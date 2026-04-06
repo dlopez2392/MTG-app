@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-primary: #121212;
+  --color-bg-secondary: #1a1a1a;
+  --color-bg-card: #2a2a2a;
+  --color-bg-hover: #333333;
+  --color-accent: #F59E0B;
+  --color-accent-dark: #D97706;
+  --color-accent-light: #FBBF24;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A0A0A0;
+  --color-text-muted: #6B7280;
+  --color-border: #3a3a3a;
+
+  /* MTG Colors */
+  --color-mtg-white: #F9FAF4;
+  --color-mtg-blue: #0E68AB;
+  --color-mtg-black: #150B00;
+  --color-mtg-red: #D3202A;
+  --color-mtg-green: #00733E;
+  --color-mtg-colorless: #9CA3AF;
+  --color-mtg-gold: #D4A843;
+
+  /* Legality Colors */
+  --color-legal: #22C55E;
+  --color-restricted: #F97316;
+  --color-banned: #EF4444;
+  --color-not-legal: #6B7280;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bg-hover) var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-hover);
+  border-radius: 3px;
+}
