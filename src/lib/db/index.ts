@@ -1,21 +1,22 @@
-import Dexie, { type EntityTable } from "dexie";
 import type { Deck, DeckCard, DeckFolder } from "@/types/deck";
 import type { Binder, CollectionCard } from "@/types/collection";
 import type { LifeGame } from "@/types/life";
 
-export type AppDatabase = Dexie & {
-  decks: EntityTable<Deck, "id">;
-  deckCards: EntityTable<DeckCard, "id">;
-  deckFolders: EntityTable<DeckFolder, "id">;
-  binders: EntityTable<Binder, "id">;
-  collectionCards: EntityTable<CollectionCard, "id">;
-  lifeGames: EntityTable<LifeGame, "id">;
-};
+export type AppDatabase = {
+  decks: import("dexie").EntityTable<Deck, "id">;
+  deckCards: import("dexie").EntityTable<DeckCard, "id">;
+  deckFolders: import("dexie").EntityTable<DeckFolder, "id">;
+  binders: import("dexie").EntityTable<Binder, "id">;
+  collectionCards: import("dexie").EntityTable<CollectionCard, "id">;
+  lifeGames: import("dexie").EntityTable<LifeGame, "id">;
+} & import("dexie").default;
 
 let _db: AppDatabase | null = null;
 
 export function getDb(): AppDatabase {
   if (!_db) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Dexie = require("dexie").default;
     _db = new Dexie("mtg-houdini") as AppDatabase;
     _db.version(1).stores({
       decks: "++id, name, format, folderId, createdAt",
@@ -28,6 +29,3 @@ export function getDb(): AppDatabase {
   }
   return _db;
 }
-
-// For convenience — only use in client components
-export const db = typeof window !== "undefined" ? getDb() : (null as unknown as AppDatabase);
