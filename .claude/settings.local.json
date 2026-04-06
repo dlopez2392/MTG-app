@@ -22,7 +22,8 @@
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in [''''dependencies'''',''''devDependencies'''']}, indent=2\\)\\)\")",
       "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''next:'', p.dependencies.next\\); console.log\\(''react:'', p.dependencies.react\\)\")",
       "Bash(gh api:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(kill %1)"
     ]
   }
 }
