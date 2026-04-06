@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useDecks } from "@/hooks/useDecks";
+import { useDecks, useDeckCards } from "@/hooks/useDecks";
 import { calculateDeckStats } from "@/lib/utils/deckStats";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
@@ -17,7 +17,7 @@ export default function DeckStatsPage({
 }) {
   const { deckId: deckIdStr } = use(params);
   const deckId = Number(deckIdStr);
-  const { getDeck, useDeckCards } = useDecks();
+  const { getDeck } = useDecks();
   const cards = useDeckCards(deckId);
   const [deck, setDeck] = useState<Deck | undefined>();
 

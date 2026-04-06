@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db/index";
+import { getDb } from "@/lib/db/index";
 import { useCollection } from "@/hooks/useCollection";
 import CollectionSummary from "@/components/collection/CollectionSummary";
 import BinderGrid from "@/components/collection/BinderGrid";
@@ -22,7 +22,7 @@ export default function CollectionPage() {
   const [newBinderName, setNewBinderName] = useState("");
 
   const { allBinders, createBinder } = useCollection();
-  const allCards = useLiveQuery(() => db.collectionCards.toArray(), []) ?? [];
+  const allCards = useLiveQuery(() => getDb().collectionCards.toArray(), []) ?? [];
 
   async function handleCreate() {
     const name = newBinderName.trim();

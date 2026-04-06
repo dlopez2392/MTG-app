@@ -1,8 +1,8 @@
 "use client";
 
-import { db } from "@/lib/db/index";
+import { getDb } from "@/lib/db/index";
 import { useLiveQuery } from "dexie-react-hooks";
-import type { Binder, CollectionCard, CardCondition } from "@/types/collection";
+import type { CollectionCard, CardCondition } from "@/types/collection";
 
 interface AddCardParams {
   scryfallId: string;
@@ -20,6 +20,7 @@ interface AddCardParams {
 }
 
 export function useCollection(binderId?: number) {
+  const db = getDb();
   const allBinders = useLiveQuery(() => db.binders.toArray(), []);
 
   const binderCards = useLiveQuery(

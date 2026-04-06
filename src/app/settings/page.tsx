@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
-import { db } from "@/lib/db/index";
+import { getDb } from "@/lib/db/index";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import type { UserSettings } from "@/types/settings";
@@ -89,10 +89,11 @@ export default function SettingsPage() {
   );
 
   async function handleExport() {
-    const binders = await db.binders.toArray();
-    const collectionCards = await db.collectionCards.toArray();
-    const decks = await db.decks.toArray();
-    const deckCards = await db.deckCards.toArray();
+    const d = getDb();
+    const binders = await d.binders.toArray();
+    const collectionCards = await d.collectionCards.toArray();
+    const decks = await d.decks.toArray();
+    const deckCards = await d.deckCards.toArray();
 
     const data = {
       exportedAt: new Date().toISOString(),
@@ -126,17 +127,18 @@ export default function SettingsPage() {
         const text = await file.text();
         const data = JSON.parse(text);
 
+        const d = getDb();
         if (data.binders) {
-          await db.binders.bulkPut(data.binders);
+          await d.binders.bulkPut(data.binders);
         }
         if (data.collectionCards) {
-          await db.collectionCards.bulkPut(data.collectionCards);
+          await d.collectionCards.bulkPut(data.collectionCards);
         }
         if (data.decks) {
-          await db.decks.bulkPut(data.decks);
+          await d.decks.bulkPut(data.decks);
         }
         if (data.deckCards) {
-          await db.deckCards.bulkPut(data.deckCards);
+          await d.deckCards.bulkPut(data.deckCards);
         }
         if (data.settings) {
           setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
@@ -152,12 +154,13 @@ export default function SettingsPage() {
   }
 
   async function handleClearAll() {
-    await db.binders.clear();
-    await db.collectionCards.clear();
-    await db.decks.clear();
-    await db.deckCards.clear();
-    await db.deckFolders.clear();
-    await db.lifeGames.clear();
+    const d = getDb();
+    await d.binders.clear();
+    await d.collectionCards.clear();
+    await d.decks.clear();
+    await d.deckCards.clear();
+    await d.deckFolders.clear();
+    await d.lifeGames.clear();
     localStorage.removeItem(SETTINGS_KEY);
     setSettings(DEFAULT_SETTINGS);
     setShowClearConfirm(false);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDecks } from "@/hooks/useDecks";
+import { useDecks, useDeckCards } from "@/hooks/useDecks";
 import Tabs from "@/components/ui/Tabs";
 import DeckCardRow from "./DeckCardRow";
 import DeckImportExport from "./DeckImportExport";
@@ -20,7 +20,7 @@ interface DeckEditorProps {
 
 export default function DeckEditor({ deckId }: DeckEditorProps) {
   const router = useRouter();
-  const { useDeckCards, updateCardQuantity, removeCardFromDeck } = useDecks();
+  const { updateCardQuantity, removeCardFromDeck } = useDecks();
   const cards = useDeckCards(deckId);
   const [activeTab, setActiveTab] = useState<string>("main");
   const [showImportExport, setShowImportExport] = useState(false);

@@ -1,11 +1,12 @@
 "use client";
 
-import { db } from "@/lib/db/index";
+import { getDb } from "@/lib/db/index";
 import { useLiveQuery } from "dexie-react-hooks";
 import type { Deck, DeckCard, DeckCategory } from "@/types/deck";
 import type { ScryfallCard } from "@/types/card";
 
 export function useDecks() {
+  const db = getDb();
   const allDecks = useLiveQuery(() => db.decks.orderBy("updatedAt").reverse().toArray());
   const allFolders = useLiveQuery(() => db.deckFolders.toArray());
 
@@ -42,7 +43,6 @@ export function useDecks() {
     category: DeckCategory = "main",
     quantity: number = 1
   ): Promise<number> {
-    // Check if card already exists in same category
     const existing = await db.deckCards
       .where("deckId")
       .equals(deckId)
@@ -75,7 +75,6 @@ export function useDecks() {
       priceUsd: card.prices?.usd,
     });
 
-    // Set cover image if first card
     const deck = await db.decks.get(deckId);
     if (deck && !deck.coverImageUri) {
       const artCrop =
@@ -114,13 +113,6 @@ export function useDecks() {
     }
   }
 
-  function useDeckCards(deckId: number | undefined) {
-    return useLiveQuery(
-      () => (deckId ? db.deckCards.where("deckId").equals(deckId).toArray() : []),
-      [deckId]
-    );
-  }
-
   return {
     allDecks,
     allFolders,
@@ -131,6 +123,14 @@ export function useDecks() {
     addCardToDeck,
     removeCardFromDeck,
     updateCardQuantity,
-    useDeckCards,
   };
+}
+
+// Separate hook for deck cards — must be called at top level of a component
+export function useDeckCards(deckId: number | undefined) {
+  const db = getDb();
+  return useLiveQuery(
+    () => (deckId ? db.deckCards.where("deckId").equals(deckId).toArray() : []),
+    [deckId]
+  );
 }

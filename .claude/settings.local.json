@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest mtg-app --typescript --tailwind --eslint --app --src-dir --no-turbopack --import-alias \"@/*\" --use-npm)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls C:/Users/danlo/MTG-app/mtg-app/src/app/decks/[deckId]/)",
+      "Bash(ls C:/Users/danlo/MTG-app/mtg-app/src/app/decks/[deckId]/stats/)",
+      "Bash(ls C:/Users/danlo/MTG-app/mtg-app/src/app/collection/[binderId]/)",
+      "Bash(cat C:/Users/danlo/MTG-app/mtg-app/src/app/collection/[binderId]/page.tsx)",
+      "Bash(npx next:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(rm -rf .git)",
+      "Bash(mv .git.bak .git)",
+      "Bash(cp -r mtg-app/src .)",
+      "Bash(cp -r mtg-app/public .)",
+      "Bash(git rm:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in [''''dependencies'''',''''devDependencies'''']}, indent=2\\)\\)\")",
+      "Bash(node -e \"const p=require\\(''./package.json''\\); console.log\\(''next:'', p.dependencies.next\\); console.log\\(''react:'', p.dependencies.react\\)\")",
+      "Bash(gh api:*)",
+      "Bash(git ls-tree:*)"
+    ]
+  }
+}

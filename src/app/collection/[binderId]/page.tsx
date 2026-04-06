@@ -3,7 +3,7 @@
 import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db/index";
+import { getDb } from "@/lib/db/index";
 import { useCollection } from "@/hooks/useCollection";
 import CollectionCardRow from "@/components/collection/CollectionCardRow";
 import Input from "@/components/ui/Input";
@@ -20,7 +20,7 @@ export default function BinderDetailPage({ params }: BinderDetailPageProps) {
   const [search, setSearch] = useState("");
 
   const binder = useLiveQuery(
-    () => db.binders.get(binderId),
+    () => getDb().binders.get(binderId),
     [binderId]
   );
 
