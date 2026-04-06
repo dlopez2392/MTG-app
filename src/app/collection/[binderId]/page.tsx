@@ -1,9 +1,11 @@
 "use client";
 
-import { lazy, Suspense, use } from "react";
+import { use } from "react";
+import dynamic from "next/dynamic";
 
-const BinderDetailClient = lazy(
-  () => import("@/components/collection/BinderDetailClient")
+const BinderDetailClient = dynamic(
+  () => import("@/components/collection/BinderDetailClient"),
+  { ssr: false }
 );
 
 export default function BinderDetailPage({
@@ -12,15 +14,5 @@ export default function BinderDetailPage({
   params: Promise<{ binderId: string }>;
 }) {
   const { binderId } = use(params);
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <BinderDetailClient binderId={binderId} />
-    </Suspense>
-  );
+  return <BinderDetailClient binderId={binderId} />;
 }

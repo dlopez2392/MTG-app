@@ -1,3 +1,4 @@
+import Dexie from "dexie";
 import type { Deck, DeckCard, DeckFolder } from "@/types/deck";
 import type { Binder, CollectionCard } from "@/types/collection";
 import type { LifeGame } from "@/types/life";
@@ -9,14 +10,15 @@ export type AppDatabase = {
   binders: import("dexie").EntityTable<Binder, "id">;
   collectionCards: import("dexie").EntityTable<CollectionCard, "id">;
   lifeGames: import("dexie").EntityTable<LifeGame, "id">;
-} & import("dexie").default;
+} & Dexie;
 
 let _db: AppDatabase | null = null;
 
 export function getDb(): AppDatabase {
+  if (typeof window === "undefined") {
+    throw new Error("getDb() can only be called in the browser");
+  }
   if (!_db) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Dexie = require("dexie").default;
     _db = new Dexie("mtg-houdini") as AppDatabase;
     _db.version(1).stores({
       decks: "++id, name, format, folderId, createdAt",

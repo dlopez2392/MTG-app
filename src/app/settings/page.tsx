@@ -1,23 +1,12 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import dynamic from "next/dynamic";
 
-const SettingsPageClient = lazy(
-  () => import("@/components/settings/SettingsPageClient")
+const SettingsPageClient = dynamic(
+  () => import("@/components/settings/SettingsPageClient"),
+  { ssr: false }
 );
 
 export default function SettingsPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col min-h-screen pb-20">
-          <div className="px-4 pt-6 pb-2">
-            <h1 className="text-xl font-bold text-text-primary">Settings</h1>
-          </div>
-        </div>
-      }
-    >
-      <SettingsPageClient />
-    </Suspense>
-  );
+  return <SettingsPageClient />;
 }

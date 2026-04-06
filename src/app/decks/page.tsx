@@ -1,19 +1,12 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import dynamic from "next/dynamic";
 
-const DecksPageClient = lazy(() => import("@/components/decks/DecksPageClient"));
+const DecksPageClient = dynamic(
+  () => import("@/components/decks/DecksPageClient"),
+  { ssr: false }
+);
 
 export default function DecksPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <DecksPageClient />
-    </Suspense>
-  );
+  return <DecksPageClient />;
 }

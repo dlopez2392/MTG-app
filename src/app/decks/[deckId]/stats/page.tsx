@@ -1,9 +1,11 @@
 "use client";
 
-import { lazy, Suspense, use } from "react";
+import { use } from "react";
+import dynamic from "next/dynamic";
 
-const DeckStatsClient = lazy(
-  () => import("@/components/decks/DeckStatsClient")
+const DeckStatsClient = dynamic(
+  () => import("@/components/decks/DeckStatsClient"),
+  { ssr: false }
 );
 
 export default function DeckStatsPage({
@@ -12,15 +14,5 @@ export default function DeckStatsPage({
   params: Promise<{ deckId: string }>;
 }) {
   const { deckId } = use(params);
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      }
-    >
-      <DeckStatsClient deckId={deckId} />
-    </Suspense>
-  );
+  return <DeckStatsClient deckId={deckId} />;
 }
