@@ -16,22 +16,20 @@ const CMDR_KEY = "__cmdr__";
 interface SlashParticle {
   id: number;
   kind: "slash";
-  /** top offset 20–65% so slashes spread across the panel */
-  top: number;
-  /** rotation between -55 and -35 deg so they look like claw marks */
+  /** px offset from center of the life number, vertically */
+  offsetY: number;
+  /** rotation angle in degrees */
   angle: number;
-  /** stagger delay in ms */
   delay: number;
 }
 
 interface HealParticle {
   id: number;
   kind: "heal";
-  /** left offset 15–80% */
-  left: number;
-  /** starting bottom offset 25–55% */
-  bottom: number;
-  /** stagger delay in ms */
+  /** px offset from center of the life number, horizontally */
+  offsetX: number;
+  /** px offset from center of the life number, vertically (start position) */
+  offsetY: number;
   delay: number;
 }
 
@@ -40,26 +38,24 @@ type Particle = SlashParticle | HealParticle;
 let nextId = 0;
 
 function spawnParticles(delta: number): Particle[] {
-  const count = Math.min(Math.abs(delta), 4); // at most 4 per hit
-  const n = Math.max(count, 3);
-
   if (delta < 0) {
-    // Damage — 3 slash marks spread vertically
-    return Array.from({ length: n }, (_, i): SlashParticle => ({
+    // 3 thick red slash lines layered over the number
+    const offsets = [-16, 0, 16];
+    return offsets.map((offsetY, i): SlashParticle => ({
       id: nextId++,
       kind: "slash",
-      top: 18 + i * 18 + Math.random() * 8,
-      angle: -50 + Math.random() * 20,
-      delay: i * 55,
+      offsetY,
+      angle: -48 + Math.random() * 16,
+      delay: i * 60,
     }));
   } else {
-    // Heal — floating plus signs
-    return Array.from({ length: n }, (_, i): HealParticle => ({
+    // 7 large green pluses orbiting/floating around the number
+    return Array.from({ length: 7 }, (_, i): HealParticle => ({
       id: nextId++,
       kind: "heal",
-      left: 15 + Math.random() * 65,
-      bottom: 25 + Math.random() * 30,
-      delay: i * 80,
+      offsetX: (Math.random() - 0.5) * 90, // ±45 px from center
+      offsetY: (Math.random() - 0.5) * 50, // ±25 px from center
+      delay: i * 70,
     }));
   }
 }
@@ -116,7 +112,7 @@ export default function PlayerPanel({
     const ids = new Set(spawned.map((s) => s.id));
     const timer = setTimeout(
       () => setParticles((p) => p.filter((x) => !ids.has(x.id))),
-      900
+      1000
     );
     return () => clearTimeout(timer);
   }, [player.life]);
@@ -152,55 +148,13 @@ export default function PlayerPanel({
         }}
       />
 
-      {/* ── Particles ── */}
-      {particles.map((p) => {
-        if (p.kind === "slash") {
-          return (
-            <div
-              key={p.id}
-              aria-hidden
-              className="pointer-events-none absolute left-[5%] right-[5%] z-20"
-              style={{
-                top: `${p.top}%`,
-                height: "3px",
-                transformOrigin: "left center",
-                transform: `rotate(${p.angle}deg)`,
-                background:
-                  "linear-gradient(90deg, transparent 0%, #ff2222 20%, #ff6666 50%, #ff2222 80%, transparent 100%)",
-                borderRadius: "2px",
-                boxShadow: "0 0 6px 1px rgba(255,30,30,0.7)",
-                animation: `life-slash 0.75s ease-out ${p.delay}ms both`,
-              }}
-            />
-          );
-        }
-
-        // heal plus
-        return (
-          <div
-            key={p.id}
-            aria-hidden
-            className="pointer-events-none absolute z-20 text-base font-black leading-none select-none"
-            style={{
-              left: `${p.left}%`,
-              bottom: `${p.bottom}%`,
-              color: "#22ff66",
-              textShadow: "0 0 8px rgba(34,255,100,0.9), 0 0 16px rgba(34,255,100,0.5)",
-              animation: `life-heal 0.85s ease-out ${p.delay}ms both`,
-            }}
-          >
-            +
-          </div>
-        );
-      })}
-
       {/* ── Top: player name ── */}
       <div className="relative z-10 flex items-center justify-center gap-2 pt-2 pb-0.5">
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: player.color }} />
         <span className="text-xs font-medium text-text-secondary">{player.name}</span>
       </div>
 
-      {/* ── Middle: life total with + above and − below ── */}
+      {/* ── Middle: life total ── */}
       <div className="relative z-10 flex flex-col items-center justify-center flex-1 min-h-0">
         <button
           onClick={() => onLifeChange(1)}
@@ -209,12 +163,67 @@ export default function PlayerPanel({
         >
           +
         </button>
-        <span
-          className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
-          style={{ color: player.color }}
-        >
-          {player.life}
-        </span>
+
+        {/* Life number + particle origin — overflow visible so particles escape */}
+        <div className="relative" style={{ overflow: "visible" }}>
+          <span
+            className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
+            style={{ color: player.color }}
+          >
+            {player.life}
+          </span>
+
+          {/* Particles anchored to this div's center */}
+          {particles.map((p) => {
+            if (p.kind === "slash") {
+              return (
+                <div
+                  key={p.id}
+                  aria-hidden
+                  className="pointer-events-none absolute z-30"
+                  style={{
+                    // Center horizontally, offset vertically
+                    top: `calc(50% + ${p.offsetY}px)`,
+                    left: "-30px",
+                    right: "-30px",
+                    height: "10px",
+                    marginTop: "-5px", // half height to center on line
+                    transformOrigin: "center center",
+                    transform: `rotate(${p.angle}deg)`,
+                    background:
+                      "linear-gradient(90deg, transparent 0%, #ff1111 15%, #ff5555 40%, #ffffff88 50%, #ff5555 60%, #ff1111 85%, transparent 100%)",
+                    borderRadius: "5px",
+                    boxShadow: "0 0 10px 3px rgba(255,20,20,0.8), 0 0 20px 4px rgba(255,20,20,0.4)",
+                    animation: `life-slash 0.7s ease-out ${p.delay}ms both`,
+                  }}
+                />
+              );
+            }
+
+            // heal plus
+            return (
+              <div
+                key={p.id}
+                aria-hidden
+                className="pointer-events-none absolute z-30 font-black leading-none select-none"
+                style={{
+                  // Offset from center of the life number
+                  top: `calc(50% + ${p.offsetY}px)`,
+                  left: `calc(50% + ${p.offsetX}px)`,
+                  transform: "translate(-50%, -50%)",
+                  fontSize: "28px",
+                  color: "#00ff55",
+                  textShadow:
+                    "0 0 10px rgba(0,255,85,1), 0 0 22px rgba(0,255,85,0.7), 0 0 40px rgba(0,255,85,0.4)",
+                  animation: `life-heal 0.95s ease-out ${p.delay}ms both`,
+                }}
+              >
+                +
+              </div>
+            );
+          })}
+        </div>
+
         <button
           onClick={() => onLifeChange(-1)}
           className="flex items-center justify-center w-full py-1 text-3xl font-bold text-white/60 hover:text-white active:text-banned transition-colors"
