@@ -62,3 +62,17 @@ export const PLAYER_COLORS = [
   "#06B6D4", // Cyan
   "#F97316", // Orange
 ] as const;
+
+// MTG color identity options for the life counter
+export const MTG_PLAYER_COLORS = [
+  { key: "W", label: "White", color: "#D4C26A", mtgQuery: "w" },
+  { key: "U", label: "Blue",  color: "#3B82F6", mtgQuery: "u" },
+  { key: "B", label: "Black", color: "#8B5CF6", mtgQuery: "b" },
+  { key: "R", label: "Red",   color: "#EF4444", mtgQuery: "r" },
+  { key: "G", label: "Green", color: "#22C55E", mtgQuery: "g" },
+] as const;
+
+export type MtgPlayerColorKey = (typeof MTG_PLAYER_COLORS)[number]["key"];
+
+// Default color per player slot (R, U, G, W)
+export const DEFAULT_PLAYER_COLOR_KEYS: MtgPlayerColorKey[] = ["R", "U", "G", "W"];

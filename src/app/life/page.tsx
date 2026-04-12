@@ -6,7 +6,6 @@ import { useLifeCounter } from "@/hooks/useLifeCounter";
 import PlayerSetup from "@/components/life/PlayerSetup";
 import PlayerPanel from "@/components/life/PlayerPanel";
 import GameHistory from "@/components/life/GameHistory";
-import CommanderDamage from "@/components/life/CommanderDamage";
 import Modal from "@/components/ui/Modal";
 
 export default function LifePage() {
@@ -26,7 +25,6 @@ export default function LifePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
-  const [showCommander, setShowCommander] = useState(false);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -41,12 +39,13 @@ export default function LifePage() {
   if (!gameStarted) {
     return (
       <PlayerSetup
-        onStart={(count, life, names) => setupGame(count, life, names)}
+        onStart={(count, life, names, colors) =>
+          setupGame(count, life, names, colors)
+        }
       />
     );
   }
 
-  // Build game layout based on player count
   const renderPlayers = () => {
     switch (playerCount) {
       case 1:
@@ -54,8 +53,10 @@ export default function LifePage() {
           <div className="flex flex-col flex-1 gap-1">
             <PlayerPanel
               player={players[0]}
+              allPlayers={players}
               onLifeChange={(d) => adjustLife(players[0].id, d)}
               onPoisonChange={(d) => adjustPoison(players[0].id, d)}
+              onCommanderDamage={addCommanderDamage}
               className="flex-1"
             />
           </div>
@@ -65,15 +66,19 @@ export default function LifePage() {
           <div className="flex flex-col flex-1 gap-1">
             <PlayerPanel
               player={players[0]}
+              allPlayers={players}
               onLifeChange={(d) => adjustLife(players[0].id, d)}
               onPoisonChange={(d) => adjustPoison(players[0].id, d)}
+              onCommanderDamage={addCommanderDamage}
               isRotated
               className="flex-1"
             />
             <PlayerPanel
               player={players[1]}
+              allPlayers={players}
               onLifeChange={(d) => adjustLife(players[1].id, d)}
               onPoisonChange={(d) => adjustPoison(players[1].id, d)}
+              onCommanderDamage={addCommanderDamage}
               className="flex-1"
             />
           </div>
@@ -83,22 +88,28 @@ export default function LifePage() {
           <div className="flex flex-col flex-1 gap-1">
             <PlayerPanel
               player={players[0]}
+              allPlayers={players}
               onLifeChange={(d) => adjustLife(players[0].id, d)}
               onPoisonChange={(d) => adjustPoison(players[0].id, d)}
+              onCommanderDamage={addCommanderDamage}
               isRotated
               className="flex-1"
             />
             <div className="flex flex-1 gap-1">
               <PlayerPanel
                 player={players[1]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[1].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[1].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 className="flex-1"
               />
               <PlayerPanel
                 player={players[2]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[2].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[2].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 className="flex-1"
               />
             </div>
@@ -110,15 +121,19 @@ export default function LifePage() {
             <div className="flex flex-1 gap-1">
               <PlayerPanel
                 player={players[0]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[0].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[0].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 isRotated
                 className="flex-1"
               />
               <PlayerPanel
                 player={players[1]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[1].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[1].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 isRotated
                 className="flex-1"
               />
@@ -126,14 +141,18 @@ export default function LifePage() {
             <div className="flex flex-1 gap-1">
               <PlayerPanel
                 player={players[2]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[2].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[2].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 className="flex-1"
               />
               <PlayerPanel
                 player={players[3]}
+                allPlayers={players}
                 onLifeChange={(d) => adjustLife(players[3].id, d)}
                 onPoisonChange={(d) => adjustPoison(players[3].id, d)}
+                onCommanderDamage={addCommanderDamage}
                 className="flex-1"
               />
             </div>
@@ -189,15 +208,6 @@ export default function LifePage() {
                 History
               </button>
               <button
-                onClick={() => {
-                  setShowCommander(true);
-                  setShowMenu(false);
-                }}
-                className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
-              >
-                Commander Damage
-              </button>
-              <button
                 onClick={toggleFullscreen}
                 className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
               >
@@ -234,24 +244,6 @@ export default function LifePage() {
         title="Game History"
       >
         <GameHistory events={events} players={players} />
-      </Modal>
-
-      {/* Commander Damage Modal */}
-      <Modal
-        open={showCommander}
-        onClose={() => setShowCommander(false)}
-        title="Commander Damage"
-      >
-        <div className="space-y-4">
-          {players.map((player) => (
-            <CommanderDamage
-              key={player.id}
-              player={player}
-              allPlayers={players}
-              onAddDamage={addCommanderDamage}
-            />
-          ))}
-        </div>
       </Modal>
     </div>
   );

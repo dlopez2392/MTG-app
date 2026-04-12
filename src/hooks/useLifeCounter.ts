@@ -14,7 +14,8 @@ interface UseLifeCounterReturn {
   setupGame: (
     playerCount: number,
     startingLife: number,
-    playerNames?: string[]
+    playerNames?: string[],
+    playerColors?: string[]
   ) => void;
   adjustLife: (playerId: string, delta: number) => void;
   adjustPoison: (playerId: string, delta: number) => void;
@@ -56,7 +57,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
   );
 
   const setupGame = useCallback(
-    (count: number, life: number, playerNames?: string[]) => {
+    (count: number, life: number, playerNames?: string[], playerColors?: string[]) => {
       setPlayerCount(count);
       setStartingLife(life);
 
@@ -65,7 +66,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
         return {
           id: uuidv4(),
           name: playerNames?.[i] || `Player ${i + 1}`,
-          color: PLAYER_COLORS[i % PLAYER_COLORS.length],
+          color: playerColors?.[i] ?? PLAYER_COLORS[i % PLAYER_COLORS.length],
           life,
           poisonCounters: 0,
           commanderDamage,
@@ -121,12 +122,14 @@ export function useLifeCounter(): UseLifeCounterReturn {
       setPlayers((prev) =>
         prev.map((p) => {
           if (p.id !== targetId) return p;
-          const newDmg = Math.max(
-            0,
-            (p.commanderDamage[sourceId] ?? 0) + amount
-          );
-          const newLife = p.life - amount;
-          pushEvent(targetId, "commander_damage", -amount, newLife, sourceId);
+          const currentDmg = p.commanderDamage[sourceId] ?? 0;
+          // Clamp so we never go below 0 or over-restore life
+          const clampedAmount =
+            amount < 0 ? Math.max(amount, -currentDmg) : amount;
+          if (clampedAmount === 0) return p;
+          const newDmg = currentDmg + clampedAmount;
+          const newLife = p.life - clampedAmount;
+          pushEvent(targetId, "commander_damage", -clampedAmount, newLife, sourceId);
           return {
             ...p,
             life: newLife,

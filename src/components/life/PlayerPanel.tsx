@@ -2,39 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
+import { MTG_PLAYER_COLORS } from "@/lib/constants";
 import type { Player } from "@/types/life";
 
-// Map player color → MTG color identity for art fetch
-const COLOR_TO_MTG: Record<string, string> = {
-  "#EF4444": "r",   // Red
-  "#3B82F6": "u",   // Blue
-  "#22C55E": "g",   // Green
-  "#F59E0B": "w",   // Amber → White
-  "#8B5CF6": "b",   // Purple → Black
-  "#EC4899": "r",   // Pink → Red
-  "#06B6D4": "u",   // Cyan → Blue
-  "#F97316": "r",   // Orange → Red
-};
+// Map hex color → Scryfall color query character
+function hexToMtgQuery(hex: string): string {
+  const match = MTG_PLAYER_COLORS.find((c) => c.color === hex);
+  return match?.mtgQuery ?? "r";
+}
 
 interface PlayerPanelProps {
   player: Player;
+  allPlayers: Player[];
   onLifeChange: (delta: number) => void;
   onPoisonChange: (delta: number) => void;
+  onCommanderDamage: (targetId: string, sourceId: string, amount: number) => void;
   isRotated?: boolean;
   className?: string;
 }
 
 export default function PlayerPanel({
   player,
+  allPlayers,
   onLifeChange,
   onPoisonChange,
+  onCommanderDamage,
   isRotated = false,
   className,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const mtgColor = COLOR_TO_MTG[player.color] ?? "r";
+    const mtgColor = hexToMtgQuery(player.color);
     fetch(
       `https://api.scryfall.com/cards/random?q=type%3Alegendary+color%3A${mtgColor}`
     )
@@ -47,14 +46,16 @@ export default function PlayerPanel({
         setArtUrl(url);
       })
       .catch(() => {});
-  // Only fetch once per player id — don't re-fetch on color changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
+
+  const opponents = allPlayers.filter((p) => p.id !== player.id);
+  const hasCommanderDamage = opponents.length > 0;
 
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center justify-center select-none overflow-hidden rounded-xl",
+        "relative flex flex-col select-none overflow-hidden rounded-xl",
         isRotated && "rotate-180",
         className
       )}
@@ -67,68 +68,103 @@ export default function PlayerPanel({
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{
-            opacity: 0.12,
-            filter: "saturate(1.4) brightness(0.8)",
-          }}
+          style={{ opacity: 0.12, filter: "saturate(1.4) brightness(0.8)" }}
         />
       )}
 
-      {/* Gradient vignette so edges fade into the panel color */}
+      {/* Radial vignette */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: `radial-gradient(ellipse at center, transparent 30%, ${player.color}22 100%)`,
+          background: `radial-gradient(ellipse at center, transparent 20%, ${player.color}28 100%)`,
         }}
       />
 
-      {/* Player name & color indicator */}
-      <div className="absolute top-2 left-0 right-0 flex items-center justify-center gap-2 z-10">
-        <div
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: player.color }}
-        />
-        <span className="text-xs font-medium text-text-secondary">
-          {player.name}
-        </span>
+      {/* ── Top: player name ── */}
+      <div className="relative z-10 flex items-center justify-center gap-2 pt-2 pb-0.5">
+        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: player.color }} />
+        <span className="text-xs font-medium text-text-secondary">{player.name}</span>
       </div>
 
-      {/* Main area: minus / life / plus */}
-      <div className="flex items-center justify-between w-full h-full px-2 z-10">
-        {/* Minus button */}
+      {/* ── Middle: life total ── */}
+      <div className="relative z-10 flex items-center justify-between flex-1 px-1 min-h-0">
         <button
           onClick={() => onLifeChange(-1)}
-          className="flex items-center justify-center w-16 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-banned transition-colors"
+          className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-banned transition-colors"
           aria-label="Decrease life"
         >
-          -
+          −
         </button>
-
-        {/* Life total */}
         <span
-          className="text-6xl font-black tabular-nums drop-shadow-lg"
+          className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
           style={{ color: player.color }}
         >
           {player.life}
         </span>
-
-        {/* Plus button */}
         <button
           onClick={() => onLifeChange(1)}
-          className="flex items-center justify-center w-16 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-legal transition-colors"
+          className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-legal transition-colors"
           aria-label="Increase life"
         >
           +
         </button>
       </div>
 
-      {/* Poison counter at bottom */}
-      <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2 z-10">
+      {/* ── Commander damage ── */}
+      {hasCommanderDamage && (
+        <div className="relative z-10 px-2 pb-1 space-y-0.5">
+          <p className="text-[8px] text-text-muted text-center uppercase tracking-widest mb-0.5">
+            Cmdr Damage
+          </p>
+          {opponents.map((opp) => {
+            const dmg = player.commanderDamage[opp.id] ?? 0;
+            const isDangerous = dmg >= 21;
+            return (
+              <div
+                key={opp.id}
+                className="flex items-center gap-1 bg-black/20 rounded px-1.5 py-0.5"
+              >
+                <div
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: opp.color }}
+                />
+                <span className="text-[9px] text-text-muted flex-1 truncate leading-none">
+                  {opp.name}
+                </span>
+                <button
+                  onClick={() => onCommanderDamage(player.id, opp.id, -1)}
+                  disabled={dmg <= 0}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-bg-hover/60 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm leading-none"
+                >
+                  −
+                </button>
+                <span
+                  className={cn(
+                    "text-xs font-bold tabular-nums w-5 text-center leading-none",
+                    isDangerous ? "text-banned" : "text-text-primary"
+                  )}
+                >
+                  {dmg}
+                </span>
+                <button
+                  onClick={() => onCommanderDamage(player.id, opp.id, 1)}
+                  className="w-5 h-5 flex items-center justify-center rounded bg-bg-hover/60 text-text-muted hover:text-text-primary text-sm leading-none"
+                >
+                  +
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Bottom: poison counter ── */}
+      <div className="relative z-10 flex items-center justify-center gap-2 pb-2">
         <button
           onClick={() => onPoisonChange(-1)}
           className="w-6 h-6 flex items-center justify-center rounded text-xs text-text-muted hover:text-text-primary bg-bg-card/60"
         >
-          -
+          −
         </button>
         <div className="flex items-center gap-1">
           <svg className="w-4 h-4 text-legal" fill="currentColor" viewBox="0 0 20 20">
