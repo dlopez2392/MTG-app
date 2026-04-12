@@ -45,7 +45,11 @@ export function useDecks() {
   }
 
   async function getDeck(id: string): Promise<Deck | undefined> {
-    return allDecks.find((d) => d.id === id);
+    const cached = allDecks.find((d) => d.id === id);
+    if (cached) return cached;
+    const res = await fetch(`/api/decks/${id}`);
+    if (res.ok) return await res.json();
+    return undefined;
   }
 
   async function addCardToDeck(

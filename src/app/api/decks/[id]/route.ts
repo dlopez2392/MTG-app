@@ -2,6 +2,17 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
 
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const sb = getSupabase();
+  const { data, error } = await sb.from("decks").select("*").eq("id", id).eq("user_id", userId).single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
+  return NextResponse.json(toDecK(data));
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,4 +42,16 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const { error } = await sb.from("decks").delete().eq("id", id).eq("user_id", userId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ success: true });
+}
+
+function toDecK(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    name: row.name,
+    format: row.format,
+    coverCardId: row.cover_card_id,
+    coverImageUri: row.cover_image_uri,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }

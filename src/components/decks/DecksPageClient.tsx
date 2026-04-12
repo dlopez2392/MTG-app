@@ -12,7 +12,7 @@ import type { Deck } from "@/types/deck";
 
 export default function DecksPageClient() {
   const router = useRouter();
-  const { allDecks } = useDecks();
+  const { allDecks, deleteDeck } = useDecks();
   const [search, setSearch] = useState("");
 
   const filteredDecks = (allDecks ?? []).filter((d) =>
@@ -21,6 +21,11 @@ export default function DecksPageClient() {
 
   function handleDeckClick(deck: Deck) {
     router.push(`/decks/${deck.id}`);
+  }
+
+  async function handleDeckDelete(deck: Deck) {
+    if (!confirm(`Delete "${deck.name}"? This cannot be undone.`)) return;
+    await deleteDeck(deck.id!);
   }
 
   return (
@@ -55,7 +60,7 @@ export default function DecksPageClient() {
             description={search ? "Try a different search term" : "Create your first deck to get started"}
           />
         ) : (
-          <DeckGrid decks={filteredDecks} onDeckClick={handleDeckClick} />
+          <DeckGrid decks={filteredDecks} onDeckClick={handleDeckClick} onDeckDelete={handleDeckDelete} />
         )}
 
         {/* FAB - Create New Deck */}
