@@ -162,10 +162,10 @@ export default function HomePage() {
         <p className="font-display text-[11px] font-bold text-text-muted tracking-widest uppercase mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 [grid-auto-rows:1fr]">
           {FEATURES.map((feature) => (
-            <Link key={feature.href} href={feature.href}>
-              <div className="group relative bg-bg-card border border-border rounded-xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/40">
+            <Link key={feature.href} href={feature.href} className="block h-full">
+              <div className="group relative bg-bg-card border border-border rounded-xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/40 h-full">
                 {/* Corner glow */}
                 <div
                   className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-15 blur-xl transition-opacity duration-200 group-hover:opacity-25"
