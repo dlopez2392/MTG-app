@@ -27,6 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json();
   const sb = getSupabase();
 
+  // Check if card already exists in this binder
   const { data: existing } = await sb
     .from("collection_cards")
     .select("id, quantity")
@@ -45,26 +46,38 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ id: existing.id });
   }
 
-  const { data, error } = await sb
+  // Try full insert first (with optional columns that may not exist yet)
+  const fullRow = {
+    binder_id: binderId,
+    user_id: userId,
+    scryfall_id: body.scryfallId,
+    name: body.name,
+    quantity: body.quantity ?? 1,
+    foil: body.isFoil ?? false,
+    condition: body.condition ?? "near_mint",
+    set_code: body.setCode ?? null,
+    set_name: body.setName ?? null,
+    collector_number: body.collectorNumber ?? null,
+    image_uri: body.imageUri ?? null,
+    price_usd: body.priceUsd ?? null,
+    type_line: body.typeLine ?? null,
+    rarity: body.rarity ?? null,
+  };
+
+  let { data, error } = await sb
     .from("collection_cards")
-    .insert({
-      binder_id: binderId,
-      user_id: userId,
-      scryfall_id: body.scryfallId,
-      name: body.name,
-      quantity: body.quantity ?? 1,
-      foil: body.isFoil ?? false,
-      condition: body.condition ?? "near_mint",
-      set_code: body.setCode ?? null,
-      set_name: body.setName ?? null,
-      collector_number: body.collectorNumber ?? null,
-      image_uri: body.imageUri ?? null,
-      price_usd: body.priceUsd ?? null,
-      type_line: body.typeLine ?? null,
-      rarity: body.rarity ?? null,
-    })
+    .insert(fullRow)
     .select()
     .single();
+
+  // If optional columns don't exist in the schema yet, retry without them
+  if (error && (error.message.includes("collector_number") || error.message.includes("type_line") || error.message.includes("rarity"))) {
+    const { collector_number, type_line, rarity, ...coreRow } = fullRow;
+    void collector_number; void type_line; void rarity;
+    const retry = await sb.from("collection_cards").insert(coreRow).select().single();
+    data = retry.data;
+    error = retry.error;
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await sb.from("binders").update({ updated_at: new Date().toISOString() }).eq("id", binderId);

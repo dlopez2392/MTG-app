@@ -43,19 +43,23 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const handleAddToCollection = useCallback(async () => {
     if (!card || !binderId) return;
     const imageUri = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal;
-    await addCardToBinder(binderId, {
-      scryfallId: card.id,
-      name: card.name,
-      setCode: card.set,
-      setName: card.set_name,
-      collectorNumber: card.collector_number,
-      typeLine: card.type_line,
-      rarity: card.rarity,
-      imageUri,
-      priceUsd: card.prices?.usd,
-    });
-    setAddedCollectionFeedback(true);
-    setTimeout(() => setAddedCollectionFeedback(false), 1500);
+    try {
+      await addCardToBinder(binderId, {
+        scryfallId: card.id,
+        name: card.name,
+        setCode: card.set,
+        setName: card.set_name,
+        collectorNumber: card.collector_number,
+        typeLine: card.type_line,
+        rarity: card.rarity,
+        imageUri,
+        priceUsd: card.prices?.usd,
+      });
+      setAddedCollectionFeedback(true);
+      setTimeout(() => setAddedCollectionFeedback(false), 1500);
+    } catch (err) {
+      alert(`Failed to add card: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
   }, [card, binderId, addCardToBinder]);
 
   if (loading) {

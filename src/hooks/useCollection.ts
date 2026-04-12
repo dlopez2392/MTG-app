@@ -115,6 +115,10 @@ export function useCollection(binderId?: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(card),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Failed to add card (${res.status})`);
+      }
       const result = await res.json();
       await refreshCards();
       return result.id;

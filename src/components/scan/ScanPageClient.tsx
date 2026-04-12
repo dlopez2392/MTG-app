@@ -166,20 +166,24 @@ export default function ScanPageClient() {
   async function doAddToBinder(binderId: string, card: ScryfallCard) {
     const imageUri =
       card.image_uris?.small ?? card.card_faces?.[0]?.image_uris?.small;
-    await addCardToBinder(binderId, {
-      scryfallId: card.id,
-      name: card.name,
-      quantity: 1,
-      setCode: card.set,
-      setName: card.set_name,
-      collectorNumber: card.collector_number,
-      imageUri,
-      priceUsd: card.prices?.usd,
-      typeLine: card.type_line,
-      rarity: card.rarity,
-    });
-    setShowBinderPicker(false);
-    alert(`Added ${card.name} to binder!`);
+    try {
+      await addCardToBinder(binderId, {
+        scryfallId: card.id,
+        name: card.name,
+        quantity: 1,
+        setCode: card.set,
+        setName: card.set_name,
+        collectorNumber: card.collector_number,
+        imageUri,
+        priceUsd: card.prices?.usd,
+        typeLine: card.type_line,
+        rarity: card.rarity,
+      });
+      setShowBinderPicker(false);
+      alert(`Added ${card.name} to binder!`);
+    } catch (err) {
+      alert(`Failed to add card: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
   }
 
   async function handleAddToDeck(card: ScryfallCard) {
