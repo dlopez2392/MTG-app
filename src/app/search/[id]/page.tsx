@@ -14,6 +14,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import Badge from "@/components/ui/Badge";
 import { useCardDetail } from "@/hooks/useCardDetail";
 import { useDecks } from "@/hooks/useDecks";
+import { useCollection } from "@/hooks/useCollection";
 import { formatPrice } from "@/lib/utils/prices";
 import type { DeckCategory } from "@/types/deck";
 
@@ -23,11 +24,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const { card, rulings, printings, loading, error } = useCardDetail(id);
   const { addCardToDeck } = useDecks();
+  const { addCardToBinder } = useCollection();
   const [activeTab, setActiveTab] = useState("versions");
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [addedCollectionFeedback, setAddedCollectionFeedback] = useState(false);
 
   const deckId = searchParams.get("deckId");
   const category = (searchParams.get("category") ?? "main") as DeckCategory;
+  const binderId = searchParams.get("binderId");
 
   const handleAddToDeck = useCallback(async () => {
     if (!card || !deckId) return;
@@ -35,6 +39,21 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   }, [card, deckId, category, addCardToDeck]);
+
+  const handleAddToCollection = useCallback(async () => {
+    if (!card || !binderId) return;
+    const imageUri = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal;
+    await addCardToBinder(binderId, {
+      scryfallId: card.id,
+      name: card.name,
+      setCode: card.set,
+      setName: card.set_name,
+      imageUri,
+      priceUsd: card.prices?.usd,
+    });
+    setAddedCollectionFeedback(true);
+    setTimeout(() => setAddedCollectionFeedback(false), 1500);
+  }, [card, binderId, addCardToBinder]);
 
   if (loading) {
     return (
@@ -138,6 +157,30 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
                     Add to Deck ({category})
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Add to Collection button */}
+            {binderId && (
+              <button
+                onClick={handleAddToCollection}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-bg-card border border-accent/50 text-accent hover:bg-accent/10 active:scale-95"
+              >
+                {addedCollectionFeedback ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Added to Collection!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add to Collection
                   </>
                 )}
               </button>

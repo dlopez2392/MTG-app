@@ -22,8 +22,9 @@ export default function SearchPage() {
   const { cards, loading, error, hasMore, totalCards, search, loadMore } = useCardSearch();
 
   const [deckContext, setDeckContext] = useState<{ deckId: string; category: string } | null>(null);
+  const [binderContext, setBinderContext] = useState<string | null>(null);
 
-  // Read ?q=, ?deckId=, ?category= params on mount and auto-search
+  // Read ?q=, ?deckId=, ?category=, ?binderId= params on mount and auto-search
   useEffect(() => {
     if (initialized) return;
     setInitialized(true);
@@ -31,7 +32,9 @@ export default function SearchPage() {
     const q = params.get("q");
     const deckId = params.get("deckId");
     const category = params.get("category");
+    const binderId = params.get("binderId");
     if (deckId) setDeckContext({ deckId, category: category ?? "main" });
+    if (binderId) setBinderContext(binderId);
     if (q) {
       const updated = { ...DEFAULT_FILTERS, query: q };
       setFilters(updated);
@@ -54,12 +57,16 @@ export default function SearchPage() {
 
   const handleCardClick = useCallback(
     (card: { id: string }) => {
-      const extra = deckContext
-        ? `?deckId=${deckContext.deckId}&category=${deckContext.category}`
-        : "";
-      router.push(`/search/${card.id}${extra}`);
+      const params = new URLSearchParams();
+      if (deckContext) {
+        params.set("deckId", deckContext.deckId);
+        params.set("category", deckContext.category);
+      }
+      if (binderContext) params.set("binderId", binderContext);
+      const qs = params.toString();
+      router.push(`/search/${card.id}${qs ? `?${qs}` : ""}`);
     },
-    [router, deckContext]
+    [router, deckContext, binderContext]
   );
 
   return (

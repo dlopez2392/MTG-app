@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCollection } from "@/hooks/useCollection";
 import CollectionCardRow from "@/components/collection/CollectionCardRow";
 import Input from "@/components/ui/Input";
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function BinderDetailClient({ binderId }: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const { allBinders, binderCards, updateQuantity, removeFromCollection } = useCollection(binderId);
 
@@ -68,6 +70,17 @@ export default function BinderDetailClient({ binderId }: Props) {
           }
         />
       </div>
+
+      {/* Add Cards FAB */}
+      <button
+        onClick={() => router.push(`/search?binderId=${binderId}`)}
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-accent hover:bg-accent-dark text-black flex items-center justify-center shadow-lg transition-colors"
+        aria-label="Add cards"
+      >
+        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </button>
 
       <div className="flex-1 px-4 space-y-2">
         {filteredCards.length === 0 ? (
