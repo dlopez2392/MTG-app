@@ -48,6 +48,9 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       name: card.name,
       setCode: card.set,
       setName: card.set_name,
+      collectorNumber: card.collector_number,
+      typeLine: card.type_line,
+      rarity: card.rarity,
       imageUri,
       priceUsd: card.prices?.usd,
     });

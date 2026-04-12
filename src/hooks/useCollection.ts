@@ -35,6 +35,7 @@ interface AddCardParams {
 export function useCollection(binderId?: string) {
   const { isSignedIn } = useUser();
   const [allBinders, setAllBinders] = useState<Binder[]>([]);
+  const [allCards, setAllCards] = useState<CollectionCard[]>([]);
   const [binderCards, setBinderCards] = useState<CollectionCard[]>([]);
 
   const refreshBinders = useCallback(async () => {
@@ -43,6 +44,20 @@ export function useCollection(binderId?: string) {
       if (res.ok) setAllBinders(await res.json());
     } else {
       setAllBinders(lsGet<Binder[]>("mtg_guest_binders", []));
+    }
+  }, [isSignedIn]);
+
+  const refreshAllCards = useCallback(async () => {
+    if (isSignedIn) {
+      const res = await fetch("/api/binders/cards");
+      if (res.ok) setAllCards(await res.json());
+    } else {
+      // Aggregate from all guest binders
+      const binders = lsGet<Binder[]>("mtg_guest_binders", []);
+      const cards = binders.flatMap((b) =>
+        lsGet<CollectionCard[]>(`mtg_guest_binder_cards_${b.id}`, [])
+      );
+      setAllCards(cards);
     }
   }, [isSignedIn]);
 
@@ -57,6 +72,7 @@ export function useCollection(binderId?: string) {
   }, [binderId, isSignedIn]);
 
   useEffect(() => { refreshBinders(); }, [refreshBinders]);
+  useEffect(() => { refreshAllCards(); }, [refreshAllCards]);
   useEffect(() => { refreshCards(); }, [refreshCards]);
 
   async function createBinder(name: string): Promise<string> {
@@ -173,7 +189,7 @@ export function useCollection(binderId?: string) {
   }
 
   return {
-    allBinders, binderCards, createBinder, deleteBinder,
+    allBinders, allCards, binderCards, createBinder, deleteBinder,
     addCardToBinder, removeFromCollection, updateQuantity, getBinderCards,
   };
 }

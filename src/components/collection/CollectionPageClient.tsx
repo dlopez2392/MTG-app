@@ -19,7 +19,7 @@ export default function CollectionPageClient() {
   const [showCreate, setShowCreate] = useState(false);
   const [newBinderName, setNewBinderName] = useState("");
 
-  const { allBinders, createBinder } = useCollection();
+  const { allBinders, allCards, createBinder, deleteBinder } = useCollection();
 
   async function handleCreate() {
     const name = newBinderName.trim();
@@ -29,6 +29,11 @@ export default function CollectionPageClient() {
     setShowCreate(false);
   }
 
+  async function handleDeleteBinder(id: string, name: string) {
+    if (!confirm(`Delete binder "${name}"? All cards inside will be lost.`)) return;
+    await deleteBinder(id);
+  }
+
   return (
     <div className="flex flex-col min-h-screen pb-20">
       <div className="px-4 pt-4 pb-2">
@@ -36,7 +41,7 @@ export default function CollectionPageClient() {
       </div>
 
       <div className="px-4 pb-3">
-        <CollectionSummary binders={allBinders} allCards={[]} />
+        <CollectionSummary binders={allBinders} allCards={allCards} />
       </div>
 
       <div className="px-4 pb-3">
@@ -45,7 +50,7 @@ export default function CollectionPageClient() {
 
       <div className="flex-1 px-4">
         {activeTab === "collection" ? (
-          <BinderGrid binders={allBinders} allCards={[]} />
+          <BinderGrid binders={allBinders} allCards={allCards} onDeleteBinder={handleDeleteBinder} />
         ) : (
           <div className="text-center py-12 text-text-muted text-sm">
             Lists coming soon

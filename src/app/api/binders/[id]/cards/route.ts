@@ -27,7 +27,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json();
   const sb = getSupabase();
 
-  // Check for existing card (same scryfall_id + foil status)
   const { data: existing } = await sb
     .from("collection_cards")
     .select("id, quantity")
@@ -58,8 +57,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       condition: body.condition ?? "near_mint",
       set_code: body.setCode ?? null,
       set_name: body.setName ?? null,
+      collector_number: body.collectorNumber ?? null,
       image_uri: body.imageUri ?? null,
       price_usd: body.priceUsd ?? null,
+      type_line: body.typeLine ?? null,
+      rarity: body.rarity ?? null,
     })
     .select()
     .single();
@@ -81,7 +83,10 @@ function toCollectionCard(row: Record<string, unknown>) {
     condition: row.condition,
     setCode: row.set_code,
     setName: row.set_name,
+    collectorNumber: row.collector_number,
     imageUri: row.image_uri,
     priceUsd: row.price_usd,
+    typeLine: row.type_line,
+    rarity: row.rarity,
   };
 }

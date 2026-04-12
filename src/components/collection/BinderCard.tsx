@@ -9,6 +9,7 @@ interface BinderCardProps {
   cardCount: number;
   totalValue: number;
   coverImageUri?: string;
+  onDelete: (e: React.MouseEvent) => void;
   className?: string;
 }
 
@@ -18,60 +19,67 @@ export default function BinderCard({
   cardCount,
   totalValue,
   coverImageUri,
+  onDelete,
   className,
 }: BinderCardProps) {
   return (
-    <Link
-      href={`/collection/${id}`}
-      className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end group transition-all duration-200 active:scale-[0.97] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(237,154,87,0.15)]",
-        className
-      )}
-    >
-      {/* Background image */}
-      {coverImageUri ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-50 transition-opacity"
-          style={{ backgroundImage: `url(${coverImageUri})` }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-b from-bg-hover/50 to-bg-card" />
-      )}
-
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-      {/* Content */}
-      <div className="relative z-10 p-3">
-        <h3 className="font-display text-sm font-bold uppercase tracking-wide text-text-primary truncate">
-          {name}
-        </h3>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-text-muted">
-            {cardCount} {cardCount === 1 ? "card" : "cards"}
-          </span>
-          <span className="text-xs text-accent font-medium">
-            ${totalValue.toFixed(2)}
-          </span>
-        </div>
-      </div>
-
-      {/* Top-right icon */}
-      <div className="absolute top-2 right-2 z-10">
-        <svg
-          className="w-5 h-5 text-text-muted"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+    <div className={cn("relative group", className)}>
+      <Link
+        href={`/collection/${id}`}
+        className="relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end block transition-all duration-200 active:scale-[0.97] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(237,154,87,0.15)]"
+      >
+        {/* Background image */}
+        {coverImageUri ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-50 transition-opacity"
+            style={{ backgroundImage: `url(${coverImageUri})` }}
           />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-b from-bg-hover/50 to-bg-card" />
+        )}
+
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Content */}
+        <div className="relative z-10 p-3">
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-text-primary truncate">
+            {name}
+          </h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-text-muted">
+              {cardCount} {cardCount === 1 ? "card" : "cards"}
+            </span>
+            <span className="text-xs text-accent font-medium">
+              ${totalValue.toFixed(2)}
+            </span>
+          </div>
+        </div>
+
+        {/* Binder icon */}
+        <div className="absolute top-2 left-2 z-10">
+          <svg
+            className="w-5 h-5 text-text-muted"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+        </div>
+      </Link>
+
+      {/* Delete button */}
+      <button
+        onClick={onDelete}
+        className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-white/60 hover:text-red-400 hover:bg-black/80 transition-colors opacity-0 group-hover:opacity-100"
+        title="Delete binder"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
-      </div>
-    </Link>
+      </button>
+    </div>
   );
 }
