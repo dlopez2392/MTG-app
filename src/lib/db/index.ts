@@ -28,6 +28,9 @@ export function getDb(): AppDatabase {
       collectionCards: "++id, binderId, scryfallId, name",
       lifeGames: "++id, createdAt",
     });
+    _db.version(2).stores({
+      decks: "++id, name, format, folderId, createdAt, updatedAt",
+    });
   }
   return _db;
 }
