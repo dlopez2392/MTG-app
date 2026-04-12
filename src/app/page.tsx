@@ -152,6 +152,7 @@ export default function HomePage() {
               />
               <button
                 type="submit"
+                suppressHydrationWarning
                 className="absolute right-1.5 px-4 py-1.5 rounded-lg bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 Search
