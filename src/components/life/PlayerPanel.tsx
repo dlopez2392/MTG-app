@@ -112,49 +112,48 @@ export default function PlayerPanel({
 
       {/* ── Commander damage ── */}
       {hasCommanderDamage && (
-        <div className="relative z-10 px-2 pb-1 space-y-0.5">
-          <p className="text-[8px] text-text-muted text-center uppercase tracking-widest mb-0.5">
+        <div className="relative z-10 px-2 pb-1">
+          <p className="text-[8px] text-text-muted text-center uppercase tracking-widest mb-1">
             Cmdr Damage
           </p>
-          {opponents.map((opp) => {
-            const dmg = player.commanderDamage[opp.id] ?? 0;
-            const isDangerous = dmg >= 21;
-            return (
-              <div
-                key={opp.id}
-                className="flex items-center gap-1 bg-black/20 rounded px-1.5 py-0.5"
-              >
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: opp.color }}
-                />
-                <span className="text-[9px] text-text-muted flex-1 truncate leading-none">
-                  {opp.name}
-                </span>
-                <button
-                  onClick={() => onCommanderDamage(player.id, opp.id, -1)}
-                  disabled={dmg <= 0}
-                  className="w-5 h-5 flex items-center justify-center rounded bg-bg-hover/60 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm leading-none"
-                >
-                  −
-                </button>
-                <span
-                  className={cn(
-                    "text-xs font-bold tabular-nums w-5 text-center leading-none",
-                    isDangerous ? "text-banned" : "text-text-primary"
-                  )}
-                >
-                  {dmg}
-                </span>
-                <button
-                  onClick={() => onCommanderDamage(player.id, opp.id, 1)}
-                  className="w-5 h-5 flex items-center justify-center rounded bg-bg-hover/60 text-text-muted hover:text-text-primary text-sm leading-none"
-                >
-                  +
-                </button>
-              </div>
-            );
-          })}
+          <div className="flex items-center justify-center gap-2">
+            {opponents.map((opp) => {
+              const dmg = player.commanderDamage[opp.id] ?? 0;
+              const isDangerous = dmg >= 21;
+              return (
+                <div key={opp.id} className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => onCommanderDamage(player.id, opp.id, -1)}
+                    disabled={dmg <= 0}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm leading-none"
+                  >
+                    −
+                  </button>
+                  {/* Colored dot + damage count */}
+                  <div className="flex flex-col items-center px-0.5">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full mb-0.5"
+                      style={{ backgroundColor: opp.color }}
+                    />
+                    <span
+                      className={cn(
+                        "text-[10px] font-black tabular-nums leading-none",
+                        isDangerous ? "text-banned" : "text-text-secondary"
+                      )}
+                    >
+                      {dmg}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onCommanderDamage(player.id, opp.id, 1)}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary text-sm leading-none"
+                  >
+                    +
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
