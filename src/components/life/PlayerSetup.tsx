@@ -18,7 +18,12 @@ interface PlayerSetupProps {
 }
 
 const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4];
-const LIFE_OPTIONS = [20, 40];
+const LIFE_OPTIONS = [
+  { value: 20, label: "20" },
+  { value: 25, label: "25" },
+  { value: 30, label: "30" },
+  { value: 40, label: "40" },
+];
 
 // MTG mana symbol SVGs (simplified)
 function ManaSymbol({ colorKey }: { colorKey: string }) {
@@ -137,18 +142,18 @@ export default function PlayerSetup({
           Starting Life
         </label>
         <div className="flex gap-2">
-          {LIFE_OPTIONS.map((life) => (
+          {LIFE_OPTIONS.map(({ value, label }) => (
             <button
-              key={life}
-              onClick={() => setStartingLife(life)}
+              key={value}
+              onClick={() => setStartingLife(value)}
               className={cn(
                 "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
-                startingLife === life
+                startingLife === value
                   ? "bg-accent text-black border-accent"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >
-              {life}
+              {label}
             </button>
           ))}
         </div>

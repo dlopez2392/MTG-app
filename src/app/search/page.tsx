@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import HeroBanner from "@/components/layout/HeroBanner";
+import { loadSettings } from "@/hooks/useSettings";
 import SearchBar from "@/components/search/SearchBar";
 import SearchFilters from "@/components/search/SearchFilters";
 import ViewToggle from "@/components/search/ViewToggle";
@@ -18,7 +19,7 @@ import { type SearchFilters as SearchFiltersType, DEFAULT_FILTERS } from "@/type
 export default function SearchPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<SearchFiltersType>(DEFAULT_FILTERS);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<"grid" | "list">(() => loadSettings().defaultSearchView);
   const [initialized, setInitialized] = useState(false);
   const { cards, loading, error, hasMore, totalCards, search, loadMore } = useCardSearch();
 

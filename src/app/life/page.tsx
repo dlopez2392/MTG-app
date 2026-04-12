@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useLifeCounter } from "@/hooks/useLifeCounter";
+import { loadSettings } from "@/hooks/useSettings";
 import PlayerSetup from "@/components/life/PlayerSetup";
 import PlayerPanel from "@/components/life/PlayerPanel";
 import GameHistory from "@/components/life/GameHistory";
@@ -37,8 +38,11 @@ export default function LifePage() {
   }, []);
 
   if (!gameStarted) {
+    const saved = loadSettings();
     return (
       <PlayerSetup
+        defaultStartingLife={saved.defaultStartingLife}
+        defaultPlayerCount={saved.defaultPlayerCount}
         onStart={(count, life, names, colors) =>
           setupGame(count, life, names, colors)
         }
