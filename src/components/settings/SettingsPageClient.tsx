@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { getDb } from "@/lib/db/index";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -50,6 +51,8 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 }
 
 export default function SettingsPageClient() {
+  const { user } = useUser();
+  const { signOut, openUserProfile } = useClerk();
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -140,6 +143,36 @@ export default function SettingsPageClient() {
       </div>
 
       <div className="px-4 mt-4 space-y-6">
+        {/* Account section */}
+        {user && (
+          <section>
+            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Account</h2>
+            <div className="bg-bg-card rounded-xl border border-border p-4 flex items-center gap-3">
+              {user.imageUrl && (
+                <img src={user.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary truncate">{user.fullName || user.username || "User"}</p>
+                <p className="text-xs text-text-muted truncate">{user.primaryEmailAddress?.emailAddress}</p>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={() => openUserProfile()}
+                  className="text-xs text-accent hover:text-accent-dark transition-colors font-medium"
+                >
+                  Edit Profile
+                </button>
+                <button
+                  onClick={() => signOut()}
+                  className="text-xs text-text-muted hover:text-banned transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Display</h2>
           <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
