@@ -5,6 +5,7 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import FeedbackModal from "@/components/ui/FeedbackModal";
 import HeroBanner from "@/components/layout/HeroBanner";
 import { useSettings } from "@/hooks/useSettings";
 import type { UserSettings } from "@/types/settings";
@@ -66,6 +67,7 @@ export default function SettingsPageClient() {
   const router = useRouter();
   const { settings, updateSetting, mounted } = useSettings();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   function handleClearGuestData() {
@@ -352,12 +354,12 @@ export default function SettingsPageClient() {
             <p className="text-xs text-text-muted">Card data provided by <span className="text-accent">Scryfall</span>. Card names, artwork, and other Magic: The Gathering content are property of Wizards of the Coast.</p>
             <p className="text-sm text-text-muted">Designed by Dan Lopez</p>
             <div className="flex flex-col gap-1.5 pt-1">
-              <a
-                href="mailto:dlopez2392@gmail.com?subject=MTG%20Houdini%20Feedback&body=Describe%20the%20issue%20or%20feedback%20here..."
-                className="text-xs text-accent hover:underline"
+              <button
+                onClick={() => setShowFeedback(true)}
+                className="text-xs text-accent hover:underline text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
               >
                 Report a bug / send feedback
-              </a>
+              </button>
             </div>
             <p className="text-xs text-text-muted pt-1 border-t border-border">
               <span className="font-semibold text-text-secondary">v0.1.0</span> — Initial release. Life counter, deck builder, collection manager, card scanner.
@@ -365,6 +367,8 @@ export default function SettingsPageClient() {
           </div>
         </section>
       </div>
+
+      <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
 
       <Modal open={showClearConfirm} onClose={() => setShowClearConfirm(false)} title="Clear Guest Data?">
         <p className="text-sm text-text-secondary mb-4">
