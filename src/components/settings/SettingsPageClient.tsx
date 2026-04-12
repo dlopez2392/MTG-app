@@ -353,9 +353,7 @@ export default function SettingsPageClient() {
             <p className="text-sm text-text-muted">Designed by Dan Lopez</p>
             <div className="flex flex-col gap-1.5 pt-1">
               <a
-                href="https://github.com/anthropics/claude-code/issues"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="mailto:dlopez2392@gmail.com?subject=MTG%20Houdini%20Feedback&body=Describe%20the%20issue%20or%20feedback%20here..."
                 className="text-xs text-accent hover:underline"
               >
                 Report a bug / send feedback
