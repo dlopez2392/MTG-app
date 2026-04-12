@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
 import CardImage from "@/components/cards/CardImage";
@@ -12,12 +13,28 @@ import Tabs from "@/components/ui/Tabs";
 import Skeleton from "@/components/ui/Skeleton";
 import Badge from "@/components/ui/Badge";
 import { useCardDetail } from "@/hooks/useCardDetail";
+import { useDecks } from "@/hooks/useDecks";
 import { formatPrice } from "@/lib/utils/prices";
+import type { DeckCategory } from "@/types/deck";
 
 export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { card, rulings, printings, loading, error } = useCardDetail(id);
+  const { addCardToDeck } = useDecks();
   const [activeTab, setActiveTab] = useState("versions");
+  const [addedFeedback, setAddedFeedback] = useState(false);
+
+  const deckId = searchParams.get("deckId");
+  const category = (searchParams.get("category") ?? "main") as DeckCategory;
+
+  const handleAddToDeck = useCallback(async () => {
+    if (!card || !deckId) return;
+    await addCardToDeck(Number(deckId), card, category);
+    setAddedFeedback(true);
+    setTimeout(() => setAddedFeedback(false), 1500);
+  }, [card, deckId, category, addCardToDeck]);
 
   if (loading) {
     return (
@@ -101,6 +118,30 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
               {card.set_name} ({card.set.toUpperCase()}) &middot; #{card.collector_number} &middot;{" "}
               <span className="capitalize">{card.rarity}</span>
             </p>
+
+            {/* Add to Deck button */}
+            {deckId && (
+              <button
+                onClick={handleAddToDeck}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-accent text-black hover:bg-accent-dark active:scale-95 shadow-[0_2px_12px_rgba(237,154,87,0.3)]"
+              >
+                {addedFeedback ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                    Added!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add to Deck ({category})
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -117,7 +158,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           />
 
           {activeTab === "versions" && (
-            <PriceTable printings={printings} />
+            <PriceTable printings={printings} deckId={deckId} category={category} />
           )}
 
           {activeTab === "rulings" && (

@@ -21,12 +21,17 @@ export default function SearchPage() {
   const [initialized, setInitialized] = useState(false);
   const { cards, loading, error, hasMore, totalCards, search, loadMore } = useCardSearch();
 
-  // Read ?q= param on mount and auto-search
+  const [deckContext, setDeckContext] = useState<{ deckId: string; category: string } | null>(null);
+
+  // Read ?q=, ?deckId=, ?category= params on mount and auto-search
   useEffect(() => {
     if (initialized) return;
     setInitialized(true);
     const params = new URLSearchParams(window.location.search);
     const q = params.get("q");
+    const deckId = params.get("deckId");
+    const category = params.get("category");
+    if (deckId) setDeckContext({ deckId, category: category ?? "main" });
     if (q) {
       const updated = { ...DEFAULT_FILTERS, query: q };
       setFilters(updated);
@@ -49,9 +54,12 @@ export default function SearchPage() {
 
   const handleCardClick = useCallback(
     (card: { id: string }) => {
-      router.push(`/search/${card.id}`);
+      const extra = deckContext
+        ? `?deckId=${deckContext.deckId}&category=${deckContext.category}`
+        : "";
+      router.push(`/search/${card.id}${extra}`);
     },
-    [router]
+    [router, deckContext]
   );
 
   return (

@@ -7,6 +7,8 @@ import type { ScryfallCard } from "@/types/card";
 interface PriceTableProps {
   printings: ScryfallCard[];
   className?: string;
+  deckId?: string | null;
+  category?: string | null;
 }
 
 function getThumbnailUrl(card: ScryfallCard): string | null {
@@ -15,7 +17,7 @@ function getThumbnailUrl(card: ScryfallCard): string | null {
   return null;
 }
 
-export default function PriceTable({ printings, className }: PriceTableProps) {
+export default function PriceTable({ printings, className, deckId, category }: PriceTableProps) {
   if (printings.length === 0) {
     return (
       <p className="text-sm text-text-secondary">No pricing data available.</p>
@@ -36,10 +38,11 @@ export default function PriceTable({ printings, className }: PriceTableProps) {
         <tbody className="divide-y divide-border">
           {printings.map((card) => {
             const thumb = getThumbnailUrl(card);
+            const deckQuery = deckId ? `?deckId=${deckId}&category=${category ?? "main"}` : "";
             return (
               <tr key={card.id} className="transition-colors hover:bg-bg-card/50 cursor-pointer">
                 <td className="py-2 pr-3">
-                  <Link href={`/search/${card.id}`} className="flex items-center gap-2">
+                  <Link href={`/search/${card.id}${deckQuery}`} className="flex items-center gap-2">
                     {thumb && (
                       <Image
                         src={thumb}
@@ -53,17 +56,17 @@ export default function PriceTable({ printings, className }: PriceTableProps) {
                   </Link>
                 </td>
                 <td className="py-2 pr-3 text-text-secondary">
-                  <Link href={`/search/${card.id}`} className="block">
+                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
                     {card.collector_number}
                   </Link>
                 </td>
                 <td className="py-2 pr-3 text-right text-text-primary">
-                  <Link href={`/search/${card.id}`} className="block">
+                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
                     {formatPrice(card.prices.usd)}
                   </Link>
                 </td>
                 <td className="py-2 text-right text-text-primary">
-                  <Link href={`/search/${card.id}`} className="block">
+                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
                     {formatPrice(card.prices.usd_foil)}
                   </Link>
                 </td>
