@@ -65,17 +65,25 @@ function spawnParticles(delta: number): Particle[] {
 interface PlayerPanelProps {
   player: Player;
   onLifeChange: (delta: number) => void;
-  onCommanderDamage: (delta: number) => void;
+  onCommanderDamage: (delta: number, sourcePlayerId?: string) => void;
+  onPoisonChange?: (delta: number) => void;
   isRotated?: boolean;
   className?: string;
+  showPoisonCounters?: boolean;
+  perCommanderTracking?: boolean;
+  opponents?: Player[];
 }
 
 export default function PlayerPanel({
   player,
   onLifeChange,
   onCommanderDamage,
+  onPoisonChange,
   isRotated = false,
   className,
+  showPoisonCounters = false,
+  perCommanderTracking = false,
+  opponents = [],
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -233,25 +241,82 @@ export default function PlayerPanel({
         </button>
       </div>
 
-      {/* ── Bottom: commander damage ── */}
-      <div className="relative z-10 flex items-center justify-center gap-1.5 pb-2">
-        <button
-          onClick={() => onCommanderDamage(-1)}
-          disabled={cmdrDmg <= 0}
-          className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
-        >−</button>
-        <div className="flex items-center gap-1">
-          <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
-          </svg>
-          <span className={cn("text-base font-bold tabular-nums leading-none", cmdrDangerous ? "text-banned" : "text-white/90")}>
-            {cmdrDmg}
-          </span>
-        </div>
-        <button
-          onClick={() => onCommanderDamage(1)}
-          className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
-        >+</button>
+      {/* ── Bottom: poison + commander damage ── */}
+      <div className="relative z-10 flex flex-col items-center gap-1 pb-2">
+        {/* Poison counters */}
+        {showPoisonCounters && onPoisonChange && (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onPoisonChange(-1)}
+              disabled={player.poisonCounters <= 0}
+              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
+            >−</button>
+            <div className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
+              </svg>
+              <span className={cn(
+                "text-sm font-bold tabular-nums leading-none",
+                player.poisonCounters >= 10 ? "text-banned" : player.poisonCounters >= 5 ? "text-restricted" : "text-white/90"
+              )}>
+                {player.poisonCounters}
+              </span>
+            </div>
+            <button
+              onClick={() => onPoisonChange(1)}
+              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
+            >+</button>
+          </div>
+        )}
+
+        {/* Commander damage — per-opponent when tracking enabled, single total otherwise */}
+        {perCommanderTracking && opponents.length > 0 ? (
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            {opponents.map((opp) => {
+              const oppDmg = player.commanderDamage[opp.id] ?? 0;
+              const oppDangerous = oppDmg >= 21;
+              return (
+                <div key={opp.id} className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => onCommanderDamage(-1, opp.id)}
+                    disabled={oppDmg <= 0}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white disabled:opacity-30 leading-none"
+                  >−</button>
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opp.color }} />
+                    <span className={cn("text-xs font-bold tabular-nums leading-none", oppDangerous ? "text-banned" : "text-white/90")}>
+                      {oppDmg}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => onCommanderDamage(1, opp.id)}
+                    className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white leading-none"
+                  >+</button>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onCommanderDamage(-1)}
+              disabled={cmdrDmg <= 0}
+              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
+            >−</button>
+            <div className="flex items-center gap-1">
+              <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+              </svg>
+              <span className={cn("text-base font-bold tabular-nums leading-none", cmdrDangerous ? "text-banned" : "text-white/90")}>
+                {cmdrDmg}
+              </span>
+            </div>
+            <button
+              onClick={() => onCommanderDamage(1)}
+              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
+            >+</button>
+          </div>
+        )}
       </div>
     </div>
   );

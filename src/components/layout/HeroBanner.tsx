@@ -33,31 +33,34 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
     card?.card_faces?.[0]?.image_uris?.art_crop;
 
   return (
-    <div className="relative overflow-hidden" style={{ minHeight: children ? 180 : 130 }}>
-      {/* Fallback gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e20] via-[#0d0d18] to-[#0a1020]" />
+    <div className="relative" style={{ minHeight: children ? 180 : 130 }}>
+      {/* Background layers — clipped separately so the dropdown can overflow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {/* Fallback gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e20] via-[#0d0d18] to-[#0a1020]" />
 
-      {/* Card art */}
-      {art && (
-        <img
-          src={art}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700"
-          style={{ opacity: loaded ? 0.32 : 0, filter: "saturate(1.3) brightness(0.6)" }}
-          onLoad={() => setLoaded(true)}
+        {/* Card art */}
+        {art && (
+          <img
+            src={art}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700"
+            style={{ opacity: loaded ? 0.32 : 0, filter: "saturate(1.3) brightness(0.6)" }}
+            onLoad={() => setLoaded(true)}
+          />
+        )}
+
+        {/* Vignette overlays */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60" />
+
+        {/* Corner accent glow */}
+        <div
+          className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl opacity-20"
+          style={{ background: accent }}
         />
-      )}
-
-      {/* Vignette overlays */}
-      <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60" />
-
-      {/* Corner accent glow */}
-      <div
-        className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl opacity-20 pointer-events-none"
-        style={{ background: accent }}
-      />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 px-4 pt-8 pb-5">

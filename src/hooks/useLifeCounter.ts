@@ -19,7 +19,7 @@ interface UseLifeCounterReturn {
   ) => void;
   adjustLife: (playerId: string, delta: number) => void;
   adjustPoison: (playerId: string, delta: number) => void;
-  adjustCommanderDamage: (playerId: string, delta: number) => void;
+  adjustCommanderDamage: (playerId: string, delta: number, sourcePlayerId?: string) => void;
   resetGame: () => void;
   newGame: () => void;
 }
@@ -105,20 +105,21 @@ export function useLifeCounter(): UseLifeCounterReturn {
   );
 
   const adjustCommanderDamage = useCallback(
-    (playerId: string, delta: number) => {
+    (playerId: string, delta: number, sourcePlayerId?: string) => {
+      const key = sourcePlayerId ?? CMDR_KEY;
       setPlayers((prev) =>
         prev.map((p) => {
           if (p.id !== playerId) return p;
-          const current = p.commanderDamage[CMDR_KEY] ?? 0;
+          const current = p.commanderDamage[key] ?? 0;
           const clamped = delta < 0 ? Math.max(delta, -current) : delta;
           if (clamped === 0) return p;
           const newTotal = current + clamped;
           const newLife = p.life - clamped;
-          pushEvent(playerId, "commander_damage", -clamped, newLife);
+          pushEvent(playerId, "commander_damage", -clamped, newLife, sourcePlayerId);
           return {
             ...p,
             life: newLife,
-            commanderDamage: { [CMDR_KEY]: newTotal },
+            commanderDamage: { ...p.commanderDamage, [key]: newTotal },
           };
         })
       );
@@ -132,7 +133,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
         ...p,
         life: startingLife,
         poisonCounters: 0,
-        commanderDamage: { [CMDR_KEY]: 0 },
+        commanderDamage: Object.fromEntries(Object.keys(p.commanderDamage).map((k) => [k, 0])),
       }))
     );
     setEvents([]);

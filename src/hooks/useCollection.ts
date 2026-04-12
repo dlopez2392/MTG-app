@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import type { Binder, CollectionCard, CardCondition } from "@/types/collection";
+import { loadSettings } from "./useSettings";
 
 function lsGet<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -109,6 +110,13 @@ export function useCollection(binderId?: string) {
   }
 
   async function addCardToBinder(targetBinderId: string, card: AddCardParams): Promise<string> {
+    const defaults = loadSettings();
+    const cardWithDefaults: AddCardParams = {
+      condition: defaults.defaultCondition,
+      isFoil: defaults.defaultFoil,
+      ...card,
+    };
+    card = cardWithDefaults;
     if (isSignedIn) {
       const res = await fetch(`/api/binders/${targetBinderId}/cards`, {
         method: "POST",

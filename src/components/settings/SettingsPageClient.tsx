@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -8,6 +8,7 @@ import Modal from "@/components/ui/Modal";
 import HeroBanner from "@/components/layout/HeroBanner";
 import { useSettings } from "@/hooks/useSettings";
 import type { UserSettings } from "@/types/settings";
+import type { CardCondition } from "@/types/collection";
 
 const GUEST_DATA_PREFIX = "mtg_guest_";
 
@@ -37,6 +38,21 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
   );
 }
 
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      role="switch"
+      aria-checked={value}
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${value ? "bg-accent" : "bg-border"}`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${value ? "translate-x-6" : "translate-x-1"}`}
+      />
+    </button>
+  );
+}
+
 const MORE_ICON = (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
@@ -50,14 +66,54 @@ export default function SettingsPageClient() {
   const router = useRouter();
   const { settings, updateSetting, mounted } = useSettings();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
 
   function handleClearGuestData() {
-    // Only clears collection/deck data — settings (preferences) are preserved
     Object.keys(localStorage)
       .filter((k) => k.startsWith(GUEST_DATA_PREFIX))
       .forEach((k) => localStorage.removeItem(k));
     setShowClearConfirm(false);
     alert("Guest data cleared. Your app preferences have been kept.");
+  }
+
+  function handleExportGuestData() {
+    const data: Record<string, unknown> = {};
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith(GUEST_DATA_PREFIX))
+      .forEach((k) => {
+        try { data[k] = JSON.parse(localStorage.getItem(k) ?? "null"); }
+        catch { data[k] = localStorage.getItem(k); }
+      });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mtg-houdini-backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportGuestData(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as Record<string, unknown>;
+        let count = 0;
+        for (const [k, v] of Object.entries(data)) {
+          if (k.startsWith(GUEST_DATA_PREFIX)) {
+            localStorage.setItem(k, JSON.stringify(v));
+            count++;
+          }
+        }
+        alert(`Imported ${count} data entries. Refresh to see changes.`);
+      } catch {
+        alert("Invalid backup file.");
+      }
+      if (importRef.current) importRef.current.value = "";
+    };
+    reader.readAsText(file);
   }
 
   if (!mounted) return null;
@@ -139,6 +195,18 @@ export default function SettingsPageClient() {
                 options={[{ value: "small", label: "Small" }, { value: "normal", label: "Normal" }, { value: "large", label: "Large" }]}
               />
             </SettingRow>
+            <SettingRow label="Default Deck Sort">
+              <Select
+                value={settings.defaultDeckSort}
+                onChange={(v) => updateSetting("defaultDeckSort", v as UserSettings["defaultDeckSort"])}
+                options={[
+                  { value: "mana_value", label: "Mana Value" },
+                  { value: "name", label: "Name" },
+                  { value: "type", label: "Type" },
+                  { value: "color", label: "Color" },
+                ]}
+              />
+            </SettingRow>
           </div>
         </section>
 
@@ -187,28 +255,115 @@ export default function SettingsPageClient() {
           </div>
         </section>
 
-        {/* Data — only shown to guests */}
-        {!isSignedIn && (
-          <section>
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
-            <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
-              <SettingRow
-                label="Clear Guest Data"
-                description="Deletes all locally stored decks, binders, and cards. Your app preferences are kept."
-              >
-                <Button variant="danger" size="sm" onClick={() => setShowClearConfirm(true)}>Clear</Button>
-              </SettingRow>
-            </div>
-          </section>
-        )}
+        {/* Gameplay */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Gameplay</h2>
+          <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
+            <SettingRow
+              label="Show Poison Counters"
+              description="Display poison counter tracker on each player panel"
+            >
+              <Toggle
+                value={settings.showPoisonCounters}
+                onChange={(v) => updateSetting("showPoisonCounters", v)}
+              />
+            </SettingRow>
+            <SettingRow
+              label="Per-Commander Tracking"
+              description="Track commander damage from each opponent separately"
+            >
+              <Toggle
+                value={settings.perCommanderTracking}
+                onChange={(v) => updateSetting("perCommanderTracking", v)}
+              />
+            </SettingRow>
+          </div>
+        </section>
+
+        {/* Collection */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Collection</h2>
+          <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
+            <SettingRow label="Default Condition" description="Used when adding cards to your collection">
+              <Select
+                value={settings.defaultCondition}
+                onChange={(v) => updateSetting("defaultCondition", v as CardCondition)}
+                options={[
+                  { value: "near_mint", label: "Near Mint" },
+                  { value: "lightly_played", label: "Lightly Played" },
+                  { value: "moderately_played", label: "Moderately Played" },
+                  { value: "heavily_played", label: "Heavily Played" },
+                  { value: "damaged", label: "Damaged" },
+                ]}
+              />
+            </SettingRow>
+            <SettingRow label="Default Foil" description="Add cards as foil by default">
+              <Toggle
+                value={settings.defaultFoil}
+                onChange={(v) => updateSetting("defaultFoil", v)}
+              />
+            </SettingRow>
+          </div>
+        </section>
+
+        {/* Data */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
+          <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
+            {!isSignedIn && (
+              <>
+                <SettingRow
+                  label="Export Guest Data"
+                  description="Download a backup of all your locally stored decks, binders, and cards"
+                >
+                  <Button variant="secondary" size="sm" onClick={handleExportGuestData}>Export</Button>
+                </SettingRow>
+                <SettingRow
+                  label="Import Guest Data"
+                  description="Restore from a previously exported backup file"
+                >
+                  <>
+                    <input
+                      ref={importRef}
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={handleImportGuestData}
+                    />
+                    <Button variant="secondary" size="sm" onClick={() => importRef.current?.click()}>Import</Button>
+                  </>
+                </SettingRow>
+                <SettingRow
+                  label="Clear Guest Data"
+                  description="Deletes all locally stored decks, binders, and cards. Your app preferences are kept."
+                >
+                  <Button variant="danger" size="sm" onClick={() => setShowClearConfirm(true)}>Clear</Button>
+                </SettingRow>
+              </>
+            )}
+          </div>
+        </section>
 
         {/* About */}
         <section className="pb-8">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">About</h2>
-          <div className="bg-bg-card rounded-xl border border-border p-4 space-y-2">
+          <div className="bg-bg-card rounded-xl border border-border p-4 space-y-3">
             <p className="text-sm text-text-secondary">MTG Houdini is your ultimate Magic: The Gathering companion app.</p>
             <p className="text-xs text-text-muted">Card data provided by <span className="text-accent">Scryfall</span>. Card names, artwork, and other Magic: The Gathering content are property of Wizards of the Coast.</p>
-            <p className="text-sm text-text-muted mt-1">Designed by Dan Lopez</p>
+            <p className="text-sm text-text-muted">Designed by Dan Lopez</p>
+            <div className="flex flex-col gap-1.5 pt-1">
+              <a
+                href="https://github.com/anthropics/claude-code/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-accent hover:underline"
+              >
+                Report a bug / send feedback
+              </a>
+            </div>
+            <p className="text-xs text-text-muted pt-1 border-t border-border">
+              <span className="font-semibold text-text-secondary">v0.1.0</span> — Initial release. Life counter, deck builder, collection manager, card scanner.
+            </p>
           </div>
         </section>
       </div>

@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useLifeCounter } from "@/hooks/useLifeCounter";
-import { loadSettings } from "@/hooks/useSettings";
+import { loadSettings, useSettings } from "@/hooks/useSettings";
 import PlayerSetup from "@/components/life/PlayerSetup";
 import PlayerPanel from "@/components/life/PlayerPanel";
 import GameHistory from "@/components/life/GameHistory";
@@ -23,6 +23,7 @@ export default function LifePage() {
     newGame,
   } = useLifeCounter();
 
+  const { settings } = useSettings();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -50,15 +51,23 @@ export default function LifePage() {
     );
   }
 
-  const panel = (index: number, rotated = false) => (
-    <PlayerPanel
-      player={players[index]}
-      onLifeChange={(d) => adjustLife(players[index].id, d)}
-      onCommanderDamage={(d) => adjustCommanderDamage(players[index].id, d)}
-      isRotated={rotated}
-      className="flex-1"
-    />
-  );
+  const panel = (index: number, rotated = false) => {
+    const p = players[index];
+    const opponents = players.filter((_, i) => i !== index);
+    return (
+      <PlayerPanel
+        player={p}
+        onLifeChange={(d) => adjustLife(p.id, d)}
+        onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
+        onPoisonChange={(d) => adjustPoison(p.id, d)}
+        isRotated={rotated}
+        className="flex-1"
+        showPoisonCounters={settings.showPoisonCounters}
+        perCommanderTracking={settings.perCommanderTracking}
+        opponents={opponents}
+      />
+    );
+  };
 
   const renderPlayers = () => {
     switch (playerCount) {
