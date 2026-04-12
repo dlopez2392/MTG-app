@@ -105,8 +105,13 @@ export default function LifePage() {
       <div className="flex-1 flex flex-col p-1 relative">
         {renderPlayers()}
 
-        {/* Center menu button */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+        {/* Menu button — center for 2+ players (sits on divider), corner for 1 player */}
+        <div className={cn(
+          "absolute z-20",
+          playerCount === 1
+            ? "bottom-4 right-4"
+            : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        )}>
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="w-10 h-10 rounded-full bg-bg-secondary/90 border border-border flex items-center justify-center shadow-lg hover:bg-bg-hover transition-colors"
