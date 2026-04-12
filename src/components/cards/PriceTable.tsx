@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/prices";
 import type { ScryfallCard } from "@/types/card";
@@ -36,9 +37,9 @@ export default function PriceTable({ printings, className }: PriceTableProps) {
           {printings.map((card) => {
             const thumb = getThumbnailUrl(card);
             return (
-              <tr key={card.id} className="transition-colors hover:bg-bg-card/50">
+              <tr key={card.id} className="transition-colors hover:bg-bg-card/50 cursor-pointer">
                 <td className="py-2 pr-3">
-                  <div className="flex items-center gap-2">
+                  <Link href={`/search/${card.id}`} className="flex items-center gap-2">
                     {thumb && (
                       <Image
                         src={thumb}
@@ -48,17 +49,23 @@ export default function PriceTable({ printings, className }: PriceTableProps) {
                         className="rounded-sm"
                       />
                     )}
-                    <span className="text-text-primary">{card.set_name}</span>
-                  </div>
+                    <span className="text-text-primary hover:text-accent transition-colors">{card.set_name}</span>
+                  </Link>
                 </td>
                 <td className="py-2 pr-3 text-text-secondary">
-                  {card.collector_number}
+                  <Link href={`/search/${card.id}`} className="block">
+                    {card.collector_number}
+                  </Link>
                 </td>
                 <td className="py-2 pr-3 text-right text-text-primary">
-                  {formatPrice(card.prices.usd)}
+                  <Link href={`/search/${card.id}`} className="block">
+                    {formatPrice(card.prices.usd)}
+                  </Link>
                 </td>
                 <td className="py-2 text-right text-text-primary">
-                  {formatPrice(card.prices.usd_foil)}
+                  <Link href={`/search/${card.id}`} className="block">
+                    {formatPrice(card.prices.usd_foil)}
+                  </Link>
                 </td>
               </tr>
             );
