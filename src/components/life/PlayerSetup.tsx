@@ -16,7 +16,7 @@ interface PlayerSetupProps {
   ) => void;
 }
 
-const PLAYER_COUNT_OPTIONS = [2, 3, 4];
+const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4];
 const LIFE_OPTIONS = [20, 40];
 
 export default function PlayerSetup({

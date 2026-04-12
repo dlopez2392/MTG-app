@@ -49,6 +49,17 @@ export default function LifePage() {
   // Build game layout based on player count
   const renderPlayers = () => {
     switch (playerCount) {
+      case 1:
+        return (
+          <div className="flex flex-col flex-1 gap-1">
+            <PlayerPanel
+              player={players[0]}
+              onLifeChange={(d) => adjustLife(players[0].id, d)}
+              onPoisonChange={(d) => adjustPoison(players[0].id, d)}
+              className="flex-1"
+            />
+          </div>
+        );
       case 2:
         return (
           <div className="flex flex-col flex-1 gap-1">
