@@ -67,7 +67,7 @@ export default function PlayerPanel({
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.35, filter: "saturate(1.4) brightness(0.75)" }}
+          style={{ opacity: 0.50, filter: "saturate(1.4) brightness(0.75)" }}
         />
       )}
 
