@@ -3,11 +3,11 @@ import type { Color, Rarity } from "./card";
 export type DeckCategory = "main" | "sideboard" | "commander" | "companion" | "maybeboard";
 
 export interface Deck {
-  id?: number;
+  id?: string;
   name: string;
   description?: string;
   format?: string;
-  folderId?: number;
+  folderId?: string;
   coverCardId?: string;
   coverImageUri?: string;
   createdAt: string;
@@ -15,8 +15,8 @@ export interface Deck {
 }
 
 export interface DeckCard {
-  id?: number;
-  deckId: number;
+  id?: string;
+  deckId: string;
   scryfallId: string;
   name: string;
   quantity: number;
@@ -31,9 +31,9 @@ export interface DeckCard {
 }
 
 export interface DeckFolder {
-  id?: number;
+  id?: string;
   name: string;
-  parentId?: number;
+  parentId?: string;
   createdAt: string;
 }
 

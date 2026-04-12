@@ -8,8 +8,8 @@ import { CONDITIONS } from "@/lib/constants";
 
 interface CollectionCardRowProps {
   card: CollectionCard;
-  onQuantityChange: (id: number, newQty: number) => void;
-  onRemove: (id: number) => void;
+  onQuantityChange: (id: string, newQty: number) => void;
+  onRemove: (id: string) => void;
 }
 
 export default function CollectionCardRow({

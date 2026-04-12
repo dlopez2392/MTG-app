@@ -15,7 +15,7 @@ const CATEGORY_TABS = [
 ];
 
 interface DeckEditorProps {
-  deckId: number;
+  deckId: string;
 }
 
 export default function DeckEditor({ deckId }: DeckEditorProps) {

@@ -9,7 +9,7 @@ export type CardCondition =
   | "damaged";
 
 export interface Binder {
-  id?: number;
+  id?: string;
   name: string;
   description?: string;
   coverImageUri?: string;
@@ -18,8 +18,8 @@ export interface Binder {
 }
 
 export interface CollectionCard {
-  id?: number;
-  binderId: number;
+  id?: string;
+  binderId: string;
   scryfallId: string;
   name: string;
   quantity: number;

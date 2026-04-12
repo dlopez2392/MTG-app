@@ -12,8 +12,7 @@ interface Props {
   deckId: string;
 }
 
-export default function DeckEditorPageClient({ deckId: deckIdStr }: Props) {
-  const deckId = Number(deckIdStr);
+export default function DeckEditorPageClient({ deckId }: Props) {
   const router = useRouter();
   const { getDeck, deleteDeck } = useDecks();
   const [deck, setDeck] = useState<Deck | undefined>();

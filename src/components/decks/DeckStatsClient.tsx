@@ -14,8 +14,7 @@ interface Props {
   deckId: string;
 }
 
-export default function DeckStatsClient({ deckId: deckIdStr }: Props) {
-  const deckId = Number(deckIdStr);
+export default function DeckStatsClient({ deckId }: Props) {
   const { getDeck } = useDecks();
   const cards = useDeckCards(deckId);
   const [deck, setDeck] = useState<Deck | undefined>();

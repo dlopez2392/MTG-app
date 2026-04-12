@@ -10,7 +10,7 @@ import type { DeckCard } from "@/types/deck";
 interface DeckImportExportProps {
   open: boolean;
   onClose: () => void;
-  deckId: number;
+  deckId: string;
   cards: DeckCard[];
 }
 

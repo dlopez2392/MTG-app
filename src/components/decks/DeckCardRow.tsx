@@ -6,8 +6,8 @@ import { formatPrice } from "@/lib/utils/prices";
 
 interface DeckCardRowProps {
   card: DeckCard;
-  onQuantityChange: (id: number, quantity: number) => void;
-  onRemove: (id: number) => void;
+  onQuantityChange: (id: string, quantity: number) => void;
+  onRemove: (id: string) => void;
 }
 
 export default function DeckCardRow({ card, onQuantityChange, onRemove }: DeckCardRowProps) {

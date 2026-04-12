@@ -1,8 +1,7 @@
 "use client";
 
-import { getDb } from "@/lib/db/index";
-import { useLiveQuery } from "dexie-react-hooks";
-import type { CollectionCard, CardCondition } from "@/types/collection";
+import { useState, useEffect, useCallback } from "react";
+import type { Binder, CollectionCard, CardCondition } from "@/types/collection";
 
 interface AddCardParams {
   scryfallId: string;
@@ -19,103 +18,74 @@ interface AddCardParams {
   rarity?: CollectionCard["rarity"];
 }
 
-export function useCollection(binderId?: number) {
-  const db = getDb();
-  const allBinders = useLiveQuery(() => db.binders.toArray(), []);
+export function useCollection(binderId?: string) {
+  const [allBinders, setAllBinders] = useState<Binder[]>([]);
+  const [binderCards, setBinderCards] = useState<CollectionCard[]>([]);
 
-  const binderCards = useLiveQuery(
-    () =>
-      binderId !== undefined
-        ? db.collectionCards.where("binderId").equals(binderId).toArray()
-        : [],
-    [binderId]
-  );
+  const refreshBinders = useCallback(async () => {
+    const res = await fetch("/api/binders");
+    if (res.ok) setAllBinders(await res.json());
+  }, []);
 
-  async function createBinder(name: string): Promise<number> {
-    const now = new Date().toISOString();
-    const id = await db.binders.add({
-      name,
-      createdAt: now,
-      updatedAt: now,
+  const refreshCards = useCallback(async () => {
+    if (!binderId) { setBinderCards([]); return; }
+    const res = await fetch(`/api/binders/${binderId}/cards`);
+    if (res.ok) setBinderCards(await res.json());
+  }, [binderId]);
+
+  useEffect(() => { refreshBinders(); }, [refreshBinders]);
+  useEffect(() => { refreshCards(); }, [refreshCards]);
+
+  async function createBinder(name: string): Promise<string> {
+    const res = await fetch("/api/binders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
     });
-    return id as number;
+    const binder = await res.json();
+    await refreshBinders();
+    return binder.id;
   }
 
-  async function deleteBinder(id: number) {
-    await db.transaction("rw", db.binders, db.collectionCards, async () => {
-      await db.collectionCards.where("binderId").equals(id).delete();
-      await db.binders.delete(id);
+  async function deleteBinder(id: string) {
+    await fetch(`/api/binders/${id}`, { method: "DELETE" });
+    await refreshBinders();
+  }
+
+  async function addCardToBinder(targetBinderId: string, card: AddCardParams): Promise<string> {
+    const res = await fetch(`/api/binders/${targetBinderId}/cards`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(card),
     });
+    const result = await res.json();
+    await refreshCards();
+    return result.id;
   }
 
-  async function addCardToBinder(
-    targetBinderId: number,
-    card: AddCardParams
-  ): Promise<number> {
-    const existing = await db.collectionCards
-      .where("binderId")
-      .equals(targetBinderId)
-      .and(
-        (c) =>
-          c.scryfallId === card.scryfallId &&
-          c.isFoil === (card.isFoil ?? false)
-      )
-      .first();
+  async function removeFromCollection(id: string) {
+    await fetch(`/api/collection-cards/${id}`, { method: "DELETE" });
+    await refreshCards();
+  }
 
-    if (existing && existing.id !== undefined) {
-      await db.collectionCards.update(existing.id, {
-        quantity: existing.quantity + (card.quantity ?? 1),
-      });
-      return existing.id;
-    }
-
-    const newId = await db.collectionCards.add({
-      binderId: targetBinderId,
-      scryfallId: card.scryfallId,
-      name: card.name,
-      quantity: card.quantity ?? 1,
-      condition: card.condition ?? "near_mint",
-      isFoil: card.isFoil ?? false,
-      setCode: card.setCode,
-      setName: card.setName,
-      collectorNumber: card.collectorNumber,
-      imageUri: card.imageUri,
-      priceUsd: card.priceUsd,
-      typeLine: card.typeLine,
-      rarity: card.rarity,
+  async function updateQuantity(id: string, qty: number) {
+    await fetch(`/api/collection-cards/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ quantity: qty }),
     });
-
-    await db.binders.update(targetBinderId, {
-      updatedAt: new Date().toISOString(),
-    });
-
-    return newId as number;
+    await refreshCards();
   }
 
-  async function removeFromCollection(id: number) {
-    await db.collectionCards.delete(id);
-  }
-
-  async function updateQuantity(id: number, qty: number) {
-    if (qty <= 0) {
-      await db.collectionCards.delete(id);
-    } else {
-      await db.collectionCards.update(id, { quantity: qty });
-    }
-  }
-
-  async function getBinderCards(
-    targetBinderId: number
-  ): Promise<CollectionCard[]> {
-    return db.collectionCards
-      .where("binderId")
-      .equals(targetBinderId)
-      .toArray();
+  async function getBinderCards(targetBinderId: string): Promise<CollectionCard[]> {
+    const res = await fetch(`/api/binders/${targetBinderId}/cards`);
+    if (res.ok) return res.json();
+    return [];
   }
 
   return {
-    allBinders: allBinders ?? [],
-    binderCards: binderCards ?? [],
+    allBinders,
+    binderCards,
     createBinder,
     deleteBinder,
     addCardToBinder,

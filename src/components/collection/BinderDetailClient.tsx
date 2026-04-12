@@ -2,8 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { useLiveQuery } from "dexie-react-hooks";
-import { getDb } from "@/lib/db/index";
 import { useCollection } from "@/hooks/useCollection";
 import CollectionCardRow from "@/components/collection/CollectionCardRow";
 import Input from "@/components/ui/Input";
@@ -13,16 +11,11 @@ interface Props {
   binderId: string;
 }
 
-export default function BinderDetailClient({ binderId: binderIdStr }: Props) {
-  const binderId = parseInt(binderIdStr, 10);
+export default function BinderDetailClient({ binderId }: Props) {
   const [search, setSearch] = useState("");
+  const { allBinders, binderCards, updateQuantity, removeFromCollection } = useCollection(binderId);
 
-  const binder = useLiveQuery(
-    () => getDb().binders.get(binderId),
-    [binderId]
-  );
-
-  const { binderCards, updateQuantity, removeFromCollection } = useCollection(binderId);
+  const binder = allBinders.find((b) => b.id === binderId);
 
   const filteredCards = useMemo(() => {
     if (!search.trim()) return binderCards;

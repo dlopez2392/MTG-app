@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { getDb } from "@/lib/db/index";
 import { useCollection } from "@/hooks/useCollection";
 import CollectionSummary from "@/components/collection/CollectionSummary";
 import BinderGrid from "@/components/collection/BinderGrid";
@@ -22,7 +20,6 @@ export default function CollectionPageClient() {
   const [newBinderName, setNewBinderName] = useState("");
 
   const { allBinders, createBinder } = useCollection();
-  const allCards = useLiveQuery(() => getDb().collectionCards.toArray(), []) ?? [];
 
   async function handleCreate() {
     const name = newBinderName.trim();
@@ -39,7 +36,7 @@ export default function CollectionPageClient() {
       </div>
 
       <div className="px-4 pb-3">
-        <CollectionSummary binders={allBinders} allCards={allCards} />
+        <CollectionSummary binders={allBinders} allCards={[]} />
       </div>
 
       <div className="px-4 pb-3">
@@ -48,7 +45,7 @@ export default function CollectionPageClient() {
 
       <div className="flex-1 px-4">
         {activeTab === "collection" ? (
-          <BinderGrid binders={allBinders} allCards={allCards} />
+          <BinderGrid binders={allBinders} allCards={[]} />
         ) : (
           <div className="text-center py-12 text-text-muted text-sm">
             Lists coming soon
