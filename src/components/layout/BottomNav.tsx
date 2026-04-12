@@ -77,16 +77,39 @@ function NavTab({
       href={href}
       suppressHydrationWarning
       className={cn(
-        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
+        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
         isActive ? "text-accent" : "text-text-muted hover:text-text-secondary"
       )}
     >
-      {/* Active indicator bar */}
-      {isActive && (
-        <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-accent shadow-[0_0_8px_2px_rgba(237,154,87,0.5)]" />
-      )}
-      {icon}
-      <span className="text-[9px] font-medium tracking-wide">{label}</span>
+      {/* Active indicator bar — always rendered, animates width + opacity */}
+      <span
+        className={cn(
+          "absolute top-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full bg-accent transition-all duration-300 ease-out",
+          isActive
+            ? "w-6 opacity-100 shadow-[0_0_8px_2px_rgba(237,154,87,0.5)]"
+            : "w-0 opacity-0"
+        )}
+      />
+
+      {/* Icon — scales up slightly when active */}
+      <span
+        className={cn(
+          "transition-transform duration-200 ease-out",
+          isActive ? "scale-110" : "scale-100"
+        )}
+      >
+        {icon}
+      </span>
+
+      {/* Label — larger and bolder when active */}
+      <span
+        className={cn(
+          "text-[10px] tracking-wide transition-all duration-200",
+          isActive ? "font-semibold" : "font-medium"
+        )}
+      >
+        {label}
+      </span>
     </Link>
   );
 }
@@ -123,17 +146,17 @@ export default function BottomNav() {
           />
         ))}
 
-        {/* Center scan button */}
+        {/* Center scan button — 48px, lifts on active */}
         <Link
           href="/scan"
           className="flex items-center justify-center w-full h-full relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
         >
           <div
             className={cn(
-              "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200",
+              "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200",
               isScanActive
-                ? "bg-accent text-black shadow-[0_0_20px_4px_rgba(237,154,87,0.4)]"
-                : "bg-accent/90 text-black hover:bg-accent hover:shadow-[0_0_16px_2px_rgba(237,154,87,0.3)] shadow-lg"
+                ? "bg-accent text-black shadow-[0_0_24px_6px_rgba(237,154,87,0.45)] scale-105"
+                : "bg-accent/90 text-black hover:bg-accent hover:scale-105 hover:shadow-[0_0_16px_2px_rgba(237,154,87,0.3)] shadow-lg"
             )}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
