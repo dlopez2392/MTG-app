@@ -8,6 +8,7 @@ import PageContainer from "@/components/layout/PageContainer";
 import DeckGrid from "@/components/decks/DeckGrid";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 import type { Deck } from "@/types/deck";
 
 const DECK_ICON = (
@@ -20,6 +21,7 @@ export default function DecksPageClient() {
   const router = useRouter();
   const { allDecks, deleteDeck } = useDecks();
   const [search, setSearch] = useState("");
+  const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
 
   const filteredDecks = (allDecks ?? []).filter((d) =>
     d.name.toLowerCase().includes(search.toLowerCase())
@@ -29,9 +31,13 @@ export default function DecksPageClient() {
     router.push(`/decks/${deck.id}`);
   }
 
-  async function handleDeckDelete(deck: Deck) {
-    if (!confirm(`Delete "${deck.name}"? This cannot be undone.`)) return;
-    await deleteDeck(deck.id!);
+  function handleDeckDelete(deck: Deck) {
+    setDeckToDelete(deck);
+  }
+
+  async function confirmDeckDelete() {
+    if (!deckToDelete) return;
+    await deleteDeck(deckToDelete.id!);
   }
 
   return (
@@ -74,6 +80,16 @@ export default function DecksPageClient() {
         ) : (
           <DeckGrid decks={filteredDecks} onDeckClick={handleDeckClick} onDeckDelete={handleDeckDelete} />
         )}
+
+        <ConfirmModal
+          open={!!deckToDelete}
+          onClose={() => setDeckToDelete(null)}
+          onConfirm={confirmDeckDelete}
+          title="Delete Deck"
+          description={`Delete "${deckToDelete?.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          danger
+        />
 
         {/* FAB - Create New Deck */}
         <button

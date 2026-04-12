@@ -9,6 +9,7 @@ import Tabs from "@/components/ui/Tabs";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ConfirmModal from "@/components/ui/ConfirmModal";
 
 const COLLECTION_ICON = (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -25,6 +26,7 @@ export default function CollectionPageClient() {
   const [activeTab, setActiveTab] = useState("collection");
   const [showCreate, setShowCreate] = useState(false);
   const [newBinderName, setNewBinderName] = useState("");
+  const [binderToDelete, setBinderToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const { allBinders, allCards, createBinder, deleteBinder } = useCollection();
 
@@ -36,9 +38,13 @@ export default function CollectionPageClient() {
     setShowCreate(false);
   }
 
-  async function handleDeleteBinder(id: string, name: string) {
-    if (!confirm(`Delete binder "${name}"? All cards inside will be lost.`)) return;
-    await deleteBinder(id);
+  function handleDeleteBinder(id: string, name: string) {
+    setBinderToDelete({ id, name });
+  }
+
+  async function confirmDeleteBinder() {
+    if (!binderToDelete) return;
+    await deleteBinder(binderToDelete.id);
   }
 
   return (
@@ -77,6 +83,16 @@ export default function CollectionPageClient() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
       </button>
+
+      <ConfirmModal
+        open={!!binderToDelete}
+        onClose={() => setBinderToDelete(null)}
+        onConfirm={confirmDeleteBinder}
+        title="Delete Binder"
+        description={`Delete "${binderToDelete?.name}"? All cards inside will be lost.`}
+        confirmLabel="Delete"
+        danger
+      />
 
       <Modal
         open={showCreate}

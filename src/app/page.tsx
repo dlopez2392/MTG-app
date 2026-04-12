@@ -100,10 +100,12 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* ── Hero ── */}
       <div className="relative overflow-hidden" style={{ minHeight: 300 }}>
-        {/* Fallback gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e20] via-[#0d0d18] to-[#0a1020]" />
+        {/* Fallback gradient — richer 5-color MTG feel */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0b2e] via-[#0d0d18] to-[#081420]" />
+        {/* Subtle radial warmth at center */}
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(237,154,87,0.07) 0%, transparent 70%)" }} />
 
-        {/* Card art */}
+        {/* Card art — raised opacity for more visual impact */}
         {heroArt && (
           <img
             src={heroArt}
@@ -111,16 +113,16 @@ export default function HomePage() {
             aria-hidden
             className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700"
             style={{
-              opacity: heroLoaded ? 0.35 : 0,
-              filter: "saturate(1.3) brightness(0.65)",
+              opacity: heroLoaded ? 0.5 : 0,
+              filter: "saturate(1.4) brightness(0.6)",
             }}
             onLoad={() => setHeroLoaded(true)}
           />
         )}
 
-        {/* Gradient overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/50 via-transparent to-bg-primary/50" />
+        {/* Gradient overlays — stronger bottom vignette, softer sides */}
+        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60" />
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center max-w-2xl mx-auto w-full">
