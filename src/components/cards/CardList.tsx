@@ -24,11 +24,20 @@ function getManaCost(card: ScryfallCard): string | undefined {
   return undefined;
 }
 
+function rarityBorder(rarity?: string): string {
+  switch (rarity) {
+    case "mythic":   return "border-l-accent";
+    case "rare":     return "border-l-mtg-gold";
+    case "uncommon": return "border-l-[#94A3B8]";
+    default:         return "border-l-border";
+  }
+}
+
 export default function CardList({ cards, onCardClick, className }: CardListProps) {
   if (cards.length === 0) return null;
 
   return (
-    <div className={cn("divide-y divide-border", className)}>
+    <div className={cn("flex flex-col gap-1", className)}>
       {cards.map((card) => {
         const thumb = getSmallImageUrl(card);
         const manaCost = getManaCost(card);
@@ -38,7 +47,13 @@ export default function CardList({ cards, onCardClick, className }: CardListProp
           <button
             key={card.id}
             onClick={() => onCardClick?.(card)}
-            className="flex w-full items-center gap-3 px-2 py-2 text-left transition-colors hover:bg-bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className={cn(
+              "group flex w-full items-center gap-3 px-3 py-2.5 text-left rounded-lg",
+              "bg-bg-card border border-border border-l-2",
+              rarityBorder(card.rarity),
+              "hover:bg-bg-hover/40 hover:border-border/70 transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+            )}
           >
             {/* Thumbnail */}
             {thumb ? (
@@ -57,10 +72,10 @@ export default function CardList({ cards, onCardClick, className }: CardListProp
 
             {/* Name & type */}
             <div className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-text-primary">
+              <span className="block truncate text-sm font-medium text-text-primary leading-snug">
                 {card.name}
               </span>
-              <span className="block truncate text-xs text-text-secondary">
+              <span className="block truncate text-xs text-text-secondary mt-0.5">
                 {card.type_line}
               </span>
             </div>
@@ -71,7 +86,7 @@ export default function CardList({ cards, onCardClick, className }: CardListProp
             )}
 
             {/* Price */}
-            <span className="flex-shrink-0 text-xs font-medium text-accent">
+            <span className="flex-shrink-0 text-xs font-semibold text-accent tabular-nums min-w-[40px] text-right">
               {price ? formatPrice(price) : ""}
             </span>
           </button>
