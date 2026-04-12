@@ -72,6 +72,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               card={card}
               onQuantityChange={updateCardQuantity}
               onRemove={removeCardFromDeck}
+              onCardClick={() => router.push(`/search/${card.scryfallId}?deckId=${deckId}&category=${activeTab}`)}
             />
           ))
         )}

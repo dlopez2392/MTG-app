@@ -75,6 +75,7 @@ function NavTab({
   return (
     <Link
       href={href}
+      suppressHydrationWarning
       className={cn(
         "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
         isActive ? "text-accent" : "text-text-muted hover:text-text-secondary"

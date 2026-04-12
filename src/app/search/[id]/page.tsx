@@ -15,7 +15,9 @@ import Badge from "@/components/ui/Badge";
 import { useCardDetail } from "@/hooks/useCardDetail";
 import { useDecks } from "@/hooks/useDecks";
 import { useCollection } from "@/hooks/useCollection";
+import { useCardCombos } from "@/hooks/useCardCombos";
 import { formatPrice } from "@/lib/utils/prices";
+import CombosPanel from "@/components/cards/CombosPanel";
 import type { DeckCategory } from "@/types/deck";
 
 export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +28,12 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const { addCardToDeck } = useDecks();
   const { addCardToBinder } = useCollection();
   const [activeTab, setActiveTab] = useState("versions");
+  const comboState = useCardCombos(card?.name ?? "");
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    if (tab === "combos") comboState.load();
+  }, [comboState]);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [addedCollectionFeedback, setAddedCollectionFeedback] = useState(false);
 
@@ -200,10 +208,11 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           <Tabs
             tabs={[
               { value: "versions", label: "Printings" },
-              { value: "rulings", label: "Ruling" },
+              { value: "rulings", label: "Rulings" },
+              { value: "combos", label: `Combos${comboState.loaded && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
             ]}
             active={activeTab}
-            onChange={setActiveTab}
+            onChange={handleTabChange}
             className="mb-4"
           />
 
@@ -221,6 +230,17 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === "combos" && (
+            <CombosPanel
+              cardName={card.name}
+              combos={comboState.combos}
+              count={comboState.count}
+              loading={comboState.loading}
+              error={comboState.error}
+              loaded={comboState.loaded}
+            />
           )}
         </div>
       </PageContainer>

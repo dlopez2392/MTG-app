@@ -34,7 +34,7 @@ export default function RootLayout({
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
-        <body className="min-h-full flex flex-col bg-bg-primary text-text-primary">
+        <body className="min-h-full flex flex-col bg-bg-primary text-text-primary" suppressHydrationWarning>
           <div className="flex-1 flex flex-col">{children}</div>
           <BottomNav />
         </body>

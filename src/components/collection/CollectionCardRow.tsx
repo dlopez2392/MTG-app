@@ -10,12 +10,14 @@ interface CollectionCardRowProps {
   card: CollectionCard;
   onQuantityChange: (id: string, newQty: number) => void;
   onRemove: (id: string) => void;
+  onCardClick?: () => void;
 }
 
 export default function CollectionCardRow({
   card,
   onQuantityChange,
   onRemove,
+  onCardClick,
 }: CollectionCardRowProps) {
   const conditionLabel =
     CONDITIONS.find((c) => c.value === card.condition)?.label ?? card.condition;
@@ -25,64 +27,71 @@ export default function CollectionCardRow({
 
   return (
     <div className="flex items-center gap-3 p-3 bg-bg-card rounded-lg border border-border">
-      {/* Card image */}
-      <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-bg-hover relative">
-        {card.imageUri ? (
-          <Image
-            src={card.imageUri}
-            alt={card.name}
-            fill
-            className="object-cover"
-            sizes="40px"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg
-              className="w-5 h-5 text-text-muted"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5"
-              />
-            </svg>
-          </div>
-        )}
-      </div>
+      {/* Card image + details — clickable area */}
+      <button
+        onClick={onCardClick}
+        className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 active:opacity-60 transition-opacity"
+        disabled={!onCardClick}
+      >
+        {/* Card image */}
+        <div className="w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-bg-hover relative">
+          {card.imageUri ? (
+            <Image
+              src={card.imageUri}
+              alt={card.name}
+              fill
+              className="object-cover"
+              sizes="40px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <svg
+                className="w-5 h-5 text-text-muted"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5"
+                />
+              </svg>
+            </div>
+          )}
+        </div>
 
-      {/* Card details */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-sm font-medium text-text-primary truncate">
-            {card.name}
-          </span>
-          {card.isFoil && (
-            <span className="text-[10px] font-bold text-accent-light bg-accent/20 px-1 rounded">
-              FOIL
+        {/* Card details */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-sm font-medium text-text-primary truncate">
+              {card.name}
             </span>
-          )}
+            {card.isFoil && (
+              <span className="text-[10px] font-bold text-accent-light bg-accent/20 px-1 rounded">
+                FOIL
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {card.setCode && (
+              <span className="text-xs text-text-muted uppercase">
+                {card.setCode}
+              </span>
+            )}
+            <Badge className="text-[10px]">{conditionLabel}</Badge>
+          </div>
+          <div className="text-xs text-accent mt-0.5">
+            ${totalPrice.toFixed(2)}
+            {card.quantity > 1 && (
+              <span className="text-text-muted ml-1">
+                (${price.toFixed(2)} ea)
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
-          {card.setCode && (
-            <span className="text-xs text-text-muted uppercase">
-              {card.setCode}
-            </span>
-          )}
-          <Badge className="text-[10px]">{conditionLabel}</Badge>
-        </div>
-        <div className="text-xs text-accent mt-0.5">
-          ${totalPrice.toFixed(2)}
-          {card.quantity > 1 && (
-            <span className="text-text-muted ml-1">
-              (${price.toFixed(2)} ea)
-            </span>
-          )}
-        </div>
-      </div>
+      </button>
 
       {/* Quantity controls */}
       <div className="flex items-center gap-1 flex-shrink-0">

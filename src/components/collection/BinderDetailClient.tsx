@@ -100,6 +100,7 @@ export default function BinderDetailClient({ binderId }: Props) {
               card={card}
               onQuantityChange={(id, qty) => updateQuantity(id, qty)}
               onRemove={(id) => removeFromCollection(id)}
+              onCardClick={() => router.push(`/search/${card.scryfallId}?binderId=${binderId}`)}
             />
           ))
         )}

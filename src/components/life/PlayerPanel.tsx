@@ -157,7 +157,7 @@ export default function PlayerPanel({
       />
 
       {/* ── Top: player name ── */}
-      <div className="relative z-10 flex items-center justify-center gap-2 pt-2 pb-0.5">
+      <div className="relative z-10 flex items-center justify-center gap-2 pt-7 pb-0.5">
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: player.color }} />
         <span className="text-xs font-medium text-text-secondary">{player.name}</span>
       </div>
