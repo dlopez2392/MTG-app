@@ -9,7 +9,6 @@ function hexToMtgQuery(hex: string): string {
   return MTG_PLAYER_COLORS.find((c) => c.color === hex)?.mtgQuery ?? "r";
 }
 
-// Single commander damage total stored under this key
 const CMDR_KEY = "__cmdr__";
 
 interface PlayerPanelProps {
@@ -18,6 +17,7 @@ interface PlayerPanelProps {
   onPoisonChange: (delta: number) => void;
   onCommanderDamage: (delta: number) => void;
   isRotated?: boolean;
+  badgePosition?: "top-left" | "top-right";
   className?: string;
 }
 
@@ -27,6 +27,7 @@ export default function PlayerPanel({
   onPoisonChange,
   onCommanderDamage,
   isRotated = false,
+  badgePosition = "top-right",
   className,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
@@ -79,6 +80,40 @@ export default function PlayerPanel({
         }}
       />
 
+      {/* ── Commander damage badge ── */}
+      <div
+        className={cn(
+          "absolute top-2 z-10 flex items-center gap-1 bg-black/50 backdrop-blur-sm rounded-lg px-1.5 py-1",
+          badgePosition === "top-right" ? "right-2" : "left-2"
+        )}
+      >
+        <button
+          onClick={() => onCommanderDamage(-1)}
+          disabled={cmdrDmg <= 0}
+          className="w-4 h-4 flex items-center justify-center text-xs text-white/60 hover:text-white disabled:opacity-30 leading-none"
+        >
+          −
+        </button>
+        {/* Commander / Crown icon */}
+        <svg className="w-3.5 h-3.5 text-white/80 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+        </svg>
+        <span
+          className={cn(
+            "text-xs font-bold tabular-nums leading-none",
+            cmdrDangerous ? "text-banned" : "text-white"
+          )}
+        >
+          {cmdrDmg}
+        </span>
+        <button
+          onClick={() => onCommanderDamage(1)}
+          className="w-4 h-4 flex items-center justify-center text-xs text-white/60 hover:text-white leading-none"
+        >
+          +
+        </button>
+      </div>
+
       {/* ── Top: player name ── */}
       <div className="relative z-10 flex items-center justify-center gap-2 pt-2 pb-0.5">
         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: player.color }} />
@@ -104,36 +139,6 @@ export default function PlayerPanel({
           onClick={() => onLifeChange(1)}
           className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-legal transition-colors"
           aria-label="Increase life"
-        >
-          +
-        </button>
-      </div>
-
-      {/* ── Commander damage ── */}
-      <div className="relative z-10 flex items-center justify-center gap-3 pb-1">
-        <button
-          onClick={() => onCommanderDamage(-1)}
-          disabled={cmdrDmg <= 0}
-          className="w-6 h-6 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm"
-        >
-          −
-        </button>
-        <div className="flex flex-col items-center">
-          <span className="text-[8px] text-text-muted uppercase tracking-widest leading-none mb-0.5">
-            Cmdr Damage
-          </span>
-          <span
-            className={cn(
-              "text-lg font-black tabular-nums leading-none",
-              cmdrDangerous ? "text-banned" : "text-text-secondary"
-            )}
-          >
-            {cmdrDmg}
-          </span>
-        </div>
-        <button
-          onClick={() => onCommanderDamage(1)}
-          className="w-6 h-6 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary text-sm"
         >
           +
         </button>
