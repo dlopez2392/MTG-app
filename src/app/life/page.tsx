@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useLifeCounter } from "@/hooks/useLifeCounter";
 import { loadSettings, useSettings } from "@/hooks/useSettings";
@@ -28,15 +28,41 @@ export default function LifePage() {
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
+  // Native Fullscreen API — supported on Android/Desktop, NOT on iOS Safari
+  const supportsNativeFullscreen =
+    typeof document !== "undefined" &&
+    "requestFullscreen" in document.documentElement;
+
+  // Keep state in sync when user exits via Escape / browser button
+  useEffect(() => {
+    if (!supportsNativeFullscreen) return;
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, [supportsNativeFullscreen]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (supportsNativeFullscreen) {
+      // Android / Desktop: use the real Fullscreen API
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        await document.exitFullscreen().catch(() => {});
+      }
+      // State updated by the fullscreenchange listener above
     } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
+      // iOS Safari: simulate fullscreen with fixed positioning (covers bottom nav)
+      setIsFullscreen((prev) => !prev);
     }
-  }, []);
+
+    // Attempt landscape lock — supported on Android, silently ignored on iOS
+    if (!isFullscreen) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (screen.orientation as any)?.lock?.("landscape")?.catch?.(() => {});
+    } else {
+      screen.orientation?.unlock?.();
+    }
+  }, [supportsNativeFullscreen, isFullscreen]);
 
   if (!gameStarted) {
     const saved = loadSettings();
@@ -111,7 +137,10 @@ export default function LifePage() {
   return (
     <div
       className={cn(
-        "flex flex-col h-screen bg-bg-primary",
+        "flex flex-col bg-bg-primary",
+        isFullscreen && !supportsNativeFullscreen
+          ? "fixed inset-0 z-[100]"   // iOS: CSS pseudo-fullscreen over bottom nav
+          : "h-screen",
         !isFullscreen && "pb-16"
       )}
     >
@@ -147,6 +176,9 @@ export default function LifePage() {
                 className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
               >
                 {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                {!supportsNativeFullscreen && (
+                  <span className="ml-1 text-[10px] text-text-muted">(iOS)</span>
+                )}
               </button>
               <div className="border-t border-border my-1" />
               <button
