@@ -13,6 +13,17 @@ interface HeroCard {
 
 const FEATURES = [
   {
+    href: "/rules",
+    title: "RULEBOOK",
+    description: "Comprehensive rules & glossary",
+    accent: "#A855F7",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+  },
+  {
     href: "/decks",
     title: "DECKS",
     description: "Build & manage your decks",
@@ -162,9 +173,9 @@ export default function HomePage() {
         <p className="font-display text-[11px] font-bold text-text-muted tracking-widest uppercase mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 [grid-auto-rows:1fr]">
-          {FEATURES.map((feature) => (
-            <Link key={feature.href} href={feature.href} className="block h-full">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 [grid-auto-rows:1fr]">
+          {FEATURES.map((feature, idx) => (
+            <Link key={feature.href} href={feature.href} className={`block h-full ${idx === 0 ? "col-span-2 sm:col-span-1" : ""}`}>
               <div className="group relative bg-bg-card border border-border rounded-xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/40 h-full">
                 {/* Corner glow */}
                 <div
