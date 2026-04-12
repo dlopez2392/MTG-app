@@ -1,10 +1,8 @@
-import type { ScryfallCard } from "./card";
-
 export interface ComboCard {
   name: string;
   zoneLocations: string[]; // "H"=Hand, "B"=Battlefield, "G"=Graveyard, "E"=Exile, "L"=Library, "C"=Command
   mustBeCommander: boolean;
-  scryfall?: ScryfallCard;
+  imageUri?: string;       // direct from Spellbook (Scryfall CDN)
 }
 
 export interface EnrichedCombo {

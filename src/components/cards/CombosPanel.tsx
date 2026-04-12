@@ -34,9 +34,7 @@ function produceColor(name: string): string {
 // ── Card thumbnail ───────────────────────────────────────────────────────────
 
 function ComboCardThumb({ card, highlight }: { card: ComboCard; highlight: boolean }) {
-  const imgUri =
-    card.scryfall?.image_uris?.small ??
-    card.scryfall?.card_faces?.[0]?.image_uris?.small;
+  const imgUri = card.imageUri;
 
   return (
     <div className="flex flex-col items-center gap-1">
