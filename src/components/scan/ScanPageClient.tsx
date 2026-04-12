@@ -154,7 +154,7 @@ export default function ScanPageClient() {
     setShowBinderPicker(true);
   }
 
-  async function doAddToBinder(binderId: number, card: ScryfallCard) {
+  async function doAddToBinder(binderId: string, card: ScryfallCard) {
     const imageUri =
       card.image_uris?.small ?? card.card_faces?.[0]?.image_uris?.small;
     await addCardToBinder(binderId, {
@@ -186,7 +186,7 @@ export default function ScanPageClient() {
     setShowDeckPicker(true);
   }
 
-  async function doAddToDeck(deckId: number, card: ScryfallCard) {
+  async function doAddToDeck(deckId: string, card: ScryfallCard) {
     await addCardToDeck(deckId, card as Partial<ScryfallCard>);
     setShowDeckPicker(false);
     alert(`Added ${card.name} to deck!`);

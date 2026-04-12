@@ -31,7 +31,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleAddToDeck = useCallback(async () => {
     if (!card || !deckId) return;
-    await addCardToDeck(Number(deckId), card, category);
+    await addCardToDeck(deckId, card, category);
     setAddedFeedback(true);
     setTimeout(() => setAddedFeedback(false), 1500);
   }, [card, deckId, category, addCardToDeck]);

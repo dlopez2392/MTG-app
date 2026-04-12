@@ -36,7 +36,7 @@ export default function BinderGrid({ binders, allCards }: BinderGridProps) {
 
   // Pre-compute card counts and values per binder
   const binderStats = new Map<
-    number,
+    string,
     { count: number; value: number; coverImage?: string }
   >();
 

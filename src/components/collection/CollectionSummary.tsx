@@ -31,7 +31,7 @@ export default function CollectionSummary({
     let cards = 0;
     let value = 0;
 
-    const binderMap = new Map<number, { name: string; value: number; count: number }>();
+    const binderMap = new Map<string, { name: string; value: number; count: number }>();
 
     for (const binder of binders) {
       if (binder.id !== undefined) {

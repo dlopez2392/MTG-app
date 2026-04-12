@@ -4,7 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils/cn";
 
 interface BinderCardProps {
-  id: number;
+  id: string;
   name: string;
   cardCount: number;
   totalValue: number;
