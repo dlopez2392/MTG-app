@@ -97,7 +97,7 @@ export default function HomePage() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen pb-20">
+    <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* ── Hero ── */}
       <div className="relative overflow-hidden" style={{ minHeight: 300 }}>
         {/* Fallback gradient */}
