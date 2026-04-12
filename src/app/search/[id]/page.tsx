@@ -115,11 +115,11 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           {/* Card Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-2">
-              <h1 className="text-xl font-bold">{card.name}</h1>
+              <h1 className="text-card-name text-xl text-text-primary">{card.name}</h1>
               {manaCost && <ManaCost cost={manaCost} />}
             </div>
 
-            <p className="text-text-secondary text-sm mb-1">{typeLine}</p>
+            <p className="text-body text-text-secondary mb-1">{typeLine}</p>
 
             {(card.power || card.card_faces?.[0]?.power) && (
               <p className="text-sm text-text-secondary mb-2">
@@ -141,7 +141,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Set Info */}
-            <p className="text-xs text-text-muted mb-4">
+            <p className="text-caption mb-4">
               {card.set_name} ({card.set.toUpperCase()}) &middot; #{card.collector_number} &middot;{" "}
               <span className="capitalize">{card.rarity}</span>
             </p>

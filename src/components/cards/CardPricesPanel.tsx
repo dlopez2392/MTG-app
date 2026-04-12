@@ -81,7 +81,7 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
   return (
     <div className="rounded-xl border border-border overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 py-2 bg-bg-hover border-b border-border text-[10px] font-bold text-text-muted uppercase tracking-wider">
+      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 py-2 bg-bg-hover border-b border-border text-label text-text-muted">
         <span>Vendor</span>
         <span className="text-right">Normal</span>
         <span className="text-right">Foil</span>
@@ -142,7 +142,7 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
         </div>
       )}
 
-      <p className="text-[9px] text-text-muted px-3 py-1.5 border-t border-border">
+      <p className="text-caption px-3 py-1.5 border-t border-border">
         Prices via Scryfall · Updated daily
       </p>
     </div>

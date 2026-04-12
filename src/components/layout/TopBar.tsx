@@ -32,7 +32,7 @@ export default function TopBar({ title, showBack, rightContent, className }: Top
             </svg>
           </button>
         )}
-        <h1 className="font-display text-lg font-bold uppercase tracking-wide text-text-primary truncate">
+        <h1 className="text-page-title text-text-primary truncate">
           {title}
         </h1>
         {rightContent && (

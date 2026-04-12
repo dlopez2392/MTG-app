@@ -124,10 +124,10 @@ export default function HomePage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center max-w-2xl mx-auto w-full">
-          <h1 className="animate-houdini font-mtg text-mtg-gradient text-4xl font-black leading-tight mb-2 drop-shadow-lg">
+          <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-2 drop-shadow-lg">
             MTG Houdini
           </h1>
-          <p className="text-text-secondary text-sm mb-8 max-w-xs">
+          <p className="text-body text-text-secondary mb-8 max-w-xs">
             Your ultimate Magic: The Gathering companion
           </p>
 
@@ -160,7 +160,7 @@ export default function HomePage() {
           </form>
 
           {heroCard && (
-            <p className="text-[10px] text-text-muted mt-3 opacity-50">
+            <p className="text-caption mt-3 opacity-50">
               Art: {heroCard.name}
               {heroCard.artist && <> · {heroCard.artist}</>}
             </p>
@@ -170,7 +170,7 @@ export default function HomePage() {
 
       {/* ── Feature Grid ── */}
       <div className="px-4 pt-1 pb-4 max-w-2xl mx-auto w-full">
-        <p className="font-display text-[11px] font-bold text-text-muted tracking-widest uppercase mb-3">
+        <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 [grid-auto-rows:1fr]">
@@ -190,10 +190,10 @@ export default function HomePage() {
                   >
                     {feature.icon}
                   </div>
-                  <h3 className="font-display text-sm font-bold text-text-primary leading-tight">
+                  <h3 className="text-page-title text-text-primary leading-tight">
                     {feature.title}
                   </h3>
-                  <p className="text-[11px] text-text-muted mt-1 leading-snug">
+                  <p className="text-caption mt-1">
                     {feature.description}
                   </p>
                 </div>
@@ -213,8 +213,8 @@ export default function HomePage() {
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="font-display text-sm font-bold text-text-primary">BROWSE ALL CARDS</p>
-              <p className="text-[11px] text-text-muted truncate">Search the full Scryfall database</p>
+              <p className="text-page-title text-text-primary">BROWSE ALL CARDS</p>
+              <p className="text-caption truncate">Search the full Scryfall database</p>
             </div>
             <svg className="ml-auto w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

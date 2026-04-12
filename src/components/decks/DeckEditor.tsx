@@ -34,7 +34,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-text-secondary">{totalCards} cards total</p>
+        <p className="text-stat text-text-secondary">{totalCards} cards</p>
         <div className="flex gap-2">
           <button
             onClick={() => setShowImportExport(true)}

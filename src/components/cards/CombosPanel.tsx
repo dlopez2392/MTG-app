@@ -53,11 +53,11 @@ function ComboCardThumb({ card, highlight }: { card: ComboCard; highlight: boole
           </div>
         )}
       </div>
-      <span className="text-[9px] text-text-muted text-center leading-tight max-w-[56px] truncate">
+      <span className="text-caption text-center max-w-[56px] truncate">
         {zoneLabel(card.zoneLocations)}
       </span>
       {card.mustBeCommander && (
-        <span className="text-[8px] text-accent font-bold">CMDR</span>
+        <span className="text-label text-accent">CMDR</span>
       )}
     </div>
   );
@@ -91,7 +91,7 @@ function ComboRow({ combo, focusCardName }: { combo: EnrichedCombo; focusCardNam
           <span
             key={result}
             className={cn(
-              "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+              "text-label px-2 py-0.5 rounded-full border",
               produceColor(result)
             )}
           >
@@ -132,7 +132,7 @@ function ComboRow({ combo, focusCardName }: { combo: EnrichedCombo; focusCardNam
             </p>
           )}
           {combo.popularity != null && (
-            <p className="text-[10px] text-text-muted">
+            <p className="text-caption">
               Used in ~{combo.popularity.toLocaleString()} decks on EDHREC
             </p>
           )}
@@ -206,7 +206,7 @@ export default function CombosPanel({
     <div className="space-y-3">
       {loaded && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-text-muted">
+          <p className="text-caption">
             {count} combo{count !== 1 ? "s" : ""} found via{" "}
             <a
               href={`https://commanderspellbook.com/search/?q=card%3A"${encodeURIComponent(cardName)}"`}
