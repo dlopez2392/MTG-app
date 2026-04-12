@@ -81,11 +81,13 @@ export default function ScanPageClient() {
     isStreaming,
     isProcessing,
     ocrText,
+    suggestions,
     matchedCard,
     error,
     startCamera,
     stopCamera,
     captureAndRecognize,
+    selectSuggestion,
     reset,
   } = useCameraScanner();
 
@@ -370,6 +372,44 @@ export default function ScanPageClient() {
           <p className="text-xs text-text-muted">
             Read: <span className="text-text-primary font-medium">{ocrText}</span>
           </p>
+        </div>
+      )}
+
+      {/* Suggestion picker */}
+      {suggestions.length > 0 && !matchedCard && (
+        <div className="mx-4 mt-3 space-y-2">
+          <p className="text-xs text-text-muted px-1">
+            Multiple matches found — tap the right card:
+          </p>
+          {suggestions.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => selectSuggestion(s.id)}
+              className="w-full flex items-center gap-3 px-3 py-2 bg-bg-card border border-border rounded-lg hover:border-accent/50 hover:bg-bg-hover transition-colors text-left"
+            >
+              {s.imageUri ? (
+                <img
+                  src={s.imageUri}
+                  alt={s.name}
+                  className="w-10 h-14 rounded object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-14 rounded bg-bg-hover flex-shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary truncate">{s.name}</p>
+                {s.setName && (
+                  <p className="text-xs text-text-muted truncate">{s.setName}</p>
+                )}
+                {s.prices?.usd && (
+                  <p className="text-xs text-accent mt-0.5">${s.prices.usd}</p>
+                )}
+              </div>
+            </button>
+          ))}
+          <Button size="sm" variant="secondary" className="w-full" onClick={reset}>
+            None of these — try again
+          </Button>
         </div>
       )}
 
