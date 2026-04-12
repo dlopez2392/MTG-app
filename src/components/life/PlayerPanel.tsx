@@ -5,25 +5,24 @@ import { cn } from "@/lib/utils/cn";
 import { MTG_PLAYER_COLORS } from "@/lib/constants";
 import type { Player } from "@/types/life";
 
-// Map hex color → Scryfall color query character
 function hexToMtgQuery(hex: string): string {
-  const match = MTG_PLAYER_COLORS.find((c) => c.color === hex);
-  return match?.mtgQuery ?? "r";
+  return MTG_PLAYER_COLORS.find((c) => c.color === hex)?.mtgQuery ?? "r";
 }
+
+// Single commander damage total stored under this key
+const CMDR_KEY = "__cmdr__";
 
 interface PlayerPanelProps {
   player: Player;
-  allPlayers: Player[];
   onLifeChange: (delta: number) => void;
   onPoisonChange: (delta: number) => void;
-  onCommanderDamage: (targetId: string, sourceId: string, amount: number) => void;
+  onCommanderDamage: (delta: number) => void;
   isRotated?: boolean;
   className?: string;
 }
 
 export default function PlayerPanel({
   player,
-  allPlayers,
   onLifeChange,
   onPoisonChange,
   onCommanderDamage,
@@ -49,8 +48,8 @@ export default function PlayerPanel({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
 
-  const opponents = allPlayers.filter((p) => p.id !== player.id);
-  const hasCommanderDamage = opponents.length > 0;
+  const cmdrDmg = player.commanderDamage[CMDR_KEY] ?? 0;
+  const cmdrDangerous = cmdrDmg >= 21;
 
   return (
     <div
@@ -111,51 +110,34 @@ export default function PlayerPanel({
       </div>
 
       {/* ── Commander damage ── */}
-      {hasCommanderDamage && (
-        <div className="relative z-10 px-2 pb-1">
-          <p className="text-[8px] text-text-muted text-center uppercase tracking-widest mb-1">
+      <div className="relative z-10 flex items-center justify-center gap-3 pb-1">
+        <button
+          onClick={() => onCommanderDamage(-1)}
+          disabled={cmdrDmg <= 0}
+          className="w-6 h-6 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm"
+        >
+          −
+        </button>
+        <div className="flex flex-col items-center">
+          <span className="text-[8px] text-text-muted uppercase tracking-widest leading-none mb-0.5">
             Cmdr Damage
-          </p>
-          <div className="flex items-center justify-center gap-2">
-            {opponents.map((opp) => {
-              const dmg = player.commanderDamage[opp.id] ?? 0;
-              const isDangerous = dmg >= 21;
-              return (
-                <div key={opp.id} className="flex items-center gap-0.5">
-                  <button
-                    onClick={() => onCommanderDamage(player.id, opp.id, -1)}
-                    disabled={dmg <= 0}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary disabled:opacity-30 text-sm leading-none"
-                  >
-                    −
-                  </button>
-                  {/* Colored dot + damage count */}
-                  <div className="flex flex-col items-center px-0.5">
-                    <div
-                      className="w-2.5 h-2.5 rounded-full mb-0.5"
-                      style={{ backgroundColor: opp.color }}
-                    />
-                    <span
-                      className={cn(
-                        "text-[10px] font-black tabular-nums leading-none",
-                        isDangerous ? "text-banned" : "text-text-secondary"
-                      )}
-                    >
-                      {dmg}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => onCommanderDamage(player.id, opp.id, 1)}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary text-sm leading-none"
-                  >
-                    +
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          </span>
+          <span
+            className={cn(
+              "text-lg font-black tabular-nums leading-none",
+              cmdrDangerous ? "text-banned" : "text-text-secondary"
+            )}
+          >
+            {cmdrDmg}
+          </span>
         </div>
-      )}
+        <button
+          onClick={() => onCommanderDamage(1)}
+          className="w-6 h-6 flex items-center justify-center rounded bg-black/30 text-text-muted hover:text-text-primary text-sm"
+        >
+          +
+        </button>
+      </div>
 
       {/* ── Bottom: poison counter ── */}
       <div className="relative z-10 flex items-center justify-center gap-2 pb-2">

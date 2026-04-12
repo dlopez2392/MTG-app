@@ -17,7 +17,7 @@ export default function LifePage() {
     setupGame,
     adjustLife,
     adjustPoison,
-    addCommanderDamage,
+    adjustCommanderDamage,
     resetGame,
     newGame,
   } = useLifeCounter();
@@ -46,72 +46,35 @@ export default function LifePage() {
     );
   }
 
+  const panel = (index: number, rotated = false) => (
+    <PlayerPanel
+      player={players[index]}
+      onLifeChange={(d) => adjustLife(players[index].id, d)}
+      onPoisonChange={(d) => adjustPoison(players[index].id, d)}
+      onCommanderDamage={(d) => adjustCommanderDamage(players[index].id, d)}
+      isRotated={rotated}
+      className="flex-1"
+    />
+  );
+
   const renderPlayers = () => {
     switch (playerCount) {
       case 1:
-        return (
-          <div className="flex flex-col flex-1 gap-1">
-            <PlayerPanel
-              player={players[0]}
-              allPlayers={players}
-              onLifeChange={(d) => adjustLife(players[0].id, d)}
-              onPoisonChange={(d) => adjustPoison(players[0].id, d)}
-              onCommanderDamage={addCommanderDamage}
-              className="flex-1"
-            />
-          </div>
-        );
+        return <div className="flex flex-col flex-1 gap-1">{panel(0)}</div>;
       case 2:
         return (
           <div className="flex flex-col flex-1 gap-1">
-            <PlayerPanel
-              player={players[0]}
-              allPlayers={players}
-              onLifeChange={(d) => adjustLife(players[0].id, d)}
-              onPoisonChange={(d) => adjustPoison(players[0].id, d)}
-              onCommanderDamage={addCommanderDamage}
-              isRotated
-              className="flex-1"
-            />
-            <PlayerPanel
-              player={players[1]}
-              allPlayers={players}
-              onLifeChange={(d) => adjustLife(players[1].id, d)}
-              onPoisonChange={(d) => adjustPoison(players[1].id, d)}
-              onCommanderDamage={addCommanderDamage}
-              className="flex-1"
-            />
+            {panel(0, true)}
+            {panel(1)}
           </div>
         );
       case 3:
         return (
           <div className="flex flex-col flex-1 gap-1">
-            <PlayerPanel
-              player={players[0]}
-              allPlayers={players}
-              onLifeChange={(d) => adjustLife(players[0].id, d)}
-              onPoisonChange={(d) => adjustPoison(players[0].id, d)}
-              onCommanderDamage={addCommanderDamage}
-              isRotated
-              className="flex-1"
-            />
+            {panel(0, true)}
             <div className="flex flex-1 gap-1">
-              <PlayerPanel
-                player={players[1]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[1].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[1].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                className="flex-1"
-              />
-              <PlayerPanel
-                player={players[2]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[2].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[2].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                className="flex-1"
-              />
+              {panel(1)}
+              {panel(2)}
             </div>
           </div>
         );
@@ -119,42 +82,12 @@ export default function LifePage() {
         return (
           <div className="flex flex-col flex-1 gap-1">
             <div className="flex flex-1 gap-1">
-              <PlayerPanel
-                player={players[0]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[0].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[0].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                isRotated
-                className="flex-1"
-              />
-              <PlayerPanel
-                player={players[1]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[1].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[1].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                isRotated
-                className="flex-1"
-              />
+              {panel(0, true)}
+              {panel(1, true)}
             </div>
             <div className="flex flex-1 gap-1">
-              <PlayerPanel
-                player={players[2]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[2].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[2].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                className="flex-1"
-              />
-              <PlayerPanel
-                player={players[3]}
-                allPlayers={players}
-                onLifeChange={(d) => adjustLife(players[3].id, d)}
-                onPoisonChange={(d) => adjustPoison(players[3].id, d)}
-                onCommanderDamage={addCommanderDamage}
-                className="flex-1"
-              />
+              {panel(2)}
+              {panel(3)}
             </div>
           </div>
         );
@@ -170,7 +103,6 @@ export default function LifePage() {
         !isFullscreen && "pb-16"
       )}
     >
-      {/* Game area */}
       <div className="flex-1 flex flex-col p-1 relative">
         {renderPlayers()}
 
@@ -180,29 +112,15 @@ export default function LifePage() {
             onClick={() => setShowMenu(!showMenu)}
             className="w-10 h-10 rounded-full bg-bg-secondary/90 border border-border flex items-center justify-center shadow-lg hover:bg-bg-hover transition-colors"
           >
-            <svg
-              className="w-5 h-5 text-text-secondary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z"
-              />
+            <svg className="w-5 h-5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
             </svg>
           </button>
 
-          {/* Quick menu */}
           {showMenu && (
             <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[140px] z-30">
               <button
-                onClick={() => {
-                  setShowHistory(true);
-                  setShowMenu(false);
-                }}
+                onClick={() => { setShowHistory(true); setShowMenu(false); }}
                 className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
               >
                 History
@@ -215,19 +133,13 @@ export default function LifePage() {
               </button>
               <div className="border-t border-border my-1" />
               <button
-                onClick={() => {
-                  resetGame();
-                  setShowMenu(false);
-                }}
+                onClick={() => { resetGame(); setShowMenu(false); }}
                 className="text-left px-3 py-2 text-sm text-restricted hover:bg-bg-hover rounded-lg transition-colors"
               >
                 Reset Game
               </button>
               <button
-                onClick={() => {
-                  newGame();
-                  setShowMenu(false);
-                }}
+                onClick={() => { newGame(); setShowMenu(false); }}
                 className="text-left px-3 py-2 text-sm text-banned hover:bg-bg-hover rounded-lg transition-colors"
               >
                 New Game
@@ -237,12 +149,7 @@ export default function LifePage() {
         </div>
       </div>
 
-      {/* History Modal */}
-      <Modal
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-        title="Game History"
-      >
+      <Modal open={showHistory} onClose={() => setShowHistory(false)} title="Game History">
         <GameHistory events={events} players={players} />
       </Modal>
     </div>
