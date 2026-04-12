@@ -36,11 +36,6 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col bg-bg-primary text-text-primary">
           <div className="flex-1 flex flex-col">{children}</div>
-          <footer className="fixed bottom-16 left-0 right-0 z-40 pointer-events-none">
-            <p className="text-center text-[10px] text-text-muted py-1">
-              Designed by Dan Lopez
-            </p>
-          </footer>
           <BottomNav />
         </body>
       </html>
