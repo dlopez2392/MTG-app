@@ -77,7 +77,7 @@ function NavTab({
       href={href}
       suppressHydrationWarning
       className={cn(
-        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors",
+        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
         isActive ? "text-accent" : "text-text-muted hover:text-text-secondary"
       )}
     >
@@ -126,7 +126,7 @@ export default function BottomNav() {
         {/* Center scan button */}
         <Link
           href="/scan"
-          className="flex items-center justify-center w-full h-full relative"
+          className="flex items-center justify-center w-full h-full relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
         >
           <div
             className={cn(

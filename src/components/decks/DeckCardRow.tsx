@@ -18,7 +18,7 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
     <div className="flex items-center gap-2 py-2 px-3 bg-bg-card rounded-lg border border-border">
       <button
         onClick={onCardClick}
-        className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-80 active:opacity-60 transition-opacity"
+        className="flex items-center gap-2 flex-1 min-w-0 text-left hover:opacity-80 active:opacity-60 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-inset focus-visible:rounded-md"
         disabled={!onCardClick}
       >
         {card.imageUri && (
@@ -43,7 +43,7 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
             if (card.quantity <= 1) onRemove(cardId);
             else onQuantityChange(cardId, card.quantity - 1);
           }}
-          className={`w-7 h-7 flex items-center justify-center rounded transition-colors text-sm font-bold ${
+          className={`w-7 h-7 flex items-center justify-center rounded transition-colors text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-card ${
             card.quantity <= 1
               ? "bg-banned/20 text-banned hover:bg-banned/30"
               : "bg-bg-hover text-text-secondary hover:text-text-primary"
@@ -60,7 +60,7 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
         </span>
         <button
           onClick={() => onQuantityChange(cardId, card.quantity + 1)}
-          className="w-7 h-7 flex items-center justify-center rounded bg-bg-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-bold"
+          className="w-7 h-7 flex items-center justify-center rounded bg-bg-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-card"
         >
           +
         </button>
@@ -68,7 +68,7 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
 
       <button
         onClick={() => onRemove(cardId)}
-        className="p-1 text-text-muted hover:text-banned transition-colors flex-shrink-0"
+        className="p-1 text-text-muted hover:text-banned transition-colors flex-shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-banned/60 focus-visible:ring-offset-1 focus-visible:ring-offset-bg-card"
         title="Remove card"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

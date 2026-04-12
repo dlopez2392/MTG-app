@@ -148,11 +148,11 @@ export default function HomePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search cards…"
-                className="w-full bg-bg-card/80 backdrop-blur border border-border rounded-xl pl-10 pr-24 py-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/60 transition-colors"
+                className="w-full bg-bg-card/80 backdrop-blur border border-border rounded-xl pl-10 pr-24 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/50 transition-colors"
               />
               <button
                 type="submit"
-                className="absolute right-1.5 px-4 py-1.5 rounded-lg bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors"
+                className="absolute right-1.5 px-4 py-1.5 rounded-lg bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 Search
               </button>

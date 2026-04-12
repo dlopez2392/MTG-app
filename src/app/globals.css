@@ -115,6 +115,21 @@ body {
   100% { opacity: 0;    transform: translate(-50%, calc(-50% - 85px)) scale(0.7); }
 }
 
+/* ── Focus rings ─────────────────────────────────────────────────────────────
+   Global fallback: any element focused by keyboard gets a visible accent ring.
+   Individual components override this with Tailwind ring utilities for finer
+   control (offset color, size, opacity). Mouse clicks do NOT trigger this. */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Remove browser default outline only on mouse focus */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-bg-hover) var(--color-bg-secondary);

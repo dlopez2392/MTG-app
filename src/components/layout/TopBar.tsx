@@ -24,7 +24,7 @@ export default function TopBar({ title, showBack, rightContent, className }: Top
         {showBack && (
           <button
             onClick={() => router.back()}
-            className="mr-2 p-1.5 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors"
+            className="mr-2 p-1.5 -ml-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary"
             suppressHydrationWarning
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

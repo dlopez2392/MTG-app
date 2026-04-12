@@ -36,7 +36,7 @@ export default function Modal({ open, onClose, title, children, className }: Mod
       {title && (
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1">
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-secondary">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>

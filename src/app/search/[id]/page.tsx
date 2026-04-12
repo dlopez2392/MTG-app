@@ -150,7 +150,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             {deckId && (
               <button
                 onClick={handleAddToDeck}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-accent text-black hover:bg-accent-dark active:scale-95 shadow-[0_2px_12px_rgba(237,154,87,0.3)]"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-accent text-black hover:bg-accent-dark active:scale-95 shadow-[0_2px_12px_rgba(237,154,87,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 {addedFeedback ? (
                   <>
@@ -174,7 +174,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             {binderId && (
               <button
                 onClick={handleAddToCollection}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-bg-card border border-accent/50 text-accent hover:bg-accent/10 active:scale-95"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-bg-card border border-accent/50 text-accent hover:bg-accent/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 {addedCollectionFeedback ? (
                   <>
