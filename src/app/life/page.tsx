@@ -50,7 +50,6 @@ export default function LifePage() {
     <PlayerPanel
       player={players[index]}
       onLifeChange={(d) => adjustLife(players[index].id, d)}
-      onPoisonChange={(d) => adjustPoison(players[index].id, d)}
       onCommanderDamage={(d) => adjustCommanderDamage(players[index].id, d)}
       isRotated={rotated}
       className="flex-1"

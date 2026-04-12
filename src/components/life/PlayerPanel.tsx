@@ -14,7 +14,6 @@ const CMDR_KEY = "__cmdr__";
 interface PlayerPanelProps {
   player: Player;
   onLifeChange: (delta: number) => void;
-  onPoisonChange: (delta: number) => void;
   onCommanderDamage: (delta: number) => void;
   isRotated?: boolean;
   className?: string;
@@ -23,7 +22,6 @@ interface PlayerPanelProps {
 export default function PlayerPanel({
   player,
   onLifeChange,
-  onPoisonChange,
   onCommanderDamage,
   isRotated = false,
   className,
@@ -84,7 +82,7 @@ export default function PlayerPanel({
         <span className="text-xs font-medium text-text-secondary">{player.name}</span>
       </div>
 
-      {/* ── Middle: life total + commander damage ── */}
+      {/* ── Middle: life total ── */}
       <div className="relative z-10 flex items-center justify-between flex-1 px-1 min-h-0">
         <button
           onClick={() => onLifeChange(-1)}
@@ -93,34 +91,12 @@ export default function PlayerPanel({
         >
           −
         </button>
-        <div className="flex flex-col items-center gap-1">
-          <span
-            className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
-            style={{ color: player.color }}
-          >
-            {player.life}
-          </span>
-          {/* Commander damage inline under life total */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onCommanderDamage(-1)}
-              disabled={cmdrDmg <= 0}
-              className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white disabled:opacity-30 leading-none"
-            >−</button>
-            <div className="flex items-center gap-1">
-              <svg className="w-3 h-3 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
-              </svg>
-              <span className={cn("text-sm font-bold tabular-nums leading-none", cmdrDangerous ? "text-banned" : "text-white/80")}>
-                {cmdrDmg}
-              </span>
-            </div>
-            <button
-              onClick={() => onCommanderDamage(1)}
-              className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white leading-none"
-            >+</button>
-          </div>
-        </div>
+        <span
+          className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
+          style={{ color: player.color }}
+        >
+          {player.life}
+        </span>
         <button
           onClick={() => onLifeChange(1)}
           className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-legal transition-colors"
@@ -130,28 +106,25 @@ export default function PlayerPanel({
         </button>
       </div>
 
-      {/* ── Bottom: poison counter ── */}
-      <div className="relative z-10 flex items-center justify-center gap-2 pb-2">
+      {/* ── Bottom: commander damage ── */}
+      <div className="relative z-10 flex items-center justify-center gap-1.5 pb-2">
         <button
-          onClick={() => onPoisonChange(-1)}
-          className="w-6 h-6 flex items-center justify-center rounded text-xs text-text-muted hover:text-text-primary bg-bg-card/60"
-        >
-          −
-        </button>
+          onClick={() => onCommanderDamage(-1)}
+          disabled={cmdrDmg <= 0}
+          className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
+        >−</button>
         <div className="flex items-center gap-1">
-          <svg className="w-4 h-4 text-legal" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 2a6 6 0 00-6 6c0 1.887.87 3.568 2.23 4.668A1.5 1.5 0 017 14.5V16a1 1 0 001 1h1v1a1 1 0 102 0v-1h1a1 1 0 001-1v-1.5a1.5 1.5 0 01.77-1.832A6 6 0 0010 2zM8 9a1 1 0 11-2 0 1 1 0 012 0zm5 1a1 1 0 100-2 1 1 0 000 2z" />
+          <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
           </svg>
-          <span className="text-sm font-bold text-legal tabular-nums">
-            {player.poisonCounters}
+          <span className={cn("text-base font-bold tabular-nums leading-none", cmdrDangerous ? "text-banned" : "text-white/90")}>
+            {cmdrDmg}
           </span>
         </div>
         <button
-          onClick={() => onPoisonChange(1)}
-          className="w-6 h-6 flex items-center justify-center rounded text-xs text-text-muted hover:text-text-primary bg-bg-card/60"
-        >
-          +
-        </button>
+          onClick={() => onCommanderDamage(1)}
+          className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
+        >+</button>
       </div>
     </div>
   );
