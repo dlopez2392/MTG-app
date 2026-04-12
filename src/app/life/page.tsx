@@ -46,18 +46,13 @@ export default function LifePage() {
     );
   }
 
-  const panel = (
-    index: number,
-    rotated = false,
-    badgePosition: "top-left" | "top-right" = "top-right"
-  ) => (
+  const panel = (index: number, rotated = false) => (
     <PlayerPanel
       player={players[index]}
       onLifeChange={(d) => adjustLife(players[index].id, d)}
       onPoisonChange={(d) => adjustPoison(players[index].id, d)}
       onCommanderDamage={(d) => adjustCommanderDamage(players[index].id, d)}
       isRotated={rotated}
-      badgePosition={badgePosition}
       className="flex-1"
     />
   );
@@ -69,17 +64,17 @@ export default function LifePage() {
       case 2:
         return (
           <div className="flex flex-col flex-1 gap-1">
-            {panel(0, true, "top-right")}
-            {panel(1, false, "top-right")}
+            {panel(0, true)}
+            {panel(1)}
           </div>
         );
       case 3:
         return (
           <div className="flex flex-col flex-1 gap-1">
-            {panel(0, true, "top-right")}
+            {panel(0, true)}
             <div className="flex flex-1 gap-1">
-              {panel(1, false, "top-right")}
-              {panel(2, false, "top-left")}
+              {panel(1)}
+              {panel(2)}
             </div>
           </div>
         );
@@ -87,16 +82,12 @@ export default function LifePage() {
         return (
           <div className="flex flex-col flex-1 gap-1">
             <div className="flex flex-1 gap-1">
-              {/* rotated: CSS top-left → visual bottom-right (near center) */}
-              {panel(0, true, "top-left")}
-              {/* rotated: CSS top-right → visual bottom-left (near center) */}
-              {panel(1, true, "top-right")}
+              {panel(0, true)}
+              {panel(1, true)}
             </div>
             <div className="flex flex-1 gap-1">
-              {/* not rotated: CSS top-right → visual top-right (near center) */}
-              {panel(2, false, "top-right")}
-              {/* not rotated: CSS top-left → visual top-left (near center) */}
-              {panel(3, false, "top-left")}
+              {panel(2)}
+              {panel(3)}
             </div>
           </div>
         );
