@@ -97,13 +97,20 @@ export default function ScanPageClient() {
   const [fileMode, setFileMode] = useState(false);
   const [cameraStarted, setCameraStarted] = useState(false);
 
+  // Start camera AFTER the video element is in the DOM
+  useEffect(() => {
+    if (cameraStarted && !fileMode) {
+      startCamera();
+    }
+  }, [cameraStarted, fileMode, startCamera]);
+
   useEffect(() => {
     return () => stopCamera();
   }, [stopCamera]);
 
-  async function handleStartCamera() {
+  function handleStartCamera() {
     setCameraStarted(true);
-    await startCamera();
+    // startCamera() fires via the effect above, after video element renders
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -279,14 +286,15 @@ export default function ScanPageClient() {
         </button>
       </div>
 
-      {/* Camera viewfinder */}
-      {isStreaming && !matchedCard && (
+      {/* Camera viewfinder — video element always in DOM once camera started so ref is available */}
+      {!matchedCard && (
         <div className="relative mx-4 rounded-xl overflow-hidden bg-black aspect-[3/4]">
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
             playsInline
             muted
+            autoPlay
           />
 
           {/* Guide overlay */}
@@ -327,7 +335,7 @@ export default function ScanPageClient() {
       )}
 
       {/* Capture button */}
-      {isStreaming && !matchedCard && !isProcessing && (
+      {isStreaming && !matchedCard && !isProcessing && !fileMode && (
         <div className="flex justify-center mt-6">
           <button
             onClick={captureAndRecognize}

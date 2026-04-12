@@ -55,11 +55,19 @@ export function useCameraScanner(): UseCameraScannerReturn {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+        videoRef.current.setAttribute("playsinline", "true");
+        try { await videoRef.current.play(); } catch { /* autoPlay policy — video will play when user interacts */ }
       }
       setIsStreaming(true);
-    } catch {
-      setError("Camera access denied. Please allow camera permissions.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
+        setError("Camera access denied. Please allow camera permissions in your browser.");
+      } else if (msg.includes("NotFoundError")) {
+        setError("No camera found on this device.");
+      } else {
+        setError("Could not start camera. Try uploading a photo instead.");
+      }
     }
   }, []);
 
