@@ -12,6 +12,13 @@ export interface CardScanSuggestion {
   prices: { usd?: string | null };
 }
 
+export interface ScanListItem {
+  listId: string;
+  card: ScryfallCard;
+  quantity: number;
+  isFoil: boolean;
+}
+
 interface UseCameraScannerReturn {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -21,6 +28,18 @@ interface UseCameraScannerReturn {
   suggestions: CardScanSuggestion[];
   matchedCard: ScryfallCard | null;
   error: string;
+  // Scan list
+  scanList: ScanListItem[];
+  totalValue: number;
+  addToScanList: (card: ScryfallCard) => void;
+  removeFromScanList: (listId: string) => void;
+  updateScanListQty: (listId: string, qty: number) => void;
+  toggleItemFoil: (listId: string) => void;
+  clearScanList: () => void;
+  // Auto-scan
+  autoScan: boolean;
+  setAutoScan: (v: boolean) => void;
+  // Actions
   startCamera: () => Promise<void>;
   stopCamera: () => void;
   captureAndRecognize: () => Promise<void>;
@@ -28,14 +47,17 @@ interface UseCameraScannerReturn {
   reset: () => void;
 }
 
-// Scale crop up before sending to OCR — bigger = better accuracy
 const OCR_SCALE = 4;
+let listIdCounter = 0;
 
 export function useCameraScanner(): UseCameraScannerReturn {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const workerRef = useRef<import("tesseract.js").Worker | null>(null);
+  const autoScanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastMatchedNameRef = useRef<string>("");
+  const isProcessingRef = useRef(false);
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -43,11 +65,22 @@ export function useCameraScanner(): UseCameraScannerReturn {
   const [suggestions, setSuggestions] = useState<CardScanSuggestion[]>([]);
   const [matchedCard, setMatchedCard] = useState<ScryfallCard | null>(null);
   const [error, setError] = useState("");
+  const [scanList, setScanList] = useState<ScanListItem[]>([]);
+  const [autoScan, setAutoScan] = useState(false);
 
+  const totalValue = scanList.reduce((sum, item) => {
+    const price = parseFloat(
+      (item.isFoil ? item.card.prices?.usd_foil : item.card.prices?.usd) ?? item.card.prices?.usd ?? "0"
+    );
+    return sum + price * item.quantity;
+  }, 0);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       workerRef.current?.terminate();
+      if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
     };
   }, []);
 
@@ -55,7 +88,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
     setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -81,13 +114,13 @@ export function useCameraScanner(): UseCameraScannerReturn {
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setIsStreaming(false);
+    if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
   }, []);
 
   const getWorker = useCallback(async () => {
     if (workerRef.current) return workerRef.current;
     const Tesseract = await import("tesseract.js");
     const worker = await Tesseract.createWorker("eng");
-    // PSM 7 = single text line — best for card name bars
     await worker.setParameters({
       tessedit_pageseg_mode: "7" as never,
       tessedit_char_whitelist:
@@ -97,13 +130,11 @@ export function useCameraScanner(): UseCameraScannerReturn {
     return worker;
   }, []);
 
-  /** Run OCR on the current canvas content */
   async function runOcr(worker: Awaited<ReturnType<typeof getWorker>>, canvas: HTMLCanvasElement) {
     const { data } = await worker.recognize(canvas);
     return { text: cleanOcrText(data.text), confidence: data.confidence };
   }
 
-  /** Draw a scaled-up crop of the source onto the canvas, returns context + dims */
   function drawCrop(
     source: HTMLVideoElement | HTMLImageElement,
     canvas: HTMLCanvasElement,
@@ -120,28 +151,55 @@ export function useCameraScanner(): UseCameraScannerReturn {
     return { ctx, dw, dh };
   }
 
-  /** Pick the best OCR result from several attempts */
-  function pickBest(
-    attempts: Array<{ text: string; confidence: number }>
-  ): string {
-    // Prefer longest text; break ties by confidence
+  function pickBest(attempts: Array<{ text: string; confidence: number }>): string {
     let best = attempts[0];
     for (const a of attempts) {
       if (
         a.text.length > best.text.length ||
         (a.text.length === best.text.length && a.confidence > best.confidence)
-      ) {
-        best = a;
-      }
+      ) best = a;
     }
     return best.text;
   }
 
+  // ── Scan list actions ──────────────────────────────────────────────────────
+
+  const addToScanList = useCallback((card: ScryfallCard) => {
+    setScanList((prev) => {
+      const existing = prev.find((i) => i.card.id === card.id && !i.isFoil);
+      if (existing) {
+        return prev.map((i) => i.listId === existing.listId ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [{ listId: `scan-${++listIdCounter}`, card, quantity: 1, isFoil: false }, ...prev];
+    });
+  }, []);
+
+  const removeFromScanList = useCallback((listId: string) => {
+    setScanList((prev) => prev.filter((i) => i.listId !== listId));
+  }, []);
+
+  const updateScanListQty = useCallback((listId: string, qty: number) => {
+    if (qty <= 0) {
+      setScanList((prev) => prev.filter((i) => i.listId !== listId));
+    } else {
+      setScanList((prev) => prev.map((i) => i.listId === listId ? { ...i, quantity: qty } : i));
+    }
+  }, []);
+
+  const toggleItemFoil = useCallback((listId: string) => {
+    setScanList((prev) => prev.map((i) => i.listId === listId ? { ...i, isFoil: !i.isFoil } : i));
+  }, []);
+
+  const clearScanList = useCallback(() => setScanList([]), []);
+
+  // ── Core scan logic ────────────────────────────────────────────────────────
+
   const captureAndRecognize = useCallback(async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!video || !canvas || isProcessingRef.current) return;
 
+    isProcessingRef.current = true;
     setIsProcessing(true);
     setError("");
     setOcrText("");
@@ -151,76 +209,55 @@ export function useCameraScanner(): UseCameraScannerReturn {
     try {
       const vw = video.videoWidth || 640;
       const vh = video.videoHeight || 480;
-
       const worker = await getWorker();
 
-      // Run 4 attempts across two crop regions and three preprocessing modes,
-      // then pick the result with the most usable text.
       const attempts: Array<{ text: string; confidence: number }> = [];
 
-      // Crop A: matches the guide overlay (top of card)
       const axA = Math.floor(vw * 0.04);
       const ayA = Math.floor(vh * 0.04);
       const awA = Math.floor(vw * 0.72);
       const ahA = Math.floor(vh * 0.14);
 
-      // Crop B: shifted down slightly in case card sits lower in frame
       const axB = Math.floor(vw * 0.04);
       const ayB = Math.floor(vh * 0.08);
       const awB = Math.floor(vw * 0.72);
       const ahB = Math.floor(vh * 0.14);
 
-      // Attempt 1 — Crop A, grayscale enhanced (no threshold, Tesseract handles binarization)
-      {
-        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
-        grayscaleEnhance(ctx, dw, dh);
-        attempts.push(await runOcr(worker, canvas));
-      }
-
-      // Attempt 2 — Crop A, hard threshold (light text on dark bg — colored cards)
-      {
-        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
-        preprocessImageData(ctx, dw, dh, false, 128);
-        attempts.push(await runOcr(worker, canvas));
-      }
-
-      // Attempt 3 — Crop A, inverted threshold (dark text on light bg — white/artifact)
-      {
-        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
-        preprocessImageData(ctx, dw, dh, true, 128);
-        attempts.push(await runOcr(worker, canvas));
-      }
-
-      // Attempt 4 — Crop B, grayscale enhanced (shifted crop fallback)
-      {
-        const { ctx, dw, dh } = drawCrop(video, canvas, axB, ayB, awB, ahB);
-        grayscaleEnhance(ctx, dw, dh);
-        attempts.push(await runOcr(worker, canvas));
-      }
+      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); grayscaleEnhance(ctx, dw, dh); attempts.push(await runOcr(worker, canvas)); }
+      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); preprocessImageData(ctx, dw, dh, false, 128); attempts.push(await runOcr(worker, canvas)); }
+      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); preprocessImageData(ctx, dw, dh, true, 128); attempts.push(await runOcr(worker, canvas)); }
+      { const { ctx, dw, dh } = drawCrop(video, canvas, axB, ayB, awB, ahB); grayscaleEnhance(ctx, dw, dh); attempts.push(await runOcr(worker, canvas)); }
 
       const cleaned = pickBest(attempts);
       setOcrText(cleaned);
 
       if (!cleaned) {
-        setError("Couldn't read the card name. Align the name in the box and try again.");
+        if (!autoScan) setError("Couldn't read the card name. Align the name in the box and try again.");
         return;
       }
 
-      // First try an exact fuzzy match on Scryfall
       const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(cleaned)}`);
       if (fuzzyRes.ok) {
         const card: ScryfallCard = await fuzzyRes.json();
+        // In auto-scan: skip if same card as last match (dedup)
+        if (autoScan && card.name === lastMatchedNameRef.current) return;
+        lastMatchedNameRef.current = card.name;
         setMatchedCard(card);
         return;
       }
 
-      // Fuzzy failed — get multiple suggestions so user can pick
       const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(cleaned)}`);
       if (suggestRes.ok) {
         const data: CardScanSuggestion[] = await suggestRes.json();
         if (data.length > 0) {
           if (data.length === 1) {
-            await selectSuggestionById(data[0].id);
+            const res = await fetch(`/api/scryfall/cards/${data[0].id}`);
+            if (res.ok) {
+              const card: ScryfallCard = await res.json();
+              if (autoScan && card.name === lastMatchedNameRef.current) return;
+              lastMatchedNameRef.current = card.name;
+              setMatchedCard(card);
+            }
           } else {
             setSuggestions(data.slice(0, 6));
           }
@@ -228,27 +265,47 @@ export function useCameraScanner(): UseCameraScannerReturn {
         }
       }
 
-      setError(
-        `Read "${cleaned}" but couldn't find a matching card. Try again or tap Search Manually.`
-      );
+      if (!autoScan) {
+        setError(`Read "${cleaned}" but couldn't find a matching card. Try again or search manually.`);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Scan failed. Please try again.");
+      if (!autoScan) setError(err instanceof Error ? err.message : "Scan failed. Please try again.");
     } finally {
+      isProcessingRef.current = false;
       setIsProcessing(false);
     }
-  }, [getWorker]);
+  }, [getWorker, autoScan]);
 
-  async function selectSuggestionById(id: string) {
-    const res = await fetch(`/api/scryfall/cards/${id}`);
-    if (res.ok) {
-      setMatchedCard(await res.json());
-      setSuggestions([]);
+  // ── Auto-scan loop ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!autoScan || !isStreaming) {
+      if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
+      return;
     }
-  }
+
+    function scheduleNext() {
+      autoScanTimerRef.current = setTimeout(async () => {
+        if (!isProcessingRef.current) await captureAndRecognize();
+        scheduleNext();
+      }, 2500);
+    }
+
+    scheduleNext();
+    return () => {
+      if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
+    };
+  }, [autoScan, isStreaming, captureAndRecognize]);
 
   const selectSuggestion = useCallback(async (id: string) => {
     setIsProcessing(true);
-    await selectSuggestionById(id);
+    const res = await fetch(`/api/scryfall/cards/${id}`);
+    if (res.ok) {
+      const card: ScryfallCard = await res.json();
+      lastMatchedNameRef.current = card.name;
+      setMatchedCard(card);
+      setSuggestions([]);
+    }
     setIsProcessing(false);
   }, []);
 
@@ -257,11 +314,15 @@ export function useCameraScanner(): UseCameraScannerReturn {
     setSuggestions([]);
     setOcrText("");
     setError("");
+    lastMatchedNameRef.current = "";
   }, []);
 
   return {
     videoRef, canvasRef, isStreaming, isProcessing,
     ocrText, suggestions, matchedCard, error,
+    scanList, totalValue, addToScanList, removeFromScanList,
+    updateScanListQty, toggleItemFoil, clearScanList,
+    autoScan, setAutoScan,
     startCamera, stopCamera, captureAndRecognize, selectSuggestion, reset,
   };
 }
