@@ -82,14 +82,14 @@ export default function PlayerPanel({
         <span className="text-xs font-medium text-text-secondary">{player.name}</span>
       </div>
 
-      {/* ── Middle: life total ── */}
-      <div className="relative z-10 flex items-center justify-between flex-1 px-1 min-h-0">
+      {/* ── Middle: life total with + above and − below ── */}
+      <div className="relative z-10 flex flex-col items-center justify-center flex-1 min-h-0">
         <button
-          onClick={() => onLifeChange(-1)}
-          className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-banned transition-colors"
-          aria-label="Decrease life"
+          onClick={() => onLifeChange(1)}
+          className="flex items-center justify-center w-full py-1 text-3xl font-bold text-white/60 hover:text-white active:text-legal transition-colors"
+          aria-label="Increase life"
         >
-          −
+          +
         </button>
         <span
           className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
@@ -98,11 +98,11 @@ export default function PlayerPanel({
           {player.life}
         </span>
         <button
-          onClick={() => onLifeChange(1)}
-          className="flex items-center justify-center w-14 h-full text-3xl font-bold text-text-muted hover:text-text-primary active:text-legal transition-colors"
-          aria-label="Increase life"
+          onClick={() => onLifeChange(-1)}
+          className="flex items-center justify-center w-full py-1 text-3xl font-bold text-white/60 hover:text-white active:text-banned transition-colors"
+          aria-label="Decrease life"
         >
-          +
+          −
         </button>
       </div>
 
