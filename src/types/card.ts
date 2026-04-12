@@ -99,16 +99,26 @@ export interface ScryfallList<T> {
   data: T[];
 }
 
+export type StatComparison = "=" | "<=" | ">=" | "<" | ">";
+
 export interface SearchFilters {
   query: string;
   colors: Color[];
   colorMode: "include" | "exact" | "at_most";
   type: string;
+  supertype: string;
+  subtype: string;
   rarity: Rarity | "";
   format: Format | "";
   set: string;
   cmc: string;
-  cmcComparison: "=" | "<=" | ">=" | "<" | ">";
+  cmcComparison: StatComparison;
+  power: string;
+  powerComparison: StatComparison;
+  toughness: string;
+  toughnessComparison: StatComparison;
+  oracleText: string;
+  manaCost: string;
 }
 
 export const DEFAULT_FILTERS: SearchFilters = {
@@ -116,9 +126,17 @@ export const DEFAULT_FILTERS: SearchFilters = {
   colors: [],
   colorMode: "include",
   type: "",
+  supertype: "",
+  subtype: "",
   rarity: "",
   format: "",
   set: "",
   cmc: "",
   cmcComparison: "<=",
+  power: "",
+  powerComparison: ">=",
+  toughness: "",
+  toughnessComparison: ">=",
+  oracleText: "",
+  manaCost: "",
 };

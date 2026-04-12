@@ -181,14 +181,13 @@ export default function PlayerPanel({
                   key={p.id}
                   aria-hidden
                   className="pointer-events-none absolute"
-                  style={{ zIndex: 1 }}
                   style={{
-                    // Center horizontally, offset vertically
+                    zIndex: 1,
                     top: `calc(50% + ${p.offsetY}px)`,
                     left: "-30px",
                     right: "-30px",
                     height: "10px",
-                    marginTop: "-5px", // half height to center on line
+                    marginTop: "-5px",
                     transformOrigin: "center center",
                     transform: `rotate(${p.angle}deg)`,
                     background:
@@ -207,9 +206,8 @@ export default function PlayerPanel({
                 key={p.id}
                 aria-hidden
                 className="pointer-events-none absolute font-black leading-none select-none"
-                style={{ zIndex: 1 }}
                 style={{
-                  // Offset from center of the life number
+                  zIndex: 1,
                   top: `calc(50% + ${p.offsetY}px)`,
                   left: `calc(50% + ${p.offsetX}px)`,
                   transform: "translate(-50%, -50%)",

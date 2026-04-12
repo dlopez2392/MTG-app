@@ -30,43 +30,29 @@ export function getManaSymbolColor(symbol: string): string {
 export function buildScryfallQuery(filters: SearchFilters): string {
   const parts: string[] = [];
 
-  if (filters.query) {
-    parts.push(filters.query);
-  }
+  if (filters.query) parts.push(filters.query);
 
   if (filters.colors.length > 0) {
     const colorStr = filters.colors.join("");
-    switch (filters.colorMode) {
-      case "exact":
-        parts.push(`c=${colorStr}`);
-        break;
-      case "at_most":
-        parts.push(`c<=${colorStr}`);
-        break;
-      default:
-        parts.push(`c:${colorStr}`);
-    }
+    if (filters.colorMode === "exact") parts.push(`c=${colorStr}`);
+    else if (filters.colorMode === "at_most") parts.push(`c<=${colorStr}`);
+    else parts.push(`c:${colorStr}`);
   }
 
-  if (filters.type) {
-    parts.push(`t:${filters.type}`);
-  }
+  if (filters.supertype) parts.push(`t:${filters.supertype.trim()}`);
+  if (filters.type)      parts.push(`t:${filters.type.trim()}`);
+  if (filters.subtype)   parts.push(`t:${filters.subtype.trim()}`);
 
-  if (filters.rarity) {
-    parts.push(`r:${filters.rarity}`);
-  }
+  if (filters.rarity)  parts.push(`r:${filters.rarity}`);
+  if (filters.format)  parts.push(`f:${filters.format}`);
+  if (filters.set)     parts.push(`s:${filters.set}`);
 
-  if (filters.format) {
-    parts.push(`f:${filters.format}`);
-  }
+  if (filters.cmc)       parts.push(`cmc${filters.cmcComparison}${filters.cmc}`);
+  if (filters.power)     parts.push(`pow${filters.powerComparison}${filters.power}`);
+  if (filters.toughness) parts.push(`tou${filters.toughnessComparison}${filters.toughness}`);
 
-  if (filters.set) {
-    parts.push(`s:${filters.set}`);
-  }
-
-  if (filters.cmc) {
-    parts.push(`cmc${filters.cmcComparison}${filters.cmc}`);
-  }
+  if (filters.oracleText) parts.push(`o:"${filters.oracleText.trim()}"`);
+  if (filters.manaCost)   parts.push(`m:${filters.manaCost.trim()}`);
 
   return parts.join(" ");
 }
