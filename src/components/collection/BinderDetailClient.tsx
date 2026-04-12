@@ -42,7 +42,7 @@ export default function BinderDetailClient({ binderId }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-bg-secondary">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-bg-secondary max-w-2xl mx-auto w-full">
         <Link href="/collection" className="text-text-muted hover:text-text-primary transition-colors">
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -58,7 +58,7 @@ export default function BinderDetailClient({ binderId }: Props) {
         </div>
       </div>
 
-      <div className="px-4 py-3">
+      <div className="px-4 py-3 max-w-2xl mx-auto w-full">
         <Input
           placeholder="Search in binder..."
           value={search}
@@ -82,7 +82,7 @@ export default function BinderDetailClient({ binderId }: Props) {
         </svg>
       </button>
 
-      <div className="flex-1 px-4 space-y-2">
+      <div className="flex-1 px-4 space-y-2 max-w-2xl mx-auto w-full">
         {filteredCards.length === 0 ? (
           <EmptyState
             icon={

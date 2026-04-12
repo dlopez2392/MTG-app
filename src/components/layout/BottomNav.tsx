@@ -111,7 +111,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur border-t border-border">
-      <div className="flex items-center justify-around h-16 max-w-lg mx-auto relative">
+      <div className="flex items-center justify-around h-16 max-w-2xl mx-auto relative">
         {/* Left tabs */}
         {leftTabs.map((tab) => (
           <NavTab

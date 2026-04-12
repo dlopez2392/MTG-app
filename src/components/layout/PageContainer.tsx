@@ -8,7 +8,7 @@ interface PageContainerProps {
 
 export default function PageContainer({ children, className, noPadding }: PageContainerProps) {
   return (
-    <main className={cn("flex-1", !noPadding && "px-4 pt-4", "pb-24", className)}>
+    <main className={cn("flex-1 w-full max-w-2xl mx-auto", !noPadding && "px-4 pt-4", "pb-24", className)}>
       {children}
     </main>
   );

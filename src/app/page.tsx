@@ -112,7 +112,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/50 via-transparent to-bg-primary/50" />
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center">
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center max-w-2xl mx-auto w-full">
           <h1 className="animate-houdini font-mtg text-mtg-gradient text-4xl font-black leading-tight mb-2 drop-shadow-lg">
             MTG Houdini
           </h1>
@@ -158,11 +158,11 @@ export default function HomePage() {
       </div>
 
       {/* ── Feature Grid ── */}
-      <div className="px-4 pt-1 pb-4">
+      <div className="px-4 pt-1 pb-4 max-w-2xl mx-auto w-full">
         <p className="font-display text-[11px] font-bold text-text-muted tracking-widest uppercase mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {FEATURES.map((feature) => (
             <Link key={feature.href} href={feature.href}>
               <div className="group relative bg-bg-card border border-border rounded-xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/40">
@@ -193,7 +193,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Search shortcut ── */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
         <Link href="/search">
           <div className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-4 py-3 hover:border-accent/40 transition-colors active:scale-[0.98]">
             <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
