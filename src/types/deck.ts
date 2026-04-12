@@ -2,6 +2,8 @@ import type { Color, Rarity } from "./card";
 
 export type DeckCategory = "main" | "sideboard" | "commander" | "companion" | "maybeboard";
 
+export type MTGColor = "W" | "U" | "B" | "R" | "G" | "multi" | "colorless";
+
 export interface Deck {
   id?: string;
   name: string;
@@ -10,6 +12,7 @@ export interface Deck {
   folderId?: string;
   coverCardId?: string;
   coverImageUri?: string;
+  dominantColor?: MTGColor;
   createdAt: string;
   updatedAt: string;
 }

@@ -7,14 +7,15 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const sb = getSupabase();
-  const { data, error } = await sb
-    .from("decks")
-    .select("*")
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false });
+  const [{ data: decks, error }, { data: cardColors }] = await Promise.all([
+    sb.from("decks").select("*").eq("user_id", userId).order("updated_at", { ascending: false }),
+    sb.from("deck_cards").select("deck_id, mana_cost, quantity").eq("user_id", userId),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data.map(toDecK));
+
+  const colorMap = computeDeckColors(cardColors ?? []);
+  return NextResponse.json(decks!.map((row) => toDecK(row, colorMap[row.id])));
 }
 
 export async function POST(req: Request) {
@@ -43,13 +44,43 @@ export async function POST(req: Request) {
   return NextResponse.json(toDecK(data));
 }
 
-function toDecK(row: Record<string, unknown>) {
+type ColorKey = "W" | "U" | "B" | "R" | "G";
+type ColorCounts = Record<ColorKey, number>;
+
+function computeDeckColors(
+  cards: { deck_id: string; mana_cost: string | null; quantity: number }[]
+): Record<string, string> {
+  const counts: Record<string, ColorCounts> = {};
+  const colors: ColorKey[] = ["W", "U", "B", "R", "G"];
+
+  for (const card of cards) {
+    if (!card.mana_cost) continue;
+    if (!counts[card.deck_id]) counts[card.deck_id] = { W: 0, U: 0, B: 0, R: 0, G: 0 };
+    const qty = card.quantity ?? 1;
+    for (const c of colors) {
+      counts[card.deck_id][c] += (card.mana_cost.match(new RegExp(`\\{${c}\\}`, "g")) ?? []).length * qty;
+    }
+  }
+
+  const result: Record<string, string> = {};
+  for (const [deckId, c] of Object.entries(counts)) {
+    const total = Object.values(c).reduce((a, b) => a + b, 0);
+    if (total === 0) { result[deckId] = "colorless"; continue; }
+    const active = colors.filter((k) => c[k] > 0);
+    if (active.length >= 3) { result[deckId] = "multi"; continue; }
+    result[deckId] = active.sort((a, b) => c[b] - c[a])[0] ?? "colorless";
+  }
+  return result;
+}
+
+function toDecK(row: Record<string, unknown>, dominantColor?: string) {
   return {
     id: row.id,
     name: row.name,
     format: row.format,
     coverCardId: row.cover_card_id,
     coverImageUri: row.cover_image_uri,
+    dominantColor: dominantColor ?? "colorless",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
