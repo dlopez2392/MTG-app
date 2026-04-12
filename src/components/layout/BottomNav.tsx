@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const leftTabs = [
@@ -92,6 +93,15 @@ function NavTab({
 export default function BottomNav() {
   const pathname = usePathname();
   const isScanActive = pathname === "/scan";
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  if (isFullscreen) return null;
 
   function isTabActive(href: string, exact: boolean) {
     if (exact) return pathname === href;
