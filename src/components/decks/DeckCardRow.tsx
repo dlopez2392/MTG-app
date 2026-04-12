@@ -39,10 +39,21 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
 
       <div className="flex items-center gap-1 flex-shrink-0">
         <button
-          onClick={() => onQuantityChange(cardId, card.quantity - 1)}
-          className="w-7 h-7 flex items-center justify-center rounded bg-bg-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-bold"
+          onClick={() => {
+            if (card.quantity <= 1) onRemove(cardId);
+            else onQuantityChange(cardId, card.quantity - 1);
+          }}
+          className={`w-7 h-7 flex items-center justify-center rounded transition-colors text-sm font-bold ${
+            card.quantity <= 1
+              ? "bg-banned/20 text-banned hover:bg-banned/30"
+              : "bg-bg-hover text-text-secondary hover:text-text-primary"
+          }`}
         >
-          -
+          {card.quantity <= 1 ? (
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          ) : "-"}
         </button>
         <span className="w-6 text-center text-sm font-medium text-text-primary">
           {card.quantity}

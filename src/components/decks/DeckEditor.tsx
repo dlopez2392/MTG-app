@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDeckCards } from "@/hooks/useDecks";
+import { useDeckCards, useDecks } from "@/hooks/useDecks";
 import Tabs from "@/components/ui/Tabs";
 import DeckCardRow from "./DeckCardRow";
 import DeckImportExport from "./DeckImportExport";
-import type { DeckCategory } from "@/types/deck";
+import type { DeckCard, DeckCategory } from "@/types/deck";
+import type { ScryfallCard } from "@/types/card";
 
 const CATEGORY_TABS = [
   { value: "main", label: "Main" },
   { value: "sideboard", label: "Sideboard" },
   { value: "commander", label: "Commander" },
+  { value: "maybeboard", label: "Maybe" },
 ];
 
 interface DeckEditorProps {
@@ -20,12 +22,14 @@ interface DeckEditorProps {
 
 export default function DeckEditor({ deckId }: DeckEditorProps) {
   const router = useRouter();
-  const { cards, updateCardQuantity, removeCardFromDeck } = useDeckCards(deckId);
+  const { cards, updateCardQuantity, removeCardFromDeck, refresh } = useDeckCards(deckId);
+  const { addCardToDeck } = useDecks();
   const [activeTab, setActiveTab] = useState<string>("main");
   const [showImportExport, setShowImportExport] = useState(false);
 
   const filteredCards = cards?.filter((c) => c.category === activeTab) ?? [];
-  const totalCards = cards?.reduce((sum, c) => sum + c.quantity, 0) ?? 0;
+  // Maybeboard cards don't count toward the deck total
+  const totalCards = cards?.filter((c) => c.category !== "maybeboard").reduce((sum, c) => sum + c.quantity, 0) ?? 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,7 +60,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
         {filteredCards.length === 0 ? (
           <div className="py-8 text-center">
             <p className="text-sm text-text-muted">
-              No cards in {activeTab === "main" ? "mainboard" : activeTab}
+              No cards in {activeTab === "main" ? "mainboard" : activeTab === "maybeboard" ? "maybeboard" : activeTab}
             </p>
             <button
               onClick={() => router.push(`/search?deckId=${deckId}&category=${activeTab}`)}
@@ -80,9 +84,12 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
       <DeckImportExport
         open={showImportExport}
-        onClose={() => setShowImportExport(false)}
+        onClose={() => { setShowImportExport(false); refresh(); }}
         deckId={deckId}
         cards={cards ?? []}
+        onImportCards={async (card: Partial<ScryfallCard>, category: DeckCard["category"], quantity: number) => {
+          await addCardToDeck(deckId, card, category, quantity);
+        }}
       />
     </div>
   );

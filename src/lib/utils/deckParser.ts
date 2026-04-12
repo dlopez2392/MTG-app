@@ -1,7 +1,7 @@
 export interface ParsedDeckEntry {
   quantity: number;
   name: string;
-  category: "main" | "sideboard" | "commander";
+  category: "main" | "sideboard" | "commander" | "maybeboard";
 }
 
 export function parseDeckList(text: string): ParsedDeckEntry[] {
@@ -20,6 +20,10 @@ export function parseDeckList(text: string): ParsedDeckEntry[] {
     }
     if (/^commander:?$/i.test(line)) {
       currentCategory = "commander";
+      continue;
+    }
+    if (/^(maybeboard|maybe):?$/i.test(line)) {
+      currentCategory = "maybeboard";
       continue;
     }
     if (/^(mainboard|main|deck):?$/i.test(line)) {
@@ -76,6 +80,12 @@ export function exportDeckList(
   if (groups["sideboard"]) {
     lines.push("Sideboard");
     for (const c of groups["sideboard"]) lines.push(`${c.quantity} ${c.name}`);
+    lines.push("");
+  }
+
+  if (groups["maybeboard"]) {
+    lines.push("Maybeboard");
+    for (const c of groups["maybeboard"]) lines.push(`${c.quantity} ${c.name}`);
   }
 
   return lines.join("\n").trim();
