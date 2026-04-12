@@ -167,20 +167,21 @@ export default function PlayerPanel({
         {/* Life number + particle origin — overflow visible so particles escape */}
         <div className="relative" style={{ overflow: "visible" }}>
           <span
-            className="text-6xl font-black tabular-nums drop-shadow-lg leading-none"
-            style={{ color: player.color }}
+            className="relative text-6xl font-black tabular-nums drop-shadow-lg leading-none"
+            style={{ color: player.color, zIndex: 2 }}
           >
             {player.life}
           </span>
 
-          {/* Particles anchored to this div's center */}
+          {/* Particles anchored to this div's center — z-index 1 so they sit behind the number */}
           {particles.map((p) => {
             if (p.kind === "slash") {
               return (
                 <div
                   key={p.id}
                   aria-hidden
-                  className="pointer-events-none absolute z-30"
+                  className="pointer-events-none absolute"
+                  style={{ zIndex: 1 }}
                   style={{
                     // Center horizontally, offset vertically
                     top: `calc(50% + ${p.offsetY}px)`,
@@ -205,7 +206,8 @@ export default function PlayerPanel({
               <div
                 key={p.id}
                 aria-hidden
-                className="pointer-events-none absolute z-30 font-black leading-none select-none"
+                className="pointer-events-none absolute font-black leading-none select-none"
+                style={{ zIndex: 1 }}
                 style={{
                   // Offset from center of the life number
                   top: `calc(50% + ${p.offsetY}px)`,
