@@ -24,7 +24,7 @@ export default function BinderCard({
     <Link
       href={`/collection/${id}`}
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end group transition-transform active:scale-[0.97]",
+        "relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end group transition-all duration-200 active:scale-[0.97] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(237,154,87,0.15)]",
         className
       )}
     >
@@ -43,7 +43,7 @@ export default function BinderCard({
 
       {/* Content */}
       <div className="relative z-10 p-3">
-        <h3 className="text-sm font-semibold text-text-primary truncate">
+        <h3 className="font-display text-sm font-bold uppercase tracking-wide text-text-primary truncate">
           {name}
         </h3>
         <div className="flex items-center gap-2 mt-1">

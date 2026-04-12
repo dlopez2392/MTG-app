@@ -12,7 +12,7 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
   return (
     <button
       onClick={onClick}
-      className="relative aspect-[3/4] rounded-xl overflow-hidden bg-bg-card border border-border group transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-accent w-full text-left"
+      className="relative aspect-[3/4] rounded-xl overflow-hidden bg-bg-card border border-border group transition-all duration-200 hover:scale-[1.03] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(237,154,87,0.15)] focus:outline-none focus:ring-2 focus:ring-accent w-full text-left"
     >
       {deck.coverImageUri ? (
         <img
@@ -29,7 +29,7 @@ export default function DeckCard({ deck, onClick }: DeckCardProps) {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-3">
-        <p className="text-white font-semibold text-sm truncate">{deck.name}</p>
+        <p className="font-display text-white font-bold text-sm uppercase tracking-wide truncate">{deck.name}</p>
         {deck.format && (
           <Badge className="mt-1 capitalize text-[10px]">{deck.format}</Badge>
         )}

@@ -1,17 +1,25 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;800;900&display=swap");
 
 @theme inline {
-  --color-bg-primary: #121212;
-  --color-bg-secondary: #1a1a1a;
-  --color-bg-card: #2a2a2a;
-  --color-bg-hover: #333333;
-  --color-accent: #F59E0B;
-  --color-accent-dark: #D97706;
-  --color-accent-light: #FBBF24;
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #A0A0A0;
-  --color-text-muted: #6B7280;
-  --color-border: #3a3a3a;
+  /* Darker, more dramatic backgrounds */
+  --color-bg-primary: #0D0D10;
+  --color-bg-secondary: #141419;
+  --color-bg-card: #1A1A22;
+  --color-bg-hover: #22222E;
+
+  /* Warm orange accent — mythic.tools signature color */
+  --color-accent: #ED9A57;
+  --color-accent-dark: #D4823F;
+  --color-accent-light: #F5B07A;
+
+  /* Text */
+  --color-text-primary: #F0F0EE;
+  --color-text-secondary: #9898A8;
+  --color-text-muted: #56566A;
+
+  /* Border */
+  --color-border: #25252F;
 
   /* MTG Colors */
   --color-mtg-white: #F9FAF4;
@@ -29,6 +37,7 @@
   --color-not-legal: #6B7280;
 
   --font-sans: var(--font-geist-sans);
+  --font-display: "Big Shoulders Display", var(--font-geist-sans), Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -36,6 +45,17 @@ body {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Display font utility */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+/* Accent glow utility */
+.glow-accent {
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 * {

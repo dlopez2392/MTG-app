@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import SearchBar from "@/components/search/SearchBar";
@@ -18,7 +18,21 @@ export default function SearchPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<SearchFiltersType>(DEFAULT_FILTERS);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [initialized, setInitialized] = useState(false);
   const { cards, loading, error, hasMore, totalCards, search, loadMore } = useCardSearch();
+
+  // Read ?q= param on mount and auto-search
+  useEffect(() => {
+    if (initialized) return;
+    setInitialized(true);
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q");
+    if (q) {
+      const updated = { ...DEFAULT_FILTERS, query: q };
+      setFilters(updated);
+      search(updated);
+    }
+  }, [initialized, search]);
 
   const handleSearch = useCallback(() => {
     search(filters);
@@ -43,7 +57,9 @@ export default function SearchPage() {
   return (
     <PageContainer>
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-accent mb-3">MTG Houdini</h1>
+        <h1 className="font-display text-2xl font-black text-accent uppercase tracking-wide mb-3">
+          Search Cards
+        </h1>
         <SearchBar
           value={filters.query}
           onChange={(query) => setFilters((f) => ({ ...f, query }))}
@@ -104,7 +120,7 @@ export default function SearchPage() {
                 onClick={() => loadMore(filters)}
                 disabled={loading}
               >
-                {loading ? "Loading..." : "Load More"}
+                {loading ? "Loading…" : "Load More"}
               </Button>
             </div>
           )}
