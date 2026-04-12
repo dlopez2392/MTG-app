@@ -17,6 +17,13 @@ const IMAGE_DIMENSIONS = {
   large:  { width: 672, height: 936 },
 } as const;
 
+// Aspect ratios as CSS values
+const ASPECT_RATIOS = {
+  small:  "146 / 204",
+  normal: "488 / 680",
+  large:  "672 / 936",
+} as const;
+
 function getImageUri(card: ScryfallCard, face: number, size: "small" | "normal" | "large"): string | null {
   if (card.image_uris) return card.image_uris[size];
   if (card.card_faces?.[face]?.image_uris) return card.card_faces[face].image_uris![size];
@@ -36,8 +43,8 @@ export default function CardImage({ card, size = "normal", className }: CardImag
   if (!imageUri) {
     return (
       <div
-        className={cn("flex items-center justify-center rounded-lg bg-bg-card text-text-secondary text-caption", className)}
-        style={{ width, height }}
+        className={cn("flex items-center justify-center rounded-lg bg-bg-card text-caption text-text-secondary w-full", className)}
+        style={{ aspectRatio: ASPECT_RATIOS[size] }}
       >
         No image
       </div>
@@ -46,26 +53,26 @@ export default function CardImage({ card, size = "normal", className }: CardImag
 
   return (
     <div
-      className={cn("relative inline-block rounded-lg overflow-hidden", className)}
-      style={{ width, height }}
+      className={cn("relative rounded-lg overflow-hidden w-full", className)}
+      style={{ aspectRatio: ASPECT_RATIOS[size] }}
     >
-      {/* Shimmer skeleton — sits behind the image, fades out once loaded */}
+      {/* Shimmer skeleton */}
       <div
         className={cn(
-          "absolute inset-0 skeleton-shimmer rounded-lg transition-opacity duration-500",
+          "absolute inset-0 skeleton-shimmer transition-opacity duration-500",
           loaded ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       />
 
-      {/* Card image — fades in from transparent */}
+      {/* Card image — fill the aspect-ratio container */}
       <Image
         src={imageUri}
         alt={card.name}
-        width={width}
-        height={height}
-        preload={size === "large"}
+        fill
+        sizes={`(max-width: 640px) 100vw, ${width}px`}
+        priority={size === "large"}
         className={cn(
-          "rounded-lg transition-opacity duration-500",
+          "object-cover transition-opacity duration-500",
           loaded ? "opacity-100" : "opacity-0"
         )}
         onLoad={() => setLoaded(true)}

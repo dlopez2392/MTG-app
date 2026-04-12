@@ -107,8 +107,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       <TopBar title={card.name} showBack />
       <PageContainer>
         <div className="flex flex-col sm:flex-row gap-6">
-          {/* Card Image */}
-          <div className="flex-shrink-0 sm:w-64">
+          {/* Card Image — constrained width so info column always has room */}
+          <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0">
             <CardImage card={card} size="normal" />
           </div>
 
