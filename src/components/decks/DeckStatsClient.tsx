@@ -16,7 +16,7 @@ interface Props {
 
 export default function DeckStatsClient({ deckId }: Props) {
   const { getDeck } = useDecks();
-  const cards = useDeckCards(deckId);
+  const { cards } = useDeckCards(deckId);
   const [deck, setDeck] = useState<Deck | undefined>();
 
   useEffect(() => {

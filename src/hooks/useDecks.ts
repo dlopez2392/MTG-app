@@ -117,5 +117,24 @@ export function useDeckCards(deckId: string | undefined) {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  return cards;
+  async function updateCardQuantity(cardId: string, quantity: number) {
+    if (quantity <= 0) {
+      setCards((prev) => prev.filter((c) => c.id !== cardId));
+      await fetch(`/api/deck-cards/${cardId}`, { method: "DELETE" });
+    } else {
+      setCards((prev) => prev.map((c) => c.id === cardId ? { ...c, quantity } : c));
+      await fetch(`/api/deck-cards/${cardId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
+    }
+  }
+
+  async function removeCardFromDeck(cardId: string) {
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+    await fetch(`/api/deck-cards/${cardId}`, { method: "DELETE" });
+  }
+
+  return { cards, refresh, updateCardQuantity, removeCardFromDeck };
 }
