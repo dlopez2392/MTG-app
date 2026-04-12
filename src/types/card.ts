@@ -68,6 +68,11 @@ export interface ScryfallCard {
   card_faces?: CardFace[];
   legalities: Record<string, Legality>;
   prices: CardPrices;
+  purchase_uris?: {
+    tcgplayer?: string;
+    cardmarket?: string;
+    cardhoarder?: string;
+  };
   prints_search_uri?: string;
   rulings_uri?: string;
   scryfall_uri: string;

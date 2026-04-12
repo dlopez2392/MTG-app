@@ -11,13 +11,12 @@ import PriceTable from "@/components/cards/PriceTable";
 import RulingsPanel from "@/components/cards/RulingsPanel";
 import Tabs from "@/components/ui/Tabs";
 import Skeleton from "@/components/ui/Skeleton";
-import Badge from "@/components/ui/Badge";
 import { useCardDetail } from "@/hooks/useCardDetail";
 import { useDecks } from "@/hooks/useDecks";
 import { useCollection } from "@/hooks/useCollection";
 import { useCardCombos } from "@/hooks/useCardCombos";
-import { formatPrice } from "@/lib/utils/prices";
 import CombosPanel from "@/components/cards/CombosPanel";
+import CardPricesPanel from "@/components/cards/CardPricesPanel";
 import type { DeckCategory } from "@/types/deck";
 
 export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -137,14 +136,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Prices */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Badge>{formatPrice(card.prices.usd)} USD</Badge>
-              {card.prices.usd_foil && (
-                <Badge>{formatPrice(card.prices.usd_foil)} Foil</Badge>
-              )}
-              {card.prices.eur && (
-                <Badge>{formatPrice(card.prices.eur, "eur")} EUR</Badge>
-              )}
+            <div className="mb-4">
+              <CardPricesPanel card={card} />
             </div>
 
             {/* Set Info */}
