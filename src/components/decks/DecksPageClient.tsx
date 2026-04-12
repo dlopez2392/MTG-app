@@ -3,12 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDecks } from "@/hooks/useDecks";
-import TopBar from "@/components/layout/TopBar";
+import HeroBanner from "@/components/layout/HeroBanner";
 import PageContainer from "@/components/layout/PageContainer";
 import DeckGrid from "@/components/decks/DeckGrid";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import type { Deck } from "@/types/deck";
+
+const DECK_ICON = (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+  </svg>
+);
 
 export default function DecksPageClient() {
   const router = useRouter();
@@ -29,8 +35,14 @@ export default function DecksPageClient() {
   }
 
   return (
-    <>
-      <TopBar title="Decks" />
+    <div className="flex flex-col min-h-screen pb-20">
+      <HeroBanner
+        title="Decks"
+        subtitle="Build & manage your decks"
+        accent="#3B82F6"
+        icon={DECK_ICON}
+      />
+
       <PageContainer>
         <div className="mb-4">
           <Input
@@ -74,6 +86,6 @@ export default function DecksPageClient() {
           </svg>
         </button>
       </PageContainer>
-    </>
+    </div>
   );
 }

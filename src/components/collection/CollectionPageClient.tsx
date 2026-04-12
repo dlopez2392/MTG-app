@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { useCollection } from "@/hooks/useCollection";
+import HeroBanner from "@/components/layout/HeroBanner";
 import CollectionSummary from "@/components/collection/CollectionSummary";
 import BinderGrid from "@/components/collection/BinderGrid";
 import Tabs from "@/components/ui/Tabs";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+
+const COLLECTION_ICON = (
+  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+  </svg>
+);
 
 const TABS = [
   { value: "collection", label: "Collection" },
@@ -36,9 +43,12 @@ export default function CollectionPageClient() {
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
-      <div className="px-4 pt-4 pb-2">
-        <h1 className="text-xl font-bold text-text-primary">Collection</h1>
-      </div>
+      <HeroBanner
+        title="Collection"
+        subtitle="Track your card collection"
+        accent="#22C55E"
+        icon={COLLECTION_ICON}
+      />
 
       <div className="px-4 pb-3">
         <CollectionSummary binders={allBinders} allCards={allCards} />

@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
+import HeroBanner from "@/components/layout/HeroBanner";
 import SearchBar from "@/components/search/SearchBar";
 import SearchFilters from "@/components/search/SearchFilters";
 import ViewToggle from "@/components/search/ViewToggle";
@@ -69,20 +70,29 @@ export default function SearchPage() {
     [router, deckContext, binderContext]
   );
 
+  const SEARCH_ICON = (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  );
+
   return (
-    <PageContainer>
-      <div className="mb-4">
-        <h1 className="font-display text-2xl font-black text-accent uppercase tracking-wide mb-3">
-          Search Cards
-        </h1>
+    <>
+      <HeroBanner
+        title="Search Cards"
+        subtitle="Browse the full Scryfall database"
+        accent="#ED9A57"
+        icon={SEARCH_ICON}
+      >
         <SearchBar
           value={filters.query}
           onChange={(query) => setFilters((f) => ({ ...f, query }))}
           onSubmit={handleSearch}
           onSelect={handleSelect}
         />
-      </div>
+      </HeroBanner>
 
+    <PageContainer>
       <SearchFilters filters={filters} onChange={setFilters} className="mb-4" />
 
       <div className="flex items-center justify-between mb-3">
@@ -142,5 +152,6 @@ export default function SearchPage() {
         </>
       )}
     </PageContainer>
+    </>
   );
 }
