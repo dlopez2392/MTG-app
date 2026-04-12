@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { cleanOcrText, preprocessImageData } from "@/lib/ocr/cardNameExtractor";
+import { cleanOcrText, grayscaleEnhance, preprocessImageData } from "@/lib/ocr/cardNameExtractor";
 import type { ScryfallCard } from "@/types/card";
 
 export interface CardScanSuggestion {
@@ -28,7 +28,7 @@ interface UseCameraScannerReturn {
   reset: () => void;
 }
 
-// How much to scale the crop before OCR — bigger = better accuracy
+// Scale crop up before sending to OCR — bigger = better accuracy
 const OCR_SCALE = 4;
 
 export function useCameraScanner(): UseCameraScannerReturn {
@@ -87,7 +87,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
     if (workerRef.current) return workerRef.current;
     const Tesseract = await import("tesseract.js");
     const worker = await Tesseract.createWorker("eng");
-    // PSM 7 = single text line — much better for card name bars
+    // PSM 7 = single text line — best for card name bars
     await worker.setParameters({
       tessedit_pageseg_mode: "7" as never,
       tessedit_char_whitelist:
@@ -97,13 +97,13 @@ export function useCameraScanner(): UseCameraScannerReturn {
     return worker;
   }, []);
 
-  /** Run OCR on the current canvas content and return cleaned text + confidence */
+  /** Run OCR on the current canvas content */
   async function runOcr(worker: Awaited<ReturnType<typeof getWorker>>, canvas: HTMLCanvasElement) {
     const { data } = await worker.recognize(canvas);
     return { text: cleanOcrText(data.text), confidence: data.confidence };
   }
 
-  /** Draw a scaled-up crop of the source onto the canvas */
+  /** Draw a scaled-up crop of the source onto the canvas, returns context + dims */
   function drawCrop(
     source: HTMLVideoElement | HTMLImageElement,
     canvas: HTMLCanvasElement,
@@ -118,6 +118,23 @@ export function useCameraScanner(): UseCameraScannerReturn {
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(source, sx, sy, sw, sh, 0, 0, dw, dh);
     return { ctx, dw, dh };
+  }
+
+  /** Pick the best OCR result from several attempts */
+  function pickBest(
+    attempts: Array<{ text: string; confidence: number }>
+  ): string {
+    // Prefer longest text; break ties by confidence
+    let best = attempts[0];
+    for (const a of attempts) {
+      if (
+        a.text.length > best.text.length ||
+        (a.text.length === best.text.length && a.confidence > best.confidence)
+      ) {
+        best = a;
+      }
+    }
+    return best.text;
   }
 
   const captureAndRecognize = useCallback(async () => {
@@ -135,34 +152,53 @@ export function useCameraScanner(): UseCameraScannerReturn {
       const vw = video.videoWidth || 640;
       const vh = video.videoHeight || 480;
 
-      // Crop: top 5–18% of frame (card title bar), ignoring mana cost on right
-      const sx = Math.floor(vw * 0.04);
-      const sy = Math.floor(vh * 0.04);
-      const sw = Math.floor(vw * 0.72);
-      const sh = Math.floor(vh * 0.14);
-
       const worker = await getWorker();
 
-      // Attempt 1: standard threshold (light text on dark bg — colored cards)
-      const { ctx: ctx1, dw, dh } = drawCrop(video, canvas, sx, sy, sw, sh);
-      preprocessImageData(ctx1, dw, dh, false);
-      const r1 = await runOcr(worker, canvas);
+      // Run 4 attempts across two crop regions and three preprocessing modes,
+      // then pick the result with the most usable text.
+      const attempts: Array<{ text: string; confidence: number }> = [];
 
-      // Attempt 2: inverted threshold (dark text on light bg — white/artifact cards)
-      const { ctx: ctx2 } = drawCrop(video, canvas, sx, sy, sw, sh);
-      preprocessImageData(ctx2, dw, dh, true);
-      const r2 = await runOcr(worker, canvas);
+      // Crop A: matches the guide overlay (top of card)
+      const axA = Math.floor(vw * 0.04);
+      const ayA = Math.floor(vh * 0.04);
+      const awA = Math.floor(vw * 0.72);
+      const ahA = Math.floor(vh * 0.14);
 
-      // Pick whichever result has higher confidence and a usable string
-      let cleaned = "";
-      if (r1.confidence >= r2.confidence && r1.text.length >= 2) {
-        cleaned = r1.text;
-      } else if (r2.text.length >= 2) {
-        cleaned = r2.text;
-      } else {
-        cleaned = r1.text || r2.text;
+      // Crop B: shifted down slightly in case card sits lower in frame
+      const axB = Math.floor(vw * 0.04);
+      const ayB = Math.floor(vh * 0.08);
+      const awB = Math.floor(vw * 0.72);
+      const ahB = Math.floor(vh * 0.14);
+
+      // Attempt 1 — Crop A, grayscale enhanced (no threshold, Tesseract handles binarization)
+      {
+        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
+        grayscaleEnhance(ctx, dw, dh);
+        attempts.push(await runOcr(worker, canvas));
       }
 
+      // Attempt 2 — Crop A, hard threshold (light text on dark bg — colored cards)
+      {
+        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
+        preprocessImageData(ctx, dw, dh, false, 128);
+        attempts.push(await runOcr(worker, canvas));
+      }
+
+      // Attempt 3 — Crop A, inverted threshold (dark text on light bg — white/artifact)
+      {
+        const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA);
+        preprocessImageData(ctx, dw, dh, true, 128);
+        attempts.push(await runOcr(worker, canvas));
+      }
+
+      // Attempt 4 — Crop B, grayscale enhanced (shifted crop fallback)
+      {
+        const { ctx, dw, dh } = drawCrop(video, canvas, axB, ayB, awB, ahB);
+        grayscaleEnhance(ctx, dw, dh);
+        attempts.push(await runOcr(worker, canvas));
+      }
+
+      const cleaned = pickBest(attempts);
       setOcrText(cleaned);
 
       if (!cleaned) {
@@ -184,7 +220,6 @@ export function useCameraScanner(): UseCameraScannerReturn {
         const data: CardScanSuggestion[] = await suggestRes.json();
         if (data.length > 0) {
           if (data.length === 1) {
-            // Only one match — auto-select
             await selectSuggestionById(data[0].id);
           } else {
             setSuggestions(data.slice(0, 6));
@@ -193,7 +228,6 @@ export function useCameraScanner(): UseCameraScannerReturn {
         }
       }
 
-      // Nothing found at all
       setError(
         `Read "${cleaned}" but couldn't find a matching card. Try again or tap Search Manually.`
       );
