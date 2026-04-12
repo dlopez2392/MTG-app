@@ -113,12 +113,7 @@ export default function HomePage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center">
-          {/* Logo mark */}
-          <div className="mb-4 flex items-center justify-center w-14 h-14 rounded-full border-2 border-accent/40 bg-accent/10">
-            <span className="font-display text-accent font-black text-2xl leading-none">M</span>
-          </div>
-
-          <h1 className="font-display text-5xl font-black text-text-primary tracking-wide uppercase leading-none mb-2">
+          <h1 className="animate-houdini font-display text-5xl font-black text-text-primary uppercase leading-none mb-2">
             MTG Houdini
           </h1>
           <p className="text-text-secondary text-sm mb-8 max-w-xs">
