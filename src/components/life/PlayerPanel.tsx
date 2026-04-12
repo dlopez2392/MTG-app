@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils/cn";
 import { MTG_PLAYER_COLORS } from "@/lib/constants";
 import type { Player } from "@/types/life";
@@ -10,6 +10,61 @@ function hexToMtgQuery(hex: string): string {
 }
 
 const CMDR_KEY = "__cmdr__";
+
+// ── Particle types ──────────────────────────────────────────────────────────
+
+interface SlashParticle {
+  id: number;
+  kind: "slash";
+  /** top offset 20–65% so slashes spread across the panel */
+  top: number;
+  /** rotation between -55 and -35 deg so they look like claw marks */
+  angle: number;
+  /** stagger delay in ms */
+  delay: number;
+}
+
+interface HealParticle {
+  id: number;
+  kind: "heal";
+  /** left offset 15–80% */
+  left: number;
+  /** starting bottom offset 25–55% */
+  bottom: number;
+  /** stagger delay in ms */
+  delay: number;
+}
+
+type Particle = SlashParticle | HealParticle;
+
+let nextId = 0;
+
+function spawnParticles(delta: number): Particle[] {
+  const count = Math.min(Math.abs(delta), 4); // at most 4 per hit
+  const n = Math.max(count, 3);
+
+  if (delta < 0) {
+    // Damage — 3 slash marks spread vertically
+    return Array.from({ length: n }, (_, i): SlashParticle => ({
+      id: nextId++,
+      kind: "slash",
+      top: 18 + i * 18 + Math.random() * 8,
+      angle: -50 + Math.random() * 20,
+      delay: i * 55,
+    }));
+  } else {
+    // Heal — floating plus signs
+    return Array.from({ length: n }, (_, i): HealParticle => ({
+      id: nextId++,
+      kind: "heal",
+      left: 15 + Math.random() * 65,
+      bottom: 25 + Math.random() * 30,
+      delay: i * 80,
+    }));
+  }
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 interface PlayerPanelProps {
   player: Player;
@@ -27,6 +82,8 @@ export default function PlayerPanel({
   className,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const prevLifeRef = useRef(player.life);
 
   useEffect(() => {
     const mtgColor = hexToMtgQuery(player.color);
@@ -44,6 +101,25 @@ export default function PlayerPanel({
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
+
+  // Spawn particles whenever life changes
+  useEffect(() => {
+    const prev = prevLifeRef.current;
+    const curr = player.life;
+    if (prev === curr) { prevLifeRef.current = curr; return; }
+
+    prevLifeRef.current = curr;
+    const delta = curr - prev;
+    const spawned = spawnParticles(delta);
+    setParticles((p) => [...p, ...spawned]);
+
+    const ids = new Set(spawned.map((s) => s.id));
+    const timer = setTimeout(
+      () => setParticles((p) => p.filter((x) => !ids.has(x.id))),
+      900
+    );
+    return () => clearTimeout(timer);
+  }, [player.life]);
 
   const cmdrDmg = player.commanderDamage[CMDR_KEY] ?? 0;
   const cmdrDangerous = cmdrDmg >= 21;
@@ -75,6 +151,48 @@ export default function PlayerPanel({
           background: `radial-gradient(ellipse at center, transparent 20%, ${player.color}28 100%)`,
         }}
       />
+
+      {/* ── Particles ── */}
+      {particles.map((p) => {
+        if (p.kind === "slash") {
+          return (
+            <div
+              key={p.id}
+              aria-hidden
+              className="pointer-events-none absolute left-[5%] right-[5%] z-20"
+              style={{
+                top: `${p.top}%`,
+                height: "3px",
+                transformOrigin: "left center",
+                transform: `rotate(${p.angle}deg)`,
+                background:
+                  "linear-gradient(90deg, transparent 0%, #ff2222 20%, #ff6666 50%, #ff2222 80%, transparent 100%)",
+                borderRadius: "2px",
+                boxShadow: "0 0 6px 1px rgba(255,30,30,0.7)",
+                animation: `life-slash 0.75s ease-out ${p.delay}ms both`,
+              }}
+            />
+          );
+        }
+
+        // heal plus
+        return (
+          <div
+            key={p.id}
+            aria-hidden
+            className="pointer-events-none absolute z-20 text-base font-black leading-none select-none"
+            style={{
+              left: `${p.left}%`,
+              bottom: `${p.bottom}%`,
+              color: "#22ff66",
+              textShadow: "0 0 8px rgba(34,255,100,0.9), 0 0 16px rgba(34,255,100,0.5)",
+              animation: `life-heal 0.85s ease-out ${p.delay}ms both`,
+            }}
+          >
+            +
+          </div>
+        );
+      })}
 
       {/* ── Top: player name ── */}
       <div className="relative z-10 flex items-center justify-center gap-2 pt-2 pb-0.5">
