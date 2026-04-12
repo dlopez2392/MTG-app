@@ -1,10 +1,5 @@
-import dynamic from "next/dynamic";
 import type { Metadata } from "next";
-
-const RulesPageClient = dynamic(
-  () => import("@/components/rules/RulesPageClient"),
-  { ssr: false }
-);
+import RulesPageClient from "@/components/rules/RulesPageClient";
 
 export const metadata: Metadata = {
   title: "Comprehensive Rules — MTG Houdini",
