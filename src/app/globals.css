@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;800;900&family=Cinzel+Decorative:wght@700;900&display=swap");
 @import "tailwindcss";
 
 @theme inline {
@@ -53,6 +53,28 @@ body {
   letter-spacing: 0.02em;
 }
 
+/* MTG title font */
+.font-mtg {
+  font-family: "Cinzel Decorative", Georgia, serif;
+}
+
+/* 5-color MTG gradient text */
+.text-mtg-gradient {
+  background: linear-gradient(
+    90deg,
+    #E8E0A8 0%,
+    #4AABDF 20%,
+    #C084FC 40%,
+    #F87171 60%,
+    #4ADE80 80%,
+    #E8E0A8 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Accent glow utility */
 .glow-accent {
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 30%, transparent);
@@ -61,16 +83,16 @@ body {
 /* MTG Houdini dust animation — runs once on home page load, no layout shift */
 @keyframes houdini-dust {
   /* Solid to start */
-  0%   { opacity: 1; filter: blur(0px);              transform: scale(1)    translateY(0);   text-shadow: none; }
+  0%   { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
   /* Blow out — scatter upward like dust in wind */
-  25%  { opacity: 0.6; filter: blur(4px);             transform: scale(1.02) translateY(-3px); text-shadow: none; }
-  42%  { opacity: 0;   filter: blur(18px) brightness(1.6); transform: scale(1.06) translateY(-7px); text-shadow: 0 0 30px rgba(237,154,87,0.5); }
+  25%  { opacity: 0.6; filter: blur(4px);                                         transform: scale(1.02) translateY(-3px); }
+  42%  { opacity: 0;   filter: blur(18px) brightness(1.6) drop-shadow(0 0 12px rgba(237,154,87,0.6)); transform: scale(1.06) translateY(-7px); }
   /* Hold invisible */
-  55%  { opacity: 0;   filter: blur(18px);            transform: scale(1.06) translateY(-7px); text-shadow: 0 0 30px rgba(237,154,87,0.3); }
+  55%  { opacity: 0;   filter: blur(18px)                 drop-shadow(0 0 8px  rgba(237,154,87,0.3)); transform: scale(1.06) translateY(-7px); }
   /* Solidify — particles fall back and coalesce */
-  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4); transform: scale(1.02) translateY(-2px); text-shadow: 0 0 28px rgba(237,154,87,0.9); }
-  86%  { opacity: 0.85; filter: blur(1.5px);          transform: scale(1.002) translateY(0);  text-shadow: 0 0 8px  rgba(237,154,87,0.4); }
-  100% { opacity: 1;   filter: blur(0px);              transform: scale(1)    translateY(0);   text-shadow: none; }
+  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4) drop-shadow(0 0 16px rgba(237,154,87,1));   transform: scale(1.02) translateY(-2px); }
+  86%  { opacity: 0.85; filter: blur(1.5px)               drop-shadow(0 0 6px  rgba(237,154,87,0.5)); transform: scale(1.002) translateY(0);  }
+  100% { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
 }
 
 .animate-houdini {

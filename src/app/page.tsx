@@ -113,7 +113,7 @@ export default function HomePage() {
 
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center">
-          <h1 className="animate-houdini font-display text-5xl font-black text-text-primary uppercase leading-none mb-2">
+          <h1 className="animate-houdini font-mtg text-mtg-gradient text-4xl font-black leading-tight mb-2 drop-shadow-lg">
             MTG Houdini
           </h1>
           <p className="text-text-secondary text-sm mb-8 max-w-xs">
