@@ -122,7 +122,7 @@ export default function LifePage() {
           </button>
 
           {showMenu && (
-            <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[140px] z-30">
+            <div className="absolute top-12 left-0 bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[140px] z-30">
               <button
                 onClick={() => { setShowHistory(true); setShowMenu(false); }}
                 className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
