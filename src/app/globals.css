@@ -58,19 +58,23 @@ body {
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-/* MTG Houdini title vanish animation */
-@keyframes houdini-vanish {
-  0%   { opacity: 1; filter: blur(0px); letter-spacing: 0.04em; text-shadow: none; }
-  55%  { opacity: 1; filter: blur(0px); letter-spacing: 0.04em; text-shadow: none; }
-  65%  { opacity: 0.7; filter: blur(3px); letter-spacing: 0.12em; text-shadow: 0 0 24px rgba(237,154,87,0.9); }
-  72%  { opacity: 0; filter: blur(12px); letter-spacing: 0.25em; text-shadow: 0 0 40px rgba(237,154,87,0.6); }
-  82%  { opacity: 0; filter: blur(12px); letter-spacing: 0.25em; text-shadow: 0 0 40px rgba(237,154,87,0.6); }
-  90%  { opacity: 0.5; filter: blur(4px); letter-spacing: 0.08em; text-shadow: 0 0 32px rgba(237,154,87,1); }
-  100% { opacity: 1; filter: blur(0px); letter-spacing: 0.04em; text-shadow: none; }
+/* MTG Houdini dust animation — runs once on home page load, no layout shift */
+@keyframes houdini-dust {
+  /* Solid to start */
+  0%   { opacity: 1; filter: blur(0px);              transform: scale(1)    translateY(0);   text-shadow: none; }
+  /* Blow out — scatter upward like dust in wind */
+  25%  { opacity: 0.6; filter: blur(4px);             transform: scale(1.02) translateY(-3px); text-shadow: none; }
+  42%  { opacity: 0;   filter: blur(18px) brightness(1.6); transform: scale(1.06) translateY(-7px); text-shadow: 0 0 30px rgba(237,154,87,0.5); }
+  /* Hold invisible */
+  55%  { opacity: 0;   filter: blur(18px);            transform: scale(1.06) translateY(-7px); text-shadow: 0 0 30px rgba(237,154,87,0.3); }
+  /* Solidify — particles fall back and coalesce */
+  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4); transform: scale(1.02) translateY(-2px); text-shadow: 0 0 28px rgba(237,154,87,0.9); }
+  86%  { opacity: 0.85; filter: blur(1.5px);          transform: scale(1.002) translateY(0);  text-shadow: 0 0 8px  rgba(237,154,87,0.4); }
+  100% { opacity: 1;   filter: blur(0px);              transform: scale(1)    translateY(0);   text-shadow: none; }
 }
 
 .animate-houdini {
-  animation: houdini-vanish 5s ease-in-out infinite;
+  animation: houdini-dust 3.2s cubic-bezier(0.4, 0, 0.2, 1) 0.5s 1 both;
 }
 
 * {
