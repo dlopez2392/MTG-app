@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { getDb } from "@/lib/db/index";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import type { UserSettings } from "@/types/settings";
@@ -51,8 +51,9 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
 }
 
 export default function SettingsPageClient() {
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const { signOut, openUserProfile } = useClerk();
+  const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -73,61 +74,11 @@ export default function SettingsPageClient() {
     []
   );
 
-  async function handleExport() {
-    const d = getDb();
-    const data = {
-      exportedAt: new Date().toISOString(),
-      appVersion: "0.1.0",
-      settings,
-      binders: await d.binders.toArray(),
-      collectionCards: await d.collectionCards.toArray(),
-      decks: await d.decks.toArray(),
-      deckCards: await d.deckCards.toArray(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `mtg-houdini-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function handleImport() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-      try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const d = getDb();
-        if (data.binders) await d.binders.bulkPut(data.binders);
-        if (data.collectionCards) await d.collectionCards.bulkPut(data.collectionCards);
-        if (data.decks) await d.decks.bulkPut(data.decks);
-        if (data.deckCards) await d.deckCards.bulkPut(data.deckCards);
-        if (data.settings) {
-          setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
-          saveSettings({ ...DEFAULT_SETTINGS, ...data.settings });
-        }
-        alert("Import successful!");
-      } catch {
-        alert("Failed to import data. Please check the file format.");
-      }
-    };
-    input.click();
-  }
-
-  async function handleClearAll() {
-    const d = getDb();
-    await d.binders.clear();
-    await d.collectionCards.clear();
-    await d.decks.clear();
-    await d.deckCards.clear();
-    await d.deckFolders.clear();
-    await d.lifeGames.clear();
+  function handleClearAll() {
+    // Clear guest localStorage data
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith("mtg_guest_"))
+      .forEach((k) => localStorage.removeItem(k));
     localStorage.removeItem(SETTINGS_KEY);
     setSettings(DEFAULT_SETTINGS);
     setShowClearConfirm(false);
@@ -144,9 +95,9 @@ export default function SettingsPageClient() {
 
       <div className="px-4 mt-4 space-y-6">
         {/* Account section */}
-        {user && (
-          <section>
-            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Account</h2>
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Account</h2>
+          {isSignedIn && user ? (
             <div className="bg-bg-card rounded-xl border border-border p-4 flex items-center gap-3">
               {user.imageUrl && (
                 <img src={user.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -170,8 +121,27 @@ export default function SettingsPageClient() {
                 </button>
               </div>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="bg-bg-card rounded-xl border border-border p-4">
+              <p className="text-sm text-text-secondary mb-1">You&apos;re using guest mode</p>
+              <p className="text-xs text-text-muted mb-3">Your data is saved on this device only. Sign in to sync across devices.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push("/sign-in")}
+                  className="flex-1 py-2 rounded-lg bg-accent text-black text-sm font-semibold hover:bg-accent-dark transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => router.push("/sign-up")}
+                  className="flex-1 py-2 rounded-lg bg-bg-hover border border-border text-text-primary text-sm font-medium hover:border-accent/40 transition-colors"
+                >
+                  Create Account
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
 
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Display</h2>
@@ -206,20 +176,16 @@ export default function SettingsPageClient() {
           </div>
         </section>
 
-        <section>
-          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
-          <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
-            <SettingRow label="Export Data" description="Download all data as JSON">
-              <Button variant="secondary" size="sm" onClick={handleExport}>Export</Button>
-            </SettingRow>
-            <SettingRow label="Import Data" description="Restore from a JSON backup">
-              <Button variant="secondary" size="sm" onClick={handleImport}>Import</Button>
-            </SettingRow>
-            <SettingRow label="Clear All Data" description="Delete all binders, decks, and cards">
-              <Button variant="danger" size="sm" onClick={() => setShowClearConfirm(true)}>Clear</Button>
-            </SettingRow>
-          </div>
-        </section>
+        {!isSignedIn && (
+          <section>
+            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
+            <div className="bg-bg-card rounded-xl border border-border px-4 divide-y divide-border">
+              <SettingRow label="Clear Guest Data" description="Delete all locally stored decks, binders, and cards">
+                <Button variant="danger" size="sm" onClick={() => setShowClearConfirm(true)}>Clear</Button>
+              </SettingRow>
+            </div>
+          </section>
+        )}
 
         <section className="pb-8">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">About</h2>
