@@ -87,7 +87,7 @@ function StatRow({
         value={value}
         onChange={(e) => onValue(e.target.value)}
         placeholder="—"
-        className="h-8 flex-1 rounded-lg border border-border bg-bg-card px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
+        className="h-8 flex-1 rounded-lg border border-border bg-bg-card px-3 text-base text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors"
       />
       {value && (
         <button onClick={() => onValue("")} className="text-text-muted hover:text-text-primary text-xs">✕</button>

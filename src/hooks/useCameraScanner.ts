@@ -88,7 +88,8 @@ export function useCameraScanner(): UseCameraScannerReturn {
     setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } },
+        // "ideal" (not exact) so iOS Safari falls back gracefully if back camera unavailable
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 } },
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -100,7 +101,12 @@ export function useCameraScanner(): UseCameraScannerReturn {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("NotAllowed") || msg.includes("Permission")) {
-        setError("Camera access denied. Please allow camera permissions in your browser.");
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        setError(
+          isIOS
+            ? "Camera access denied. Go to Settings > Safari > Camera and allow access."
+            : "Camera access denied. Please allow camera permissions in your browser."
+        );
       } else if (msg.includes("NotFound")) {
         setError("No camera found on this device.");
       } else {

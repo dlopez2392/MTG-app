@@ -23,7 +23,8 @@ export const viewport: Viewport = {
   themeColor: "#121212",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,        // Allow accessibility zoom (iOS WCAG requirement)
+  viewportFit: "cover",  // iPhone notch / Dynamic Island support
 };
 
 export default function RootLayout({

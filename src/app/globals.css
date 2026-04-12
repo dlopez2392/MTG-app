@@ -45,6 +45,22 @@ body {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* iOS Safari safe-area insets (notch / Dynamic Island / home indicator) */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Eliminate 300ms tap delay on all interactive elements */
+button, a, [role="button"], input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Prevent iOS number input zoom — font-size must be ≥ 16px */
+input[type="number"],
+input[type="text"],
+input[type="search"],
+input[type="email"] {
+  font-size: max(16px, 1em);
 }
 
 /* Display font utility */

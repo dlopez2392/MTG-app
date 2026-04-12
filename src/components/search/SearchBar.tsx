@@ -85,7 +85,9 @@ export default function SearchBar({ value, onChange, onSubmit, onSelect }: Searc
             <li
               key={card.id}
               onMouseDown={() => handleSelect(card.name)}
+              onTouchEnd={(e) => { e.preventDefault(); handleSelect(card.name); }}
               onMouseEnter={() => setHighlighted(i)}
+              onTouchStart={() => setHighlighted(i)}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors",
                 i === highlighted ? "bg-bg-hover" : "hover:bg-bg-secondary",
