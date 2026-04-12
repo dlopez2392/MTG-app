@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;800;900&display=swap");
+@import "tailwindcss";
 
 @theme inline {
   /* Darker, more dramatic backgrounds */
