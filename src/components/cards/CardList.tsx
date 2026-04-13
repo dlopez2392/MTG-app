@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/prices";
+import { getLegalityBadge } from "@/lib/utils/legality";
 import ManaCost from "@/components/cards/ManaCost";
 import type { ScryfallCard } from "@/types/card";
 
@@ -11,6 +12,7 @@ interface CardListProps {
   onCardClick?: (card: ScryfallCard) => void;
   className?: string;
   collectionMap?: Map<string, number>;
+  deckFormat?: string;
 }
 
 function getSmallImageUrl(card: ScryfallCard): string | null {
@@ -34,7 +36,7 @@ function rarityBorder(rarity?: string): string {
   }
 }
 
-export default function CardList({ cards, onCardClick, className, collectionMap }: CardListProps) {
+export default function CardList({ cards, onCardClick, className, collectionMap, deckFormat }: CardListProps) {
   if (cards.length === 0) return null;
 
   return (
@@ -44,6 +46,9 @@ export default function CardList({ cards, onCardClick, className, collectionMap 
         const manaCost = getManaCost(card);
         const price = card.prices.usd ?? card.prices.usd_foil;
         const owned = collectionMap?.get(card.id) ?? 0;
+        const legalityBadge = deckFormat
+          ? getLegalityBadge(card.legalities?.[deckFormat] as Parameters<typeof getLegalityBadge>[0])
+          : null;
 
         return (
           <button
@@ -77,9 +82,19 @@ export default function CardList({ cards, onCardClick, className, collectionMap 
               <span className="block truncate text-sm font-medium text-text-primary leading-snug">
                 {card.name}
               </span>
-              <span className="block truncate text-xs text-text-secondary mt-0.5">
-                {card.type_line}
-              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="truncate text-xs text-text-secondary">
+                  {card.type_line}
+                </span>
+                {legalityBadge && (
+                  <span className={cn(
+                    "shrink-0 text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded",
+                    legalityBadge.classes
+                  )}>
+                    {legalityBadge.label}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Mana cost */}

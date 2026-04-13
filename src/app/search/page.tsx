@@ -16,6 +16,7 @@ import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import { useCardSearch } from "@/hooks/useCardSearch";
 import { useCollectionMap } from "@/hooks/useCollectionMap";
+import { useDecks } from "@/hooks/useDecks";
 import { type SearchFilters as SearchFiltersType, DEFAULT_FILTERS, type ScryfallSet } from "@/types/card";
 import { cn } from "@/lib/utils/cn";
 
@@ -31,7 +32,9 @@ export default function SearchPage() {
 
   const [deckContext, setDeckContext] = useState<{ deckId: string; category: string } | null>(null);
   const [binderContext, setBinderContext] = useState<string | null>(null);
+  const [deckFormat, setDeckFormat] = useState<string | null>(null);
   const collectionMap = useCollectionMap();
+  const { getDeck } = useDecks();
 
   // Read ?q=, ?deckId=, ?category=, ?binderId= params on mount and auto-search
   useEffect(() => {
@@ -42,7 +45,12 @@ export default function SearchPage() {
     const deckId = params.get("deckId");
     const category = params.get("category");
     const binderId = params.get("binderId");
-    if (deckId) setDeckContext({ deckId, category: category ?? "main" });
+    if (deckId) {
+      setDeckContext({ deckId, category: category ?? "main" });
+      getDeck(deckId).then((deck) => {
+        if (deck?.format) setDeckFormat(deck.format);
+      });
+    }
     if (binderId) setBinderContext(binderId);
     if (q) {
       const updated = { ...DEFAULT_FILTERS, query: q };
@@ -191,12 +199,14 @@ export default function SearchPage() {
                     cards={cards}
                     onCardClick={handleCardClick}
                     collectionMap={deckContext ? collectionMap : undefined}
+                    deckFormat={deckContext ? deckFormat ?? undefined : undefined}
                   />
                 ) : (
                   <CardList
                     cards={cards}
                     onCardClick={handleCardClick}
                     collectionMap={deckContext ? collectionMap : undefined}
+                    deckFormat={deckContext ? deckFormat ?? undefined : undefined}
                   />
                 )}
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/prices";
+import { getLegalityBadge } from "@/lib/utils/legality";
 import type { ScryfallCard } from "@/types/card";
 
 interface CardGridProps {
@@ -11,6 +12,7 @@ interface CardGridProps {
   onCardClick?: (card: ScryfallCard) => void;
   className?: string;
   collectionMap?: Map<string, number>;
+  deckFormat?: string;
 }
 
 function getArtCropUrl(card: ScryfallCard): string | null {
@@ -23,14 +25,19 @@ function CardGridItem({
   card,
   onCardClick,
   owned,
+  deckFormat,
 }: {
   card: ScryfallCard;
   onCardClick?: (card: ScryfallCard) => void;
   owned?: number;
+  deckFormat?: string;
 }) {
   const [loaded, setLoaded] = useState(false);
   const artCrop = getArtCropUrl(card);
   const price = card.prices.usd ?? card.prices.usd_foil;
+  const legalityBadge = deckFormat
+    ? getLegalityBadge(card.legalities?.[deckFormat] as Parameters<typeof getLegalityBadge>[0])
+    : null;
 
   return (
     <button
@@ -63,7 +70,7 @@ function CardGridItem({
         </div>
       )}
 
-      {/* Name overlay — only show once image is loaded */}
+      {/* Name + legality overlay — only show once image is loaded */}
       <div
         className={cn(
           "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-2 pb-2 pt-6 transition-opacity duration-300",
@@ -73,6 +80,14 @@ function CardGridItem({
         <span className="block truncate text-xs font-medium text-white">
           {card.name}
         </span>
+        {legalityBadge && (
+          <span className={cn(
+            "mt-0.5 inline-block text-[9px] font-bold uppercase tracking-wide px-1 py-0.5 rounded",
+            legalityBadge.classes
+          )}>
+            {legalityBadge.label}
+          </span>
+        )}
       </div>
 
       {/* Price badge */}
@@ -97,7 +112,7 @@ function CardGridItem({
   );
 }
 
-export default function CardGrid({ cards, onCardClick, className, collectionMap }: CardGridProps) {
+export default function CardGrid({ cards, onCardClick, className, collectionMap, deckFormat }: CardGridProps) {
   if (cards.length === 0) return null;
 
   return (
@@ -108,6 +123,7 @@ export default function CardGrid({ cards, onCardClick, className, collectionMap 
           card={card}
           onCardClick={onCardClick}
           owned={collectionMap ? (collectionMap.get(card.id) ?? 0) : undefined}
+          deckFormat={deckFormat}
         />
       ))}
     </div>
