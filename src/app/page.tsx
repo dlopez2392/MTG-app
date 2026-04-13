@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import NewsWidget from "@/components/news/NewsWidget";
 
 interface HeroCard {
   name: string;
@@ -205,6 +206,9 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      {/* ── News ── */}
+      <NewsWidget />
 
       {/* ── Search shortcut ── */}
       <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
