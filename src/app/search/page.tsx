@@ -15,7 +15,7 @@ import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import { useCardSearch } from "@/hooks/useCardSearch";
-import { type SearchFilters as SearchFiltersType, DEFAULT_FILTERS } from "@/types/card";
+import { type SearchFilters as SearchFiltersType, DEFAULT_FILTERS, type ScryfallSet } from "@/types/card";
 import { cn } from "@/lib/utils/cn";
 
 type Tab = "cards" | "sets";
@@ -60,6 +60,16 @@ export default function SearchPage() {
       search(updated);
     },
     [filters, search]
+  );
+
+  const handleSetSelect = useCallback(
+    (set: ScryfallSet) => {
+      const updated = { ...DEFAULT_FILTERS, set: set.code };
+      setFilters(updated);
+      setTab("cards");
+      search(updated);
+    },
+    [search]
   );
 
   const handleCardClick = useCallback(
@@ -132,7 +142,7 @@ export default function SearchPage() {
 
       <PageContainer>
         {tab === "sets" ? (
-          <SetsTab />
+          <SetsTab onSetSelect={handleSetSelect} />
         ) : (
           <>
             <SearchFilters filters={filters} onChange={setFilters} className="mb-4" />

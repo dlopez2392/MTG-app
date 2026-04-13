@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import type { ScryfallSet } from "@/types/card";
+
+interface SetsTabProps {
+  onSetSelect: (set: ScryfallSet) => void;
+}
 
 const SET_TYPE_ORDER = [
   "expansion", "core", "masters", "draft_innovation", "commander",
@@ -19,8 +22,7 @@ function sortSets(sets: ScryfallSet[]): ScryfallSet[] {
   });
 }
 
-export default function SetsTab() {
-  const router = useRouter();
+export default function SetsTab({ onSetSelect }: SetsTabProps) {
   const [sets, setSets] = useState<ScryfallSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -44,7 +46,7 @@ export default function SetsTab() {
   }, [sets, query]);
 
   function handleSetClick(set: ScryfallSet) {
-    router.push(`/search?q=set%3A${encodeURIComponent(set.code)}`);
+    onSetSelect(set);
   }
 
   return (
