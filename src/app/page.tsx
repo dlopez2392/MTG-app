@@ -172,8 +172,28 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Feature Grid ── */}
+      {/* ── Search shortcut ── */}
       <div className="px-4 pt-1 pb-4 max-w-2xl mx-auto w-full">
+        <Link href="/search">
+          <div className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-4 py-3 hover:border-accent/40 transition-colors active:scale-[0.98]">
+            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-page-title text-text-primary">BROWSE ALL CARDS</p>
+              <p className="text-caption truncate">Search the full Scryfall database</p>
+            </div>
+            <svg className="ml-auto w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      </div>
+
+      {/* ── Feature Grid ── */}
+      <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
         <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
@@ -209,26 +229,6 @@ export default function HomePage() {
 
       {/* ── News ── */}
       <NewsWidget />
-
-      {/* ── Search shortcut ── */}
-      <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
-        <Link href="/search">
-          <div className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-4 py-3 hover:border-accent/40 transition-colors active:scale-[0.98]">
-            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="text-page-title text-text-primary">BROWSE ALL CARDS</p>
-              <p className="text-caption truncate">Search the full Scryfall database</p>
-            </div>
-            <svg className="ml-auto w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
-        </Link>
-      </div>
     </div>
   );
 }
