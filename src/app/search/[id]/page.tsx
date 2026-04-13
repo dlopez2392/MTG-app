@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState, use, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
