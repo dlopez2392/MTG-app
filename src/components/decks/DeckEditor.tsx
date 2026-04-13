@@ -9,6 +9,7 @@ import Toast from "@/components/ui/Toast";
 import DeckCardRow from "./DeckCardRow";
 import DeckCardGrid from "./DeckCardGrid";
 import DeckImportExport from "./DeckImportExport";
+import HandSimulator from "./HandSimulator";
 import type { DeckCard, DeckCategory } from "@/types/deck";
 import type { ScryfallCard } from "@/types/card";
 
@@ -34,6 +35,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   const [activeTab, setActiveTab]         = useState<string>("main");
   const [viewMode, setViewMode]           = useState<ViewMode>("list");
   const [showImportExport, setShowImportExport] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   const filteredCards = cards?.filter((c) => c.category === activeTab) ?? [];
   const totalCards    = cards?.filter((c) => c.category !== "maybeboard").reduce((sum, c) => sum + c.quantity, 0) ?? 0;
@@ -76,6 +78,17 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               </svg>
             </button>
           </div>
+
+          <button
+            onClick={() => setShowSimulator(true)}
+            title="Open hand simulator"
+            className="p-1.5 text-text-muted hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+          >
+            {/* Play / cards icon */}
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" />
+            </svg>
+          </button>
 
           <button
             onClick={() => setShowImportExport(true)}
@@ -143,6 +156,12 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
       />
 
       <Toast message={toast.message} visible={toast.visible} />
+
+      <HandSimulator
+        open={showSimulator}
+        onClose={() => setShowSimulator(false)}
+        cards={cards ?? []}
+      />
     </div>
   );
 }
