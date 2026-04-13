@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useDeckCards, useDecks } from "@/hooks/useDecks";
 import { useToast } from "@/hooks/useToast";
+import { useCollectionMap } from "@/hooks/useCollectionMap";
 import Tabs from "@/components/ui/Tabs";
 import Toast from "@/components/ui/Toast";
 import DeckCardRow from "./DeckCardRow";
@@ -31,6 +32,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   const { cards, updateCardQuantity, removeCardFromDeck, refresh } = useDeckCards(deckId);
   const { addCardToDeck } = useDecks();
   const { toast, showToast } = useToast();
+  const collectionMap = useCollectionMap();
 
   const [activeTab, setActiveTab]         = useState<string>("main");
   const [viewMode, setViewMode]           = useState<ViewMode>("list");
@@ -133,6 +135,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               onQuantityChange={handleQuantityChange}
               onRemove={removeCardFromDeck}
               onCardClick={() => router.push(`/search/${card.scryfallId}?deckId=${deckId}&category=${activeTab}`)}
+              ownedQty={collectionMap.get(card.scryfallId)}
             />
           ))}
         </div>

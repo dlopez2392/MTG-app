@@ -10,6 +10,7 @@ interface CardGridProps {
   cards: ScryfallCard[];
   onCardClick?: (card: ScryfallCard) => void;
   className?: string;
+  collectionMap?: Map<string, number>;
 }
 
 function getArtCropUrl(card: ScryfallCard): string | null {
@@ -18,7 +19,15 @@ function getArtCropUrl(card: ScryfallCard): string | null {
   return null;
 }
 
-function CardGridItem({ card, onCardClick }: { card: ScryfallCard; onCardClick?: (card: ScryfallCard) => void }) {
+function CardGridItem({
+  card,
+  onCardClick,
+  owned,
+}: {
+  card: ScryfallCard;
+  onCardClick?: (card: ScryfallCard) => void;
+  owned?: number;
+}) {
   const [loaded, setLoaded] = useState(false);
   const artCrop = getArtCropUrl(card);
   const price = card.prices.usd ?? card.prices.usd_foil;
@@ -72,17 +81,34 @@ function CardGridItem({ card, onCardClick }: { card: ScryfallCard; onCardClick?:
           {formatPrice(price)}
         </span>
       )}
+
+      {/* Owned badge — top-left, only when collection context is active */}
+      {owned !== undefined && loaded && (
+        <span className={cn(
+          "absolute left-1 top-1 rounded px-1.5 py-0.5 text-[10px] font-bold backdrop-blur-sm",
+          owned > 0
+            ? "bg-legal/80 text-white"
+            : "bg-black/60 text-text-muted"
+        )}>
+          {owned > 0 ? `${owned}×` : "0"}
+        </span>
+      )}
     </button>
   );
 }
 
-export default function CardGrid({ cards, onCardClick, className }: CardGridProps) {
+export default function CardGrid({ cards, onCardClick, className, collectionMap }: CardGridProps) {
   if (cards.length === 0) return null;
 
   return (
     <div className={cn("grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6", className)}>
       {cards.map((card) => (
-        <CardGridItem key={card.id} card={card} onCardClick={onCardClick} />
+        <CardGridItem
+          key={card.id}
+          card={card}
+          onCardClick={onCardClick}
+          owned={collectionMap ? (collectionMap.get(card.id) ?? 0) : undefined}
+        />
       ))}
     </div>
   );

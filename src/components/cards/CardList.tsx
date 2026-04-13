@@ -10,6 +10,7 @@ interface CardListProps {
   cards: ScryfallCard[];
   onCardClick?: (card: ScryfallCard) => void;
   className?: string;
+  collectionMap?: Map<string, number>;
 }
 
 function getSmallImageUrl(card: ScryfallCard): string | null {
@@ -33,7 +34,7 @@ function rarityBorder(rarity?: string): string {
   }
 }
 
-export default function CardList({ cards, onCardClick, className }: CardListProps) {
+export default function CardList({ cards, onCardClick, className, collectionMap }: CardListProps) {
   if (cards.length === 0) return null;
 
   return (
@@ -42,6 +43,7 @@ export default function CardList({ cards, onCardClick, className }: CardListProp
         const thumb = getSmallImageUrl(card);
         const manaCost = getManaCost(card);
         const price = card.prices.usd ?? card.prices.usd_foil;
+        const owned = collectionMap?.get(card.id) ?? 0;
 
         return (
           <button
@@ -83,6 +85,18 @@ export default function CardList({ cards, onCardClick, className }: CardListProp
             {/* Mana cost */}
             {manaCost && (
               <ManaCost cost={manaCost} className="flex-shrink-0" />
+            )}
+
+            {/* Owned badge — only shown when in deck-building context */}
+            {collectionMap && (
+              <span className={cn(
+                "flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md tabular-nums",
+                owned > 0
+                  ? "bg-legal/20 text-legal"
+                  : "bg-bg-hover text-text-muted"
+              )}>
+                {owned > 0 ? `${owned}×` : "0×"}
+              </span>
             )}
 
             {/* Price */}

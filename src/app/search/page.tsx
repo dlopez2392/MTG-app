@@ -15,6 +15,7 @@ import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import { useCardSearch } from "@/hooks/useCardSearch";
+import { useCollectionMap } from "@/hooks/useCollectionMap";
 import { type SearchFilters as SearchFiltersType, DEFAULT_FILTERS, type ScryfallSet } from "@/types/card";
 import { cn } from "@/lib/utils/cn";
 
@@ -30,6 +31,7 @@ export default function SearchPage() {
 
   const [deckContext, setDeckContext] = useState<{ deckId: string; category: string } | null>(null);
   const [binderContext, setBinderContext] = useState<string | null>(null);
+  const collectionMap = useCollectionMap();
 
   // Read ?q=, ?deckId=, ?category=, ?binderId= params on mount and auto-search
   useEffect(() => {
@@ -185,9 +187,17 @@ export default function SearchPage() {
             {cards.length > 0 && (
               <>
                 {view === "grid" ? (
-                  <CardGrid cards={cards} onCardClick={handleCardClick} />
+                  <CardGrid
+                    cards={cards}
+                    onCardClick={handleCardClick}
+                    collectionMap={deckContext ? collectionMap : undefined}
+                  />
                 ) : (
-                  <CardList cards={cards} onCardClick={handleCardClick} />
+                  <CardList
+                    cards={cards}
+                    onCardClick={handleCardClick}
+                    collectionMap={deckContext ? collectionMap : undefined}
+                  />
                 )}
 
                 {hasMore && (

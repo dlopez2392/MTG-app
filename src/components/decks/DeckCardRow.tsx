@@ -10,6 +10,7 @@ interface DeckCardRowProps {
   onQuantityChange: (id: string, quantity: number) => void;
   onRemove: (id: string) => void;
   onCardClick?: () => void;
+  ownedQty?: number;
 }
 
 function rarityBorder(rarity?: string): string {
@@ -21,7 +22,7 @@ function rarityBorder(rarity?: string): string {
   }
 }
 
-export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardClick }: DeckCardRowProps) {
+export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardClick, ownedQty }: DeckCardRowProps) {
   const cardId = card.id!;
 
   return (
@@ -55,6 +56,18 @@ export default function DeckCardRow({ card, onQuantityChange, onRemove, onCardCl
               <ManaCost cost={card.manaCost} className="scale-75 origin-left" />
             )}
             <span className="text-xs text-text-muted">{formatPrice(card.priceUsd)}</span>
+            {ownedQty !== undefined && (
+              <span className={cn(
+                "text-[10px] font-bold px-1 py-0.5 rounded",
+                ownedQty >= card.quantity
+                  ? "text-legal bg-legal/15"
+                  : ownedQty > 0
+                  ? "text-restricted bg-restricted/15"
+                  : "text-text-muted bg-bg-hover"
+              )}>
+                {ownedQty}/{card.quantity}
+              </span>
+            )}
           </div>
         </div>
       </button>
