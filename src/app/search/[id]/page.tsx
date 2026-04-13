@@ -80,34 +80,45 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     if (!imageUrl || savingImage) return;
     setSavingImage(true);
     try {
-      const res = await fetch(imageUrl);
+      // Proxy through our API to avoid CORS issues with Scryfall image CDN
+      const proxyUrl = `/api/scryfall/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const filename = `${card!.name.replace(/[^a-z0-9]/gi, "_")}.jpg`;
-      const file = new File([blob], filename, { type: blob.type });
+      const file = new File([blob], filename, { type: "image/jpeg" });
 
-      // iOS 15+ / Android: share file directly into Photos
-      if (
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files: [file] })
-      ) {
-        await navigator.share({ files: [file], title: card!.name });
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (isIOS) {
+        // iOS Safari: share sheet lets user tap "Save Image" → Photos
+        // navigator.share with files is supported on iOS 15+
+        if (navigator.share) {
+          await navigator.share({ files: [file], title: card!.name });
+        } else {
+          // Older iOS: open image in new tab — long-press → Save to Photos
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank");
+          URL.revokeObjectURL(url);
+        }
       } else {
-        // Desktop / fallback: trigger download
+        // Android / Desktop: trigger direct download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = filename;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
       setSaveStatus("ok");
-    } catch {
-      // User cancelled share sheet or fetch failed — open image in new tab
-      const imageUrl2 =
-        card?.image_uris?.normal ??
-        card?.card_faces?.[0]?.image_uris?.normal;
-      if (imageUrl2) window.open(imageUrl2, "_blank");
-      setSaveStatus("err");
+    } catch (err) {
+      // User cancelled the iOS share sheet — treat as success (not an error)
+      const cancelled =
+        err instanceof Error &&
+        (err.name === "AbortError" || err.message.includes("cancel"));
+      setSaveStatus(cancelled ? "ok" : "err");
     } finally {
       setSavingImage(false);
       if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
