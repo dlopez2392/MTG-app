@@ -1,7 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
+import { Suspense } from "react";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import HeroBanner from "@/components/layout/HeroBanner";
@@ -226,7 +225,7 @@ function WinRateBar({ wins, losses, draws }: { wins: number; losses: number; dra
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
-export default function GamesPage() {
+function GamesPageInner() {
   const searchParams = useSearchParams();
   const { entries, addEntry, deleteEntry } = useGameLog();
   const { allDecks } = useDecks();
@@ -479,5 +478,13 @@ export default function GamesPage() {
         />
       </Modal>
     </>
+  );
+}
+
+export default function GamesPage() {
+  return (
+    <Suspense>
+      <GamesPageInner />
+    </Suspense>
   );
 }

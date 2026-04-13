@@ -1,7 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
+import { Suspense } from "react";
 import { useState, use, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
@@ -23,7 +22,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils/cn";
 import type { DeckCategory } from "@/types/deck";
 
-export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -398,5 +397,13 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </PageContainer>
     </>
+  );
+}
+
+export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense>
+      <CardDetailPageInner params={params} />
+    </Suspense>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
+import { Suspense } from "react";
 import { useState, useCallback, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
@@ -233,7 +232,7 @@ function PackageCard({
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
-export default function PackagesPage() {
+function PackagesPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const deckId = searchParams.get("deckId");
@@ -321,5 +320,13 @@ export default function PackagesPage() {
 
       <Toast message={toast.message} visible={toast.visible} />
     </>
+  );
+}
+
+export default function PackagesPage() {
+  return (
+    <Suspense>
+      <PackagesPageInner />
+    </Suspense>
   );
 }
