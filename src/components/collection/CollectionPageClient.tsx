@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useCollection } from "@/hooks/useCollection";
+import { useValueHistory } from "@/hooks/useValueHistory";
 import HeroBanner from "@/components/layout/HeroBanner";
 import CollectionSummary from "@/components/collection/CollectionSummary";
+import ValueHistoryChart from "@/components/collection/ValueHistoryChart";
+import CsvImportExport from "@/components/collection/CsvImportExport";
 import BinderGrid from "@/components/collection/BinderGrid";
+import SetCompletionTab from "@/components/collection/SetCompletionTab";
 import Tabs from "@/components/ui/Tabs";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -19,7 +23,7 @@ const COLLECTION_ICON = (
 
 const TABS = [
   { value: "collection", label: "Collection" },
-  { value: "lists", label: "Lists" },
+  { value: "sets",       label: "Set Completion" },
 ];
 
 export default function CollectionPageClient() {
@@ -28,7 +32,33 @@ export default function CollectionPageClient() {
   const [newBinderName, setNewBinderName] = useState("");
   const [binderToDelete, setBinderToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  const { allBinders, allCards, createBinder, deleteBinder } = useCollection();
+  const { allBinders, allCards, createBinder, deleteBinder, addCardToBinder } = useCollection();
+  const { history, recordSnapshot } = useValueHistory();
+
+  // Compute total value and record a daily snapshot
+  const totalValue = useMemo(() => {
+    return allCards.reduce((sum, c) => sum + parseFloat(c.priceUsd ?? "0") * c.quantity, 0);
+  }, [allCards]);
+
+  const totalCards = useMemo(() => {
+    return allCards.reduce((sum, c) => sum + c.quantity, 0);
+  }, [allCards]);
+
+  useEffect(() => {
+    if (allCards.length > 0) recordSnapshot(totalValue, totalCards);
+  }, [totalValue, totalCards, recordSnapshot]);
+
+  // CSV helpers
+  const binderNameToId = useRef<Map<string, string>>(new Map());
+  async function getOrCreateBinder(name: string): Promise<string> {
+    const cached = binderNameToId.current.get(name);
+    if (cached) return cached;
+    const existing = allBinders.find((b) => b.name.toLowerCase() === name.toLowerCase());
+    if (existing?.id) { binderNameToId.current.set(name, existing.id); return existing.id; }
+    const id = await createBinder(name);
+    binderNameToId.current.set(name, id);
+    return id;
+  }
 
   async function handleCreate() {
     const name = newBinderName.trim();
@@ -61,28 +91,52 @@ export default function CollectionPageClient() {
       </div>
 
       <div className="px-4 pb-3">
-        <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <ValueHistoryChart history={history} />
+      </div>
+
+      <div className="px-4 pb-3 flex items-center justify-between gap-2">
+        <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} className="flex-1" />
+        <CsvImportExport
+          allCards={allCards}
+          allBinders={allBinders}
+          getOrCreateBinder={getOrCreateBinder}
+          addCard={async (binderId, row) => {
+            await addCardToBinder(binderId, {
+              scryfallId: row.scryfallId,
+              name: row.name,
+              quantity: row.quantity,
+              condition: row.condition as import("@/types/collection").CardCondition,
+              isFoil: row.foil,
+              setCode: row.setCode || undefined,
+              setName: row.setName || undefined,
+              collectorNumber: row.collectorNumber || undefined,
+              priceUsd: row.priceUsd || undefined,
+              typeLine: row.typeLine || undefined,
+              rarity: row.rarity as import("@/types/collection").CollectionCard["rarity"] || undefined,
+            });
+          }}
+        />
       </div>
 
       <div className="flex-1 px-4">
         {activeTab === "collection" ? (
           <BinderGrid binders={allBinders} allCards={allCards} onDeleteBinder={handleDeleteBinder} />
         ) : (
-          <div className="text-center py-12 text-text-muted text-sm">
-            Lists coming soon
-          </div>
+          <SetCompletionTab allCards={allCards} />
         )}
       </div>
 
-      <button
-        onClick={() => setShowCreate(true)}
-        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-accent hover:bg-accent-dark text-black flex items-center justify-center shadow-lg transition-colors"
-        aria-label="Create new binder"
-      >
-        <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-      </button>
+      {activeTab === "collection" && (
+        <button
+          onClick={() => setShowCreate(true)}
+          className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-accent hover:bg-accent-dark text-black flex items-center justify-center shadow-lg transition-colors"
+          aria-label="Create new binder"
+        >
+          <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+      )}
 
       <ConfirmModal
         open={!!binderToDelete}

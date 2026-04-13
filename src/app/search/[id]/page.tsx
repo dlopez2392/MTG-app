@@ -17,6 +17,8 @@ import { useCollection } from "@/hooks/useCollection";
 import { useCardCombos } from "@/hooks/useCardCombos";
 import CombosPanel from "@/components/cards/CombosPanel";
 import CardPricesPanel from "@/components/cards/CardPricesPanel";
+import { useWishlist } from "@/hooks/useWishlist";
+import { cn } from "@/lib/utils/cn";
 import type { DeckCategory } from "@/types/deck";
 
 export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,6 +28,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   const { card, rulings, printings, loading, error } = useCardDetail(id);
   const { addCardToDeck } = useDecks();
   const { addCardToBinder } = useCollection();
+  const { isOnWishlist, addItem: addToWishlist, removeItem: removeFromWishlist, items: wishlistItems } = useWishlist();
   const [activeTab, setActiveTab] = useState("versions");
   const comboState = useCardCombos(card?.name ?? "");
 
@@ -147,6 +150,27 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, [card, sharing]);
 
+  const wishlisted = card ? isOnWishlist(card.id) : false;
+  const wishlistId = card ? wishlistItems.find((i) => i.scryfallId === card.id)?.id : undefined;
+
+  const handleToggleWishlist = useCallback(() => {
+    if (!card) return;
+    if (wishlisted && wishlistId) {
+      removeFromWishlist(wishlistId);
+    } else {
+      const imageUri = card.image_uris?.small ?? card.card_faces?.[0]?.image_uris?.small;
+      addToWishlist({
+        scryfallId: card.id,
+        name: card.name,
+        imageUri,
+        typeLine: card.type_line,
+        manaCost: card.mana_cost ?? card.card_faces?.[0]?.mana_cost,
+        rarity: card.rarity,
+        priceUsd: card.prices?.usd ?? undefined,
+      });
+    }
+  }, [card, wishlisted, wishlistId, addToWishlist, removeFromWishlist]);
+
   if (loading) {
     return (
       <>
@@ -189,8 +213,24 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
           <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0 flex flex-col gap-2">
             <CardImage card={card} size="normal" />
 
-            {/* Save / Share */}
+            {/* Wishlist / Save / Share */}
             <div className="flex gap-2">
+              {/* Wishlist */}
+              <button
+                onClick={handleToggleWishlist}
+                title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                className={cn(
+                  "flex items-center justify-center py-2 px-2.5 rounded-xl border transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+                  wishlisted
+                    ? "bg-pink-500/10 border-pink-500/40 text-pink-400"
+                    : "bg-bg-card border-border text-text-secondary hover:text-pink-400 hover:border-pink-500/40"
+                )}
+              >
+                <svg className="w-4 h-4" fill={wishlisted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                </svg>
+              </button>
+
               {/* Save Image */}
               <button
                 onClick={handleSaveImage}
