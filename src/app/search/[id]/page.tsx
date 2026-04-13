@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useCallback } from "react";
+import { useState, use, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
@@ -35,6 +35,10 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
   }, [comboState]);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [addedCollectionFeedback, setAddedCollectionFeedback] = useState(false);
+  const [savingImage, setSavingImage] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "ok" | "err">("idle");
+  const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const deckId = searchParams.get("deckId");
   const category = (searchParams.get("category") ?? "main") as DeckCategory;
@@ -68,6 +72,69 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       alert(`Failed to add card: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   }, [card, binderId, addCardToBinder]);
+
+  const handleSaveImage = useCallback(async () => {
+    const imageUrl =
+      card?.image_uris?.normal ??
+      card?.card_faces?.[0]?.image_uris?.normal;
+    if (!imageUrl || savingImage) return;
+    setSavingImage(true);
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const filename = `${card!.name.replace(/[^a-z0-9]/gi, "_")}.jpg`;
+      const file = new File([blob], filename, { type: blob.type });
+
+      // iOS 15+ / Android: share file directly into Photos
+      if (
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({ files: [file], title: card!.name });
+      } else {
+        // Desktop / fallback: trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      setSaveStatus("ok");
+    } catch {
+      // User cancelled share sheet or fetch failed — open image in new tab
+      const imageUrl2 =
+        card?.image_uris?.normal ??
+        card?.card_faces?.[0]?.image_uris?.normal;
+      if (imageUrl2) window.open(imageUrl2, "_blank");
+      setSaveStatus("err");
+    } finally {
+      setSavingImage(false);
+      if (saveStatusTimer.current) clearTimeout(saveStatusTimer.current);
+      saveStatusTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
+    }
+  }, [card, savingImage]);
+
+  const handleShare = useCallback(async () => {
+    if (!card || sharing) return;
+    setSharing(true);
+    const shareData = {
+      title: card.name,
+      text: `${card.name} · ${card.type_line} · ${card.set_name} (${card.set.toUpperCase()})`,
+      url: card.scryfall_uri,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(card.scryfall_uri);
+      }
+    } catch {
+      // user dismissed — no-op
+    } finally {
+      setSharing(false);
+    }
+  }, [card, sharing]);
 
   if (loading) {
     return (
@@ -107,9 +174,49 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       <TopBar title={card.name} showBack />
       <PageContainer>
         <div className="flex flex-col sm:flex-row gap-6">
-          {/* Card Image — constrained width so info column always has room */}
-          <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0">
+          {/* Card Image + action buttons */}
+          <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0 flex flex-col gap-2">
             <CardImage card={card} size="normal" />
+
+            {/* Save / Share */}
+            <div className="flex gap-2">
+              {/* Save Image */}
+              <button
+                onClick={handleSaveImage}
+                disabled={savingImage}
+                title="Save image"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-accent/40 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+              >
+                {saveStatus === "ok" ? (
+                  <svg className="w-4 h-4 text-legal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : savingImage ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                )}
+                <span className="text-xs font-medium">Save</span>
+              </button>
+
+              {/* Share */}
+              <button
+                onClick={handleShare}
+                disabled={sharing}
+                title="Share card"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-accent/40 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+                <span className="text-xs font-medium">Share</span>
+              </button>
+            </div>
           </div>
 
           {/* Card Info */}
