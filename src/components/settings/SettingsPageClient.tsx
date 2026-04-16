@@ -361,6 +361,9 @@ export default function SettingsPageClient() {
                 Report a bug / send feedback
               </button>
             </div>
+            <p className="text-xs text-text-muted italic border-t border-border pt-3">
+              MTG Houdini is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
+            </p>
             <p className="text-xs text-text-muted pt-1 border-t border-border">
               <span className="font-semibold text-text-secondary">v0.1.0</span> — Initial release. Life counter, deck builder, collection manager, card scanner.
             </p>
