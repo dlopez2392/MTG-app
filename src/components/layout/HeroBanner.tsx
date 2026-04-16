@@ -63,7 +63,7 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
       </div>
 
       {/* Content */}
-      <div className="relative z-10 px-4 pt-8 pb-5 max-w-2xl mx-auto">
+      <div className="relative z-20 px-4 pt-8 pb-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-1">
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"

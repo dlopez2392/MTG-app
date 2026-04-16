@@ -151,6 +151,8 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
     }
   }, [card, sharing]);
 
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const wishlisted = card ? isOnWishlist(card.id) : false;
   const wishlistId = card ? wishlistItems.find((i) => i.scryfallId === card.id)?.id : undefined;
 
@@ -212,7 +214,13 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Card Image + action buttons */}
           <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0 flex flex-col gap-2">
-            <CardImage card={card} size="normal" />
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="block w-full rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-zoom-in"
+              aria-label="Enlarge card image"
+            >
+              <CardImage card={card} size="normal" />
+            </button>
 
             {/* Wishlist / Save / Share */}
             <div className="flex gap-2">
@@ -354,6 +362,30 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
         </div>
+
+        {/* Lightbox */}
+        {lightboxOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <div
+              className="relative max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CardImage card={card} size="large" />
+              <button
+                onClick={() => setLightboxOpen(false)}
+                className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                aria-label="Close"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="mt-6">
