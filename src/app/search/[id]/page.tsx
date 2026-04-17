@@ -17,6 +17,7 @@ import { useDecks } from "@/hooks/useDecks";
 import { useCollection } from "@/hooks/useCollection";
 import { useCardCombos } from "@/hooks/useCardCombos";
 import CombosPanel from "@/components/cards/CombosPanel";
+import DraftStatsPanel from "@/components/cards/DraftStatsPanel";
 import CardPricesPanel from "@/components/cards/CardPricesPanel";
 import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils/cn";
@@ -394,6 +395,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
               { value: "versions", label: "Printings" },
               { value: "rulings", label: "Rulings" },
               { value: "combos", label: `Combos${comboState.loaded && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
+              { value: "draft", label: "Draft" },
             ]}
             active={activeTab}
             onChange={handleTabChange}
@@ -414,6 +416,10 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               )}
             </div>
+          )}
+
+          {activeTab === "draft" && (
+            <DraftStatsPanel cardName={card.name} setCode={card.set} />
           )}
 
           {activeTab === "combos" && (
