@@ -108,7 +108,7 @@ export default function ScanPageClient() {
   const {
     videoRef, canvasRef,
     isStreaming, isProcessing,
-    ocrText, suggestions, matchedCard, error,
+    statusText, suggestions, matchedCard, error, hasHashIndex,
     scanList, totalValue, addToScanList, removeFromScanList,
     updateScanListQty, toggleItemFoil, clearScanList,
     autoScan, setAutoScan,
@@ -158,25 +158,46 @@ export default function ScanPageClient() {
     const file = e.target.files?.[0];
     if (!file) return;
     setFileMode(true);
+    setCameraStarted(true);
     const img = new Image();
     img.onload = async () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      const cropY = Math.floor(img.height * 0.05);
-      const cropH = Math.floor(img.height * 0.13);
-      const cropX = Math.floor(img.width * 0.05);
-      const cropW = Math.floor(img.width * 0.75);
-      canvas.width = cropW;
-      canvas.height = cropH;
+      // Crop artwork region — mirrors hook's proportions
+      const artX = Math.floor(img.width * 0.07);
+      const artY = Math.floor(img.height * 0.14);
+      const artW = Math.floor(img.width * 0.86);
+      const artH = Math.floor(img.height * 0.43);
+      canvas.width = artW;
+      canvas.height = artH;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-      const { preprocessImageData } = await import("@/lib/ocr/cardNameExtractor");
-      preprocessImageData(ctx, cropW, cropH);
-      await captureAndRecognize();
+      ctx.drawImage(img, artX, artY, artW, artH, 0, 0, artW, artH);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+
+      try {
+        const res = await fetch("/api/scan/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const result = await res.json() as {
+          indexed: boolean;
+          matches?: Array<{ id: string; name: string; setCode: string; distance: number }>;
+        };
+        if (result.indexed && result.matches && result.matches.length > 0) {
+          const best = result.matches[0];
+          const cardRes = await fetch(`/api/scryfall/cards/${best.id}`);
+          if (cardRes.ok) {
+            const card = await cardRes.json();
+            addToScanList(card);
+          }
+        }
+      } catch {
+        // silently ignore — user can try camera
+      }
     };
     img.src = URL.createObjectURL(file);
-    setCameraStarted(true);
   }
 
   function handleAddMatchedToList(card: ScryfallCard) {
@@ -258,7 +279,9 @@ export default function ScanPageClient() {
               Point your camera at a Magic card to identify it instantly.
             </p>
             <p className="text-xs text-text-muted">
-              Works best with good lighting and the card name clearly visible.
+              {hasHashIndex
+                ? "Works best with good lighting — center the card artwork in the frame."
+                : "Works best with good lighting and the card name clearly visible."}
             </p>
           </div>
 
@@ -346,34 +369,32 @@ export default function ScanPageClient() {
         </button>
       </div>
 
-      {/* ── Card name guide box ── */}
+      {/* ── Artwork guide box ── */}
       {!matchedCard && (
         <div className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-start"
-          style={{ paddingTop: "18%" }}
+          style={{ paddingTop: "14%" }}
         >
           <div
-            className="border-2 rounded-lg"
+            className="border-2 rounded-xl"
             style={{
-              width: "78%",
-              height: "14%",
+              width: "86%",
+              height: "43%",
               borderColor: autoScan ? "#22c55e" : "#ED9A57",
-              boxShadow: `0 0 20px ${autoScan ? "rgba(34,197,94,0.3)" : "rgba(237,154,87,0.3)"}`,
+              boxShadow: `0 0 24px ${autoScan ? "rgba(34,197,94,0.35)" : "rgba(237,154,87,0.35)"}`,
             }}
           />
           <p className="mt-2 text-xs font-medium px-3 py-1 rounded-full bg-black/60"
             style={{ color: autoScan ? "#22c55e" : "#ED9A57" }}
           >
-            {autoScan ? "Auto-scanning…" : "Align card name here"}
+            {autoScan ? "Auto-scanning…" : hasHashIndex ? "Center card artwork here" : "Align card name at top"}
           </p>
         </div>
       )}
 
-      {/* ── OCR text feedback ── */}
-      {ocrText && !matchedCard && !isProcessing && (
-        <div className="absolute z-20 top-[35%] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/70 rounded-lg">
-          <p className="text-xs text-white/70">
-            Read: <span className="text-white font-medium">{ocrText}</span>
-          </p>
+      {/* ── Status text feedback ── */}
+      {statusText && !matchedCard && !isProcessing && (
+        <div className="absolute z-20 top-[60%] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/70 rounded-lg whitespace-nowrap">
+          <p className="text-xs text-white/80 font-medium">{statusText}</p>
         </div>
       )}
 
@@ -386,7 +407,7 @@ export default function ScanPageClient() {
               Try Again
             </button>
             <button
-              onClick={() => router.push(`/search?q=${encodeURIComponent(ocrText)}`)}
+              onClick={() => router.push("/search")}
               className="px-4 py-1.5 rounded-lg bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors"
             >
               Search Manually

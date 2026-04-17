@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { cleanOcrText, grayscaleEnhance, preprocessImageData } from "@/lib/ocr/cardNameExtractor";
 import type { ScryfallCard } from "@/types/card";
 
 export interface CardScanSuggestion {
@@ -24,10 +23,11 @@ interface UseCameraScannerReturn {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   isStreaming: boolean;
   isProcessing: boolean;
-  ocrText: string;
+  statusText: string;
   suggestions: CardScanSuggestion[];
   matchedCard: ScryfallCard | null;
   error: string;
+  hasHashIndex: boolean;
   // Scan list
   scanList: ScanListItem[];
   totalValue: number;
@@ -47,8 +47,69 @@ interface UseCameraScannerReturn {
   reset: () => void;
 }
 
-const OCR_SCALE = 4;
 let listIdCounter = 0;
+
+// ── Browser-side dHash ────────────────────────────────────────────────────────
+// Mirrors the server-side algorithm in src/lib/scan/dhash.ts
+
+function computeDHashFromCanvas(
+  source: HTMLVideoElement | HTMLCanvasElement,
+  cropX: number, cropY: number, cropW: number, cropH: number
+): string {
+  const tmp = document.createElement("canvas");
+  tmp.width = 9;
+  tmp.height = 8;
+  const ctx = tmp.getContext("2d")!;
+  ctx.drawImage(source, cropX, cropY, cropW, cropH, 0, 0, 9, 8);
+  const { data } = ctx.getImageData(0, 0, 9, 8);
+
+  let lo = 0, hi = 0;
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const i1 = (y * 9 + x) * 4;
+      const i2 = (y * 9 + x + 1) * 4;
+      const g1 = data[i1] * 0.299 + data[i1 + 1] * 0.587 + data[i1 + 2] * 0.114;
+      const g2 = data[i2] * 0.299 + data[i2 + 1] * 0.587 + data[i2 + 2] * 0.114;
+      const bit = y * 8 + x;
+      if (g1 > g2) {
+        if (bit < 32) lo |= 1 << bit;
+        else hi |= 1 << (bit - 32);
+      }
+    }
+  }
+  return (hi >>> 0).toString(16).padStart(8, "0") +
+         (lo >>> 0).toString(16).padStart(8, "0");
+}
+
+// Crop a JPEG from the video at the artwork region and return as base64 data URL
+function cropArtworkToDataUrl(
+  video: HTMLVideoElement,
+  canvas: HTMLCanvasElement,
+  artX: number, artY: number, artW: number, artH: number
+): string {
+  canvas.width = artW;
+  canvas.height = artH;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(video, artX, artY, artW, artH, 0, 0, artW, artH);
+  return canvas.toDataURL("image/jpeg", 0.8);
+}
+
+// ── OCR fallback (Tesseract) ──────────────────────────────────────────────────
+
+function cleanOcrText(raw: string): string {
+  let text = raw.trim()
+    .replace(/[|]/g, "l")
+    .replace(/1(?=[a-z])/gi, "l")
+    .replace(/0(?=[a-z])/gi, "o")
+    .replace(/\{[^}]*\}/g, "")
+    .replace(/[^a-zA-Z0-9\s\-',.\/]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  text = text.replace(/\s*\/\s*/g, " // ").replace(/\/\/ \/\//g, "//");
+  return text.length < 2 ? "" : text;
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useCameraScanner(): UseCameraScannerReturn {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -61,12 +122,25 @@ export function useCameraScanner(): UseCameraScannerReturn {
 
   const [isStreaming, setIsStreaming] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [ocrText, setOcrText] = useState("");
+  const [statusText, setStatusText] = useState("");
   const [suggestions, setSuggestions] = useState<CardScanSuggestion[]>([]);
   const [matchedCard, setMatchedCard] = useState<ScryfallCard | null>(null);
   const [error, setError] = useState("");
   const [scanList, setScanList] = useState<ScanListItem[]>([]);
   const [autoScan, setAutoScan] = useState(false);
+  const [hasHashIndex, setHasHashIndex] = useState(false);
+
+  // Check if hash index exists on mount
+  useEffect(() => {
+    fetch("/api/scan/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: "data:image/jpeg;base64,/9j/4AAQ" }), // tiny probe
+    })
+      .then(r => r.json())
+      .then(d => setHasHashIndex(d.indexed === true))
+      .catch(() => setHasHashIndex(false));
+  }, []);
 
   const totalValue = scanList.reduce((sum, item) => {
     const price = parseFloat(
@@ -75,10 +149,9 @@ export function useCameraScanner(): UseCameraScannerReturn {
     return sum + price * item.quantity;
   }, 0);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current?.getTracks().forEach(t => t.stop());
       workerRef.current?.terminate();
       if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
     };
@@ -88,8 +161,11 @@ export function useCameraScanner(): UseCameraScannerReturn {
     setError("");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        // "ideal" (not exact) so iOS Safari falls back gracefully if back camera unavailable
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280, max: 1920 }, height: { ideal: 720, max: 1080 } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -102,11 +178,9 @@ export function useCameraScanner(): UseCameraScannerReturn {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("NotAllowed") || msg.includes("Permission")) {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        setError(
-          isIOS
-            ? "Camera access denied. Go to Settings > Safari > Camera and allow access."
-            : "Camera access denied. Please allow camera permissions in your browser."
-        );
+        setError(isIOS
+          ? "Camera access denied. Go to Settings > Safari > Camera and allow access."
+          : "Camera access denied. Please allow camera permissions in your browser.");
       } else if (msg.includes("NotFound")) {
         setError("No camera found on this device.");
       } else {
@@ -116,89 +190,84 @@ export function useCameraScanner(): UseCameraScannerReturn {
   }, []);
 
   const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach(t => t.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setIsStreaming(false);
     if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
   }, []);
 
-  const getWorker = useCallback(async () => {
+  // Lazy-load Tesseract worker only when needed (OCR fallback)
+  const getOcrWorker = useCallback(async () => {
     if (workerRef.current) return workerRef.current;
     const Tesseract = await import("tesseract.js");
     const worker = await Tesseract.createWorker("eng");
     await worker.setParameters({
       tessedit_pageseg_mode: "7" as never,
-      tessedit_char_whitelist:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '-,./",
+      tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '-,./",
     });
     workerRef.current = worker;
     return worker;
   }, []);
 
-  async function runOcr(worker: Awaited<ReturnType<typeof getWorker>>, canvas: HTMLCanvasElement) {
-    const { data } = await worker.recognize(canvas);
-    return { text: cleanOcrText(data.text), confidence: data.confidence };
-  }
+  // ── OCR fallback ─────────────────────────────────────────────────────────────
 
-  function drawCrop(
-    source: HTMLVideoElement | HTMLImageElement,
-    canvas: HTMLCanvasElement,
-    sx: number, sy: number, sw: number, sh: number
-  ) {
-    const dw = sw * OCR_SCALE;
-    const dh = sh * OCR_SCALE;
-    canvas.width = dw;
-    canvas.height = dh;
+  const runOcrFallback = useCallback(async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
+    setStatusText("Trying OCR fallback…");
+    const vw = video.videoWidth || 640;
+    const vh = video.videoHeight || 480;
+    const worker = await getOcrWorker();
+
+    // Crop the name-bar region (top ~14% of frame)
+    const scale = 4;
+    const sx = Math.floor(vw * 0.04);
+    const sy = Math.floor(vh * 0.04);
+    const sw = Math.floor(vw * 0.72);
+    const sh = Math.floor(vh * 0.14);
+    canvas.width = sw * scale;
+    canvas.height = sh * scale;
     const ctx = canvas.getContext("2d")!;
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(source, sx, sy, sw, sh, 0, 0, dw, dh);
-    return { ctx, dw, dh };
-  }
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw * scale, sh * scale);
 
-  function pickBest(attempts: Array<{ text: string; confidence: number }>): string {
-    let best = attempts[0];
-    for (const a of attempts) {
-      if (
-        a.text.length > best.text.length ||
-        (a.text.length === best.text.length && a.confidence > best.confidence)
-      ) best = a;
+    // Greyscale + contrast
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < img.data.length; i += 4) {
+      let g = img.data[i] * 0.299 + img.data[i + 1] * 0.587 + img.data[i + 2] * 0.114;
+      g = Math.min(255, Math.max(0, (g - 128) * 1.4 + 128));
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = g;
     }
-    return best.text;
-  }
+    ctx.putImageData(img, 0, 0);
 
-  // ── Scan list actions ──────────────────────────────────────────────────────
+    const { data } = await worker.recognize(canvas);
+    return cleanOcrText(data.text);
+  }, [getOcrWorker]);
+
+  // ── Scan list actions ─────────────────────────────────────────────────────────
 
   const addToScanList = useCallback((card: ScryfallCard) => {
-    setScanList((prev) => {
-      const existing = prev.find((i) => i.card.id === card.id && !i.isFoil);
-      if (existing) {
-        return prev.map((i) => i.listId === existing.listId ? { ...i, quantity: i.quantity + 1 } : i);
-      }
+    setScanList(prev => {
+      const existing = prev.find(i => i.card.id === card.id && !i.isFoil);
+      if (existing) return prev.map(i => i.listId === existing.listId ? { ...i, quantity: i.quantity + 1 } : i);
       return [{ listId: `scan-${++listIdCounter}`, card, quantity: 1, isFoil: false }, ...prev];
     });
   }, []);
 
   const removeFromScanList = useCallback((listId: string) => {
-    setScanList((prev) => prev.filter((i) => i.listId !== listId));
+    setScanList(prev => prev.filter(i => i.listId !== listId));
   }, []);
 
   const updateScanListQty = useCallback((listId: string, qty: number) => {
-    if (qty <= 0) {
-      setScanList((prev) => prev.filter((i) => i.listId !== listId));
-    } else {
-      setScanList((prev) => prev.map((i) => i.listId === listId ? { ...i, quantity: qty } : i));
-    }
+    if (qty <= 0) setScanList(prev => prev.filter(i => i.listId !== listId));
+    else setScanList(prev => prev.map(i => i.listId === listId ? { ...i, quantity: qty } : i));
   }, []);
 
   const toggleItemFoil = useCallback((listId: string) => {
-    setScanList((prev) => prev.map((i) => i.listId === listId ? { ...i, isFoil: !i.isFoil } : i));
+    setScanList(prev => prev.map(i => i.listId === listId ? { ...i, isFoil: !i.isFoil } : i));
   }, []);
 
   const clearScanList = useCallback(() => setScanList([]), []);
 
-  // ── Core scan logic ────────────────────────────────────────────────────────
+  // ── Core capture + recognize ──────────────────────────────────────────────────
 
   const captureAndRecognize = useCallback(async () => {
     const video = videoRef.current;
@@ -208,99 +277,146 @@ export function useCameraScanner(): UseCameraScannerReturn {
     isProcessingRef.current = true;
     setIsProcessing(true);
     setError("");
-    setOcrText("");
+    setStatusText("Scanning…");
     setSuggestions([]);
     setMatchedCard(null);
 
     try {
       const vw = video.videoWidth || 640;
       const vh = video.videoHeight || 480;
-      const worker = await getWorker();
 
-      const attempts: Array<{ text: string; confidence: number }> = [];
+      // Artwork region: roughly centre 40-90% width, 14-57% height of the card
+      // Guide overlay is centred in the viewport — we use fixed proportions of the video frame
+      const artX = Math.floor(vw * 0.07);
+      const artY = Math.floor(vh * 0.14);
+      const artW = Math.floor(vw * 0.86);
+      const artH = Math.floor(vh * 0.43);
 
-      const axA = Math.floor(vw * 0.04);
-      const ayA = Math.floor(vh * 0.04);
-      const awA = Math.floor(vw * 0.72);
-      const ahA = Math.floor(vh * 0.14);
+      // ── Phase 1: Visual hash matching ────────────────────────────────────────
+      if (hasHashIndex) {
+        setStatusText("Computing visual hash…");
+        const dataUrl = cropArtworkToDataUrl(video, canvas, artX, artY, artW, artH);
 
-      const axB = Math.floor(vw * 0.04);
-      const ayB = Math.floor(vh * 0.08);
-      const awB = Math.floor(vw * 0.72);
-      const ahB = Math.floor(vh * 0.14);
+        const res = await fetch("/api/scan/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+        const result = await res.json() as {
+          indexed: boolean;
+          matches?: Array<{ id: string; name: string; setCode: string; distance: number }>;
+        };
 
-      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); grayscaleEnhance(ctx, dw, dh); attempts.push(await runOcr(worker, canvas)); }
-      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); preprocessImageData(ctx, dw, dh, false, 128); attempts.push(await runOcr(worker, canvas)); }
-      { const { ctx, dw, dh } = drawCrop(video, canvas, axA, ayA, awA, ahA); preprocessImageData(ctx, dw, dh, true, 128); attempts.push(await runOcr(worker, canvas)); }
-      { const { ctx, dw, dh } = drawCrop(video, canvas, axB, ayB, awB, ahB); grayscaleEnhance(ctx, dw, dh); attempts.push(await runOcr(worker, canvas)); }
+        if (result.indexed && result.matches && result.matches.length > 0) {
+          const best = result.matches[0];
 
-      const cleaned = pickBest(attempts);
-      setOcrText(cleaned);
-
-      if (!cleaned) {
-        if (!autoScan) setError("Couldn't read the card name. Align the name in the box and try again.");
-        return;
-      }
-
-      const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(cleaned)}`);
-      if (fuzzyRes.ok) {
-        const card: ScryfallCard = await fuzzyRes.json();
-        // In auto-scan: skip if same card as last match (dedup)
-        if (autoScan && card.name === lastMatchedNameRef.current) return;
-        lastMatchedNameRef.current = card.name;
-        setMatchedCard(card);
-        return;
-      }
-
-      const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(cleaned)}`);
-      if (suggestRes.ok) {
-        const data: CardScanSuggestion[] = await suggestRes.json();
-        if (data.length > 0) {
-          if (data.length === 1) {
-            const res = await fetch(`/api/scryfall/cards/${data[0].id}`);
-            if (res.ok) {
-              const card: ScryfallCard = await res.json();
+          if (best.distance <= 10) {
+            // Strong match — fetch full card data
+            setStatusText("Match found!");
+            const cardRes = await fetch(`/api/scryfall/cards/${best.id}`);
+            if (cardRes.ok) {
+              const card: ScryfallCard = await cardRes.json();
               if (autoScan && card.name === lastMatchedNameRef.current) return;
               lastMatchedNameRef.current = card.name;
               setMatchedCard(card);
+              setStatusText("");
+              return;
             }
-          } else {
-            setSuggestions(data.slice(0, 6));
           }
+
+          if (best.distance <= 20 && result.matches.length > 1) {
+            // Possible matches — show picker
+            setStatusText("Multiple possible matches");
+            const pickerItems = await Promise.all(
+              result.matches.slice(0, 5).map(async m => {
+                const r = await fetch(`/api/scryfall/cards/${m.id}`);
+                if (!r.ok) return null;
+                const c: ScryfallCard = await r.json();
+                return {
+                  id: c.id,
+                  name: c.name,
+                  imageUri: c.image_uris?.small ?? c.card_faces?.[0]?.image_uris?.small ?? null,
+                  setName: c.set_name,
+                  prices: { usd: c.prices?.usd },
+                };
+              })
+            );
+            setSuggestions(pickerItems.filter(Boolean) as CardScanSuggestion[]);
+            setStatusText("");
+            return;
+          }
+        }
+      }
+
+      // ── Phase 2: OCR fallback ─────────────────────────────────────────────────
+      const ocrText = await runOcrFallback(video, canvas);
+
+      if (!ocrText) {
+        if (!autoScan) setError("Couldn't read the card. Align the artwork in the frame and try again.");
+        return;
+      }
+
+      setStatusText("Searching by name…");
+
+      // Fuzzy name search
+      const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(ocrText)}`);
+      if (fuzzyRes.ok) {
+        const card: ScryfallCard = await fuzzyRes.json();
+        if (autoScan && card.name === lastMatchedNameRef.current) return;
+        lastMatchedNameRef.current = card.name;
+        setMatchedCard(card);
+        setStatusText("");
+        return;
+      }
+
+      // Autocomplete suggest
+      const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(ocrText)}`);
+      if (suggestRes.ok) {
+        const data: CardScanSuggestion[] = await suggestRes.json();
+        if (data.length === 1) {
+          const r = await fetch(`/api/scryfall/cards/${data[0].id}`);
+          if (r.ok) {
+            const card: ScryfallCard = await r.json();
+            if (autoScan && card.name === lastMatchedNameRef.current) return;
+            lastMatchedNameRef.current = card.name;
+            setMatchedCard(card);
+            setStatusText("");
+            return;
+          }
+        } else if (data.length > 1) {
+          setSuggestions(data.slice(0, 6));
+          setStatusText("");
           return;
         }
       }
 
       if (!autoScan) {
-        setError(`Read "${cleaned}" but couldn't find a matching card. Try again or search manually.`);
+        setError(`Couldn't identify this card. Try adjusting the angle or lighting.`);
       }
     } catch (err) {
       if (!autoScan) setError(err instanceof Error ? err.message : "Scan failed. Please try again.");
     } finally {
       isProcessingRef.current = false;
       setIsProcessing(false);
+      if (!matchedCard) setStatusText("");
     }
-  }, [getWorker, autoScan]);
+  }, [hasHashIndex, runOcrFallback, autoScan]);
 
-  // ── Auto-scan loop ─────────────────────────────────────────────────────────
+  // ── Auto-scan loop ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!autoScan || !isStreaming) {
       if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
       return;
     }
-
     function scheduleNext() {
       autoScanTimerRef.current = setTimeout(async () => {
         if (!isProcessingRef.current) await captureAndRecognize();
         scheduleNext();
       }, 2500);
     }
-
     scheduleNext();
-    return () => {
-      if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current);
-    };
+    return () => { if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current); };
   }, [autoScan, isStreaming, captureAndRecognize]);
 
   const selectSuggestion = useCallback(async (id: string) => {
@@ -318,14 +434,14 @@ export function useCameraScanner(): UseCameraScannerReturn {
   const reset = useCallback(() => {
     setMatchedCard(null);
     setSuggestions([]);
-    setOcrText("");
+    setStatusText("");
     setError("");
     lastMatchedNameRef.current = "";
   }, []);
 
   return {
-    videoRef, canvasRef, isStreaming, isProcessing,
-    ocrText, suggestions, matchedCard, error,
+    videoRef, canvasRef, isStreaming, isProcessing, statusText,
+    suggestions, matchedCard, error, hasHashIndex,
     scanList, totalValue, addToScanList, removeFromScanList,
     updateScanListQty, toggleItemFoil, clearScanList,
     autoScan, setAutoScan,
