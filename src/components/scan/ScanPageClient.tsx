@@ -320,20 +320,20 @@ export default function ScanPageClient() {
 
       {/* Dark vignette edges */}
       <div className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)" }}
+        style={{ background: "radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.5) 100%)" }}
       />
 
-      {/* Processing overlay */}
+      {/* Processing overlay — non-blocking indicator */}
       {isProcessing && (
-        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3 z-10">
-          <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-white font-medium">Scanning…</p>
+        <div className="absolute z-30 top-28 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-black/60 backdrop-blur-sm">
+          <div className="w-5 h-5 border-2 border-white/80 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-white/90 font-medium">Scanning…</p>
         </div>
       )}
 
       {/* ── Top bar ── */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pt-12 pb-4"
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.75), transparent)" }}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pt-12 pb-6"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 40%, transparent)" }}
       >
         <button
           onClick={handleClose}
@@ -369,23 +369,31 @@ export default function ScanPageClient() {
         </button>
       </div>
 
-      {/* ── Artwork guide box ── */}
+      {/* ── Artwork guide box — corner brackets ── */}
       {!matchedCard && (
         <div className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-start"
           style={{ paddingTop: "8%" }}
         >
-          <div
-            className="border-2 rounded-xl"
-            style={{
-              width: "90%",
-              height: "58%",
-              borderColor: autoScan ? "#22c55e" : "#7C5CFC",
-              boxShadow: `0 0 24px ${autoScan ? "rgba(34,197,94,0.35)" : "rgba(124,92,252,0.35)"}`,
-            }}
-          />
-          <p className="mt-2 text-xs font-medium px-3 py-1 rounded-full bg-black/60"
-            style={{ color: autoScan ? "#22c55e" : "#7C5CFC" }}
-          >
+          <div className="relative" style={{ width: "88%", height: "56%" }}>
+            {/* Corner brackets */}
+            {([
+              "top-0 left-0 border-t-2 border-l-2 rounded-tl-xl",
+              "top-0 right-0 border-t-2 border-r-2 rounded-tr-xl",
+              "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-xl",
+              "bottom-0 right-0 border-b-2 border-r-2 rounded-br-xl",
+            ] as const).map((cls) => (
+              <div
+                key={cls}
+                className={`absolute w-8 h-8 ${cls}`}
+                style={{ borderColor: autoScan ? "#22c55e" : "rgba(255,255,255,0.8)" }}
+              />
+            ))}
+            {/* Subtle inner shadow for depth */}
+            <div className="absolute inset-0 rounded-xl" style={{
+              boxShadow: `inset 0 0 60px rgba(0,0,0,0.3), 0 0 80px rgba(0,0,0,0.4)`,
+            }} />
+          </div>
+          <p className="mt-3 text-xs font-medium px-4 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white/80">
             {autoScan ? "Auto-scanning…" : hasHashIndex ? "Center card artwork here" : "Align card name at top"}
           </p>
         </div>
@@ -393,7 +401,7 @@ export default function ScanPageClient() {
 
       {/* ── Status text feedback ── */}
       {statusText && !matchedCard && !isProcessing && (
-        <div className="absolute z-20 top-[60%] left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/70 rounded-lg whitespace-nowrap">
+        <div className="absolute z-20 top-[62%] left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full whitespace-nowrap">
           <p className="text-xs text-white/80 font-medium">{statusText}</p>
         </div>
       )}
@@ -515,8 +523,8 @@ export default function ScanPageClient() {
 
       {/* ── Bottom controls ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center pb-24 pt-6 px-8"
-        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.8), transparent)" }}
+        className="absolute bottom-0 left-0 right-0 z-20 flex flex-col items-center pb-20 pt-8 px-6"
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 30%, transparent)" }}
       >
         {/* Recent scans preview (last 4) */}
         {scanList.length > 0 && (
@@ -563,14 +571,11 @@ export default function ScanPageClient() {
             <button
               onClick={captureAndRecognize}
               disabled={isProcessing}
-              className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+              className="w-[72px] h-[72px] rounded-full bg-white/90 flex items-center justify-center shadow-2xl hover:scale-105 active:scale-90 transition-transform disabled:opacity-50"
               aria-label="Scan card"
             >
-              <div className="w-13 h-13 rounded-full border-2 border-bg-primary flex items-center justify-center">
-                <svg className="w-7 h-7 text-bg-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
+              <div className="w-[62px] h-[62px] rounded-full border-[3px] border-black/20 flex items-center justify-center">
+                <div className="w-[52px] h-[52px] rounded-full bg-white" />
               </div>
             </button>
           )}

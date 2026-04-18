@@ -159,16 +159,34 @@ export function useCameraScanner(): UseCameraScannerReturn {
 
   const startCamera = useCallback(async () => {
     setError("");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 },
-        } as MediaTrackConstraints,
-      });
 
+    // Try high resolution first, then fall back progressively
+    const configs = [
+      { facingMode: { exact: "environment" as const }, width: { min: 1920, ideal: 3840 }, height: { min: 1080, ideal: 2160 } },
+      { facingMode: { exact: "environment" as const }, width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 } },
+      { facingMode: { ideal: "environment" as const }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      { facingMode: { ideal: "environment" as const } },
+    ];
+
+    let stream: MediaStream | null = null;
+    for (const video of configs) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video });
+        break;
+      } catch {
+        continue;
+      }
+    }
+
+    if (!stream) {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      setError(isIOS
+        ? "Camera access denied. Go to Settings > Safari > Camera and allow access."
+        : "Camera access denied. Please allow camera permissions in your browser.");
+      return;
+    }
+
+    try {
       // Apply advanced constraints (autofocus, exposure) after stream is acquired
       const track = stream.getVideoTracks()[0];
       if (track) {
@@ -202,12 +220,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
       setIsStreaming(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("NotAllowed") || msg.includes("Permission")) {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        setError(isIOS
-          ? "Camera access denied. Go to Settings > Safari > Camera and allow access."
-          : "Camera access denied. Please allow camera permissions in your browser.");
-      } else if (msg.includes("NotFound")) {
+      if (msg.includes("NotFound")) {
         setError("No camera found on this device.");
       } else {
         setError("Could not start camera. Try uploading a photo instead.");
