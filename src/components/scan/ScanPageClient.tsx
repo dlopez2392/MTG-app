@@ -164,10 +164,10 @@ export default function ScanPageClient() {
       const canvas = canvasRef.current;
       if (!canvas) return;
       // Crop artwork region — mirrors hook's proportions
-      const artX = Math.floor(img.width * 0.07);
-      const artY = Math.floor(img.height * 0.14);
-      const artW = Math.floor(img.width * 0.86);
-      const artH = Math.floor(img.height * 0.43);
+      const artX = Math.floor(img.width * 0.05);
+      const artY = Math.floor(img.height * 0.08);
+      const artW = Math.floor(img.width * 0.90);
+      const artH = Math.floor(img.height * 0.58);
       canvas.width = artW;
       canvas.height = artH;
       const ctx = canvas.getContext("2d");
@@ -372,13 +372,13 @@ export default function ScanPageClient() {
       {/* ── Artwork guide box ── */}
       {!matchedCard && (
         <div className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-start"
-          style={{ paddingTop: "14%" }}
+          style={{ paddingTop: "8%" }}
         >
           <div
             className="border-2 rounded-xl"
             style={{
-              width: "86%",
-              height: "43%",
+              width: "90%",
+              height: "58%",
               borderColor: autoScan ? "#22c55e" : "#7C5CFC",
               boxShadow: `0 0 24px ${autoScan ? "rgba(34,197,94,0.35)" : "rgba(124,92,252,0.35)"}`,
             }}

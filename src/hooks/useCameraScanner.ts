@@ -313,10 +313,10 @@ export function useCameraScanner(): UseCameraScannerReturn {
 
       // Artwork region: roughly centre 40-90% width, 14-57% height of the card
       // Guide overlay is centred in the viewport — we use fixed proportions of the video frame
-      const artX = Math.floor(vw * 0.07);
-      const artY = Math.floor(vh * 0.14);
-      const artW = Math.floor(vw * 0.86);
-      const artH = Math.floor(vh * 0.43);
+      const artX = Math.floor(vw * 0.05);
+      const artY = Math.floor(vh * 0.08);
+      const artW = Math.floor(vw * 0.90);
+      const artH = Math.floor(vh * 0.58);
 
       // ── Phase 1: Visual hash matching ────────────────────────────────────────
       if (hasHashIndex) {
