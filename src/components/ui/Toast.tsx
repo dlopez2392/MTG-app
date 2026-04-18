@@ -14,7 +14,7 @@ export default function Toast({ message, visible }: ToastProps) {
       aria-live="polite"
       className={cn(
         "fixed bottom-24 left-1/2 -translate-x-1/2 z-[110] px-4 py-2 rounded-full",
-        "bg-bg-card border border-border shadow-lg",
+        "bg-bg-card border border-border shadow-lg border-l-2 border-l-accent",
         "text-sm font-medium text-text-primary whitespace-nowrap",
         "transition-all duration-300 pointer-events-none",
         visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"

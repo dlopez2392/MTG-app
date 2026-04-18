@@ -86,7 +86,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           <select
             value={deckId || deckName}
             onChange={handleDeckChange}
-            className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
           >
             {decks.map((d) => (
               <option key={d.id ?? d.name} value={d.id ?? d.name}>{d.name}</option>
@@ -100,7 +100,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
             value={deckName}
             onChange={(e) => setDeckName(e.target.value)}
             placeholder="Deck name…"
-            className="w-full mt-1 bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+            className="w-full mt-1 bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
             required
           />
         )}
@@ -137,7 +137,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           <select
             value={playerCount}
             onChange={(e) => setPlayers(Number(e.target.value))}
-            className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
           >
             {[2, 3, 4, 5, 6, 7, 8].map((n) => (
               <option key={n} value={n}>{n} players</option>
@@ -149,7 +149,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
           >
             <option value="">Any</option>
             {["commander", "standard", "modern", "legacy", "vintage", "pioneer", "pauper", "draft", "sealed"].map((f) => (
@@ -166,7 +166,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
         />
       </div>
 
@@ -178,7 +178,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           value={opponents}
           onChange={(e) => setOpponents(e.target.value)}
           placeholder="e.g. Yuriko, Atraxa, Sliver Queen"
-          className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
         />
       </div>
 
@@ -190,7 +190,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           onChange={(e) => setNotes(e.target.value)}
           placeholder="How did it go? Key plays, combos, notes…"
           rows={3}
-          className="w-full bg-bg-card border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors resize-none"
+          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors resize-none"
         />
       </div>
 
@@ -200,7 +200,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           Cancel
         </button>
         <button type="submit" disabled={!deckName.trim()}
-          className="px-4 py-2 rounded-lg bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors disabled:opacity-40">
+          className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors disabled:opacity-40">
           Save
         </button>
       </div>
@@ -292,7 +292,7 @@ function GamesPageInner() {
               <button key={v} onClick={() => setView(v)}
                 className={cn(
                   "px-3 py-1.5 rounded text-xs font-semibold capitalize transition-colors",
-                  view === v ? "bg-accent text-black" : "text-text-muted hover:text-text-secondary"
+                  view === v ? "bg-accent text-white" : "text-text-muted hover:text-text-secondary"
                 )}>
                 {v}
               </button>
@@ -300,7 +300,7 @@ function GamesPageInner() {
           </div>
           <button
             onClick={() => setShowLog(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

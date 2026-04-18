@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { MTG_PLAYER_COLORS, DEFAULT_PLAYER_COLOR_KEYS, type MtgPlayerColorKey } from "@/lib/constants";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import ManaSymbol from "@/components/cards/ManaSymbol";
 
 interface PlayerSetupProps {
   defaultPlayerCount?: number;
@@ -17,57 +18,13 @@ interface PlayerSetupProps {
   ) => void;
 }
 
-const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4];
+const PLAYER_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6];
 const LIFE_OPTIONS = [
   { value: 20, label: "20" },
   { value: 25, label: "25" },
   { value: 30, label: "30" },
   { value: 40, label: "40" },
 ];
-
-// MTG mana symbol SVGs (simplified)
-function ManaSymbol({ colorKey }: { colorKey: string }) {
-  switch (colorKey) {
-    case "W":
-      return (
-        <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-          <circle cx="10" cy="10" r="8" fill="#D4C26A" />
-          <path d="M10 3l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 12l-3.7 2.5 1.4-4.3L4 7.5h4.5L10 3z" fill="#7a6a20" />
-        </svg>
-      );
-    case "U":
-      return (
-        <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-          <circle cx="10" cy="10" r="8" fill="#3B82F6" />
-          <path d="M10 4c-1.5 2-3 4-3 6s1.5 4 3 6c1.5-2 3-4 3-6s-1.5-4-3-6z" fill="#1d4ed8" />
-          <ellipse cx="10" cy="10" rx="5" ry="2" fill="#1d4ed8" />
-        </svg>
-      );
-    case "B":
-      return (
-        <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-          <circle cx="10" cy="10" r="8" fill="#4c1d95" />
-          <path d="M10 5c-1 1-2 2.5-2 4 0 1 .5 2 1 2.5L7.5 15h5l-1.5-3.5c.5-.5 1-1.5 1-2.5 0-1.5-1-3-2-4z" fill="#7c3aed" />
-        </svg>
-      );
-    case "R":
-      return (
-        <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-          <circle cx="10" cy="10" r="8" fill="#EF4444" />
-          <path d="M10 3c0 4-4 5-4 8 0 2 1.5 3.5 4 4 2.5-.5 4-2 4-4 0-3-4-4-4-8z" fill="#991b1b" />
-        </svg>
-      );
-    case "G":
-      return (
-        <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor">
-          <circle cx="10" cy="10" r="8" fill="#22C55E" />
-          <path d="M10 4C7 6 5 8 5 11c0 2 1 3.5 2.5 4.5C9 14 10 12 10 12s1 2 2.5 3.5C14 14.5 15 13 15 11c0-3-2-5-5-7z" fill="#166534" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
 
 export default function PlayerSetup({
   defaultPlayerCount = 2,
@@ -77,7 +34,7 @@ export default function PlayerSetup({
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount);
   const [startingLife, setStartingLife] = useState(defaultStartingLife);
   const [playerNames, setPlayerNames] = useState<string[]>(
-    Array.from({ length: 4 }, (_, i) => `Player ${i + 1}`)
+    Array.from({ length: 6 }, (_, i) => `Player ${i + 1}`)
   );
   const [selectedColorKeys, setSelectedColorKeys] = useState<MtgPlayerColorKey[]>(
     [...DEFAULT_PLAYER_COLOR_KEYS]
@@ -126,7 +83,7 @@ export default function PlayerSetup({
               className={cn(
                 "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
                 playerCount === count
-                  ? "bg-accent text-black border-accent"
+                  ? "bg-accent text-white border-accent"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >
@@ -149,7 +106,7 @@ export default function PlayerSetup({
               className={cn(
                 "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
                 startingLife === value
-                  ? "bg-accent text-black border-accent"
+                  ? "bg-accent text-white border-accent"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >
@@ -199,7 +156,7 @@ export default function PlayerSetup({
                           : "opacity-60 hover:opacity-90"
                       )}
                     >
-                      <ManaSymbol colorKey={c.key} />
+                      <ManaSymbol symbol={c.key} size={20} />
                     </button>
                   ))}
                   <span

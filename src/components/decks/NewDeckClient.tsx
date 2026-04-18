@@ -58,7 +58,7 @@ export default function NewDeckClient() {
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
-              className="w-full bg-bg-card border border-border rounded-lg px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
             >
               <option value="">No format</option>
               {FORMATS.map((f) => (
@@ -78,7 +78,7 @@ export default function NewDeckClient() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What's this deck about?"
               rows={3}
-              className="w-full bg-bg-card border border-border rounded-lg px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none"
+              className="w-full bg-bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent transition-colors resize-none"
             />
           </div>
 

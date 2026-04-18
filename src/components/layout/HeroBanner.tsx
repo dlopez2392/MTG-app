@@ -36,8 +36,8 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
     <div className="relative" style={{ minHeight: children ? 180 : 130 }}>
       {/* Background layers — clipped separately so the dropdown can overflow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Fallback gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0e20] via-[#0d0d18] to-[#0a1020]" />
+        {/* Fallback gradient — theme-aware via CSS variables */}
+        <div className="absolute inset-0 bg-gradient-to-br from-hero-from via-hero-via to-hero-to" />
 
         {/* Card art */}
         {art && (
@@ -45,8 +45,8 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
             src={art}
             alt=""
             aria-hidden
-            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700"
-            style={{ opacity: loaded ? 0.32 : 0, filter: "saturate(1.3) brightness(0.6)" }}
+            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 hero-art"
+            style={{ opacity: loaded ? 0.32 : 0 }}
             onLoad={() => setLoaded(true)}
           />
         )}
@@ -66,8 +66,8 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
       <div className="relative z-20 px-4 pt-8 pb-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-1">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
-            style={{ background: `${accent}28`, color: accent, boxShadow: `0 0 16px ${accent}40` }}
+            className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+            style={{ background: `${accent}18`, color: accent, boxShadow: `0 0 20px ${accent}30` }}
           >
             {icon}
           </div>

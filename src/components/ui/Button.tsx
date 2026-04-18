@@ -18,9 +18,9 @@ export default function Button({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center font-semibold rounded-lg transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary",
+        "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary",
         {
-          "bg-accent text-black hover:bg-accent-dark shadow-[0_2px_12px_rgba(237,154,87,0.25)] hover:shadow-[0_2px_16px_rgba(237,154,87,0.4)]":
+          "bg-accent text-white hover:bg-accent-dark shadow-[0_2px_12px_color-mix(in_srgb,var(--color-accent)_25%,transparent)] hover:shadow-[0_2px_16px_color-mix(in_srgb,var(--color-accent)_40%,transparent)]":
             variant === "primary",
           "bg-bg-card text-text-primary hover:bg-bg-hover border border-border hover:border-accent/40":
             variant === "secondary",
@@ -32,8 +32,8 @@ export default function Button({
             variant === "outline",
         },
         {
-          "px-3 py-1.5 text-sm": size === "sm",
-          "px-4 py-2 text-sm": size === "md",
+          "px-3.5 py-1.5 text-sm": size === "sm",
+          "px-5 py-2.5 text-sm": size === "md",
           "px-6 py-3 text-base": size === "lg",
         },
         className

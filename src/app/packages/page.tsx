@@ -166,7 +166,7 @@ function PackageCard({
           <button
             onClick={handleAdd}
             disabled={adding}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-black text-xs font-bold hover:bg-accent-dark transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent-dark transition-colors disabled:opacity-50"
           >
             {adding ? (
               <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">

@@ -74,5 +74,5 @@ export const MTG_PLAYER_COLORS = [
 
 export type MtgPlayerColorKey = (typeof MTG_PLAYER_COLORS)[number]["key"];
 
-// Default color per player slot (R, U, G, W)
-export const DEFAULT_PLAYER_COLOR_KEYS: MtgPlayerColorKey[] = ["R", "U", "G", "W"];
+// Default color per player slot
+export const DEFAULT_PLAYER_COLOR_KEYS: MtgPlayerColorKey[] = ["R", "U", "G", "W", "B", "R"];

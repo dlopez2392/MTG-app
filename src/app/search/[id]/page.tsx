@@ -318,7 +318,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
             {deckId && (
               <button
                 onClick={handleAddToDeck}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-accent text-black hover:bg-accent-dark active:scale-95 shadow-[0_2px_12px_rgba(237,154,87,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-accent text-white hover:bg-accent-dark active:scale-95 shadow-[0_2px_12px_rgba(124,92,252,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 {addedFeedback ? (
                   <>

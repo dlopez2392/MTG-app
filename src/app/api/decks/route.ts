@@ -15,7 +15,10 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const colorMap = computeDeckColors(cardColors ?? []);
-  return NextResponse.json(decks!.map((row) => toDecK(row, colorMap[row.id])));
+  return NextResponse.json(decks!.map((row) => {
+    const info = colorMap[row.id];
+    return toDecK(row, info?.dominant, info?.colors);
+  }));
 }
 
 export async function POST(req: Request) {
@@ -49,7 +52,7 @@ type ColorCounts = Record<ColorKey, number>;
 
 function computeDeckColors(
   cards: { deck_id: string; mana_cost: string | null; quantity: number }[]
-): Record<string, string> {
+): Record<string, { dominant: string; colors: string[] }> {
   const counts: Record<string, ColorCounts> = {};
   const colors: ColorKey[] = ["W", "U", "B", "R", "G"];
 
@@ -62,18 +65,18 @@ function computeDeckColors(
     }
   }
 
-  const result: Record<string, string> = {};
+  const result: Record<string, { dominant: string; colors: string[] }> = {};
   for (const [deckId, c] of Object.entries(counts)) {
     const total = Object.values(c).reduce((a, b) => a + b, 0);
-    if (total === 0) { result[deckId] = "colorless"; continue; }
     const active = colors.filter((k) => c[k] > 0);
-    if (active.length >= 3) { result[deckId] = "multi"; continue; }
-    result[deckId] = active.sort((a, b) => c[b] - c[a])[0] ?? "colorless";
+    if (total === 0) { result[deckId] = { dominant: "colorless", colors: [] }; continue; }
+    const dominant = active.length >= 3 ? "multi" : (active.sort((a, b) => c[b] - c[a])[0] ?? "colorless");
+    result[deckId] = { dominant, colors: active };
   }
   return result;
 }
 
-function toDecK(row: Record<string, unknown>, dominantColor?: string) {
+function toDecK(row: Record<string, unknown>, dominantColor?: string, colors?: string[]) {
   return {
     id: row.id,
     name: row.name,
@@ -81,6 +84,7 @@ function toDecK(row: Record<string, unknown>, dominantColor?: string) {
     coverCardId: row.cover_card_id,
     coverImageUri: row.cover_image_uri,
     dominantColor: dominantColor ?? "colorless",
+    colors: colors ?? [],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

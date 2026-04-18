@@ -82,7 +82,7 @@ export default function CardImage({ card, size = "normal", className }: CardImag
       {isDFC(card) && loaded && (
         <button
           onClick={() => { setLoaded(false); setActiveFace((f) => (f === 0 ? 1 : 0)); }}
-          className="absolute bottom-2 right-2 rounded-full bg-bg-primary/80 px-3 py-1.5 text-xs font-medium text-text-primary backdrop-blur-sm transition-colors hover:bg-accent hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="absolute bottom-2 right-2 rounded-full bg-bg-primary/80 px-3 py-1.5 text-xs font-medium text-text-primary backdrop-blur-sm transition-colors hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="Flip card"
         >
           Flip

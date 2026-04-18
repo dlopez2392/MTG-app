@@ -129,6 +129,39 @@ export default function LifePage() {
             </div>
           </div>
         );
+      case 5:
+        return (
+          <div className="flex flex-col flex-1 gap-1">
+            <div className="flex flex-1 gap-1">
+              {panel(0, true)}
+              {panel(1, true)}
+            </div>
+            <div className="flex flex-1 gap-1">
+              {panel(2)}
+              {panel(3)}
+            </div>
+            <div className="flex flex-1 gap-1">
+              {panel(4)}
+            </div>
+          </div>
+        );
+      case 6:
+        return (
+          <div className="flex flex-col flex-1 gap-1">
+            <div className="flex flex-1 gap-1">
+              {panel(0, true)}
+              {panel(1, true)}
+            </div>
+            <div className="flex flex-1 gap-1">
+              {panel(2)}
+              {panel(3)}
+            </div>
+            <div className="flex flex-1 gap-1">
+              {panel(4, true)}
+              {panel(5)}
+            </div>
+          </div>
+        );
       default:
         return null;
     }

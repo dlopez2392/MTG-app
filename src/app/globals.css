@@ -2,24 +2,32 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Darker, more dramatic backgrounds */
-  --color-bg-primary: #0D0D10;
-  --color-bg-secondary: #141419;
-  --color-bg-card: #1A1A22;
-  --color-bg-hover: #22222E;
+  /* Deep navy-charcoal backgrounds */
+  --color-bg-primary: #0B0E14;
+  --color-bg-secondary: #111520;
+  --color-bg-card: #161B27;
+  --color-bg-hover: #1E2433;
 
-  /* Warm orange accent — mythic.tools signature color */
-  --color-accent: #ED9A57;
-  --color-accent-dark: #D4823F;
-  --color-accent-light: #F5B07A;
+  /* Violet-blue accent */
+  --color-accent: #7C5CFC;
+  --color-accent-dark: #6347E0;
+  --color-accent-light: #9B82FF;
+
+  /* Warm gold secondary accent */
+  --color-accent-warm: #E4A94F;
 
   /* Text */
-  --color-text-primary: #F0F0EE;
-  --color-text-secondary: #9898A8;
-  --color-text-muted: #56566A;
+  --color-text-primary: #E8EAF0;
+  --color-text-secondary: #8B90A0;
+  --color-text-muted: #4E5364;
 
   /* Border */
-  --color-border: #25252F;
+  --color-border: #1E2433;
+
+  /* Hero gradient */
+  --color-hero-from: #1a0b2e;
+  --color-hero-via: #0B0E14;
+  --color-hero-to: #0B1420;
 
   /* MTG Colors */
   --color-mtg-white: #F9FAF4;
@@ -41,11 +49,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Frosted glass surface */
+.glass {
+  background: color-mix(in srgb, var(--color-bg-secondary) 85%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+/* Hero art filter */
+.hero-art {
+  filter: saturate(1.2) brightness(0.55);
+}
+
 body {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  /* iOS Safari safe-area insets (notch / Dynamic Island / home indicator) */
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
@@ -69,73 +88,63 @@ input[type="email"] {
   letter-spacing: 0.02em;
 }
 
-/* ── Typography scale ────────────────────────────────────────────────────────
-   Semantic classes to replace scattered text-[Npx] and ad-hoc weight combos.
-   Use these everywhere instead of raw Tailwind size utilities for consistency. */
+/* ── Typography scale ──────────────────────────────────────────────────────── */
 
-/* Page / hero title — Cinzel Decorative, gradient applied separately */
 .text-hero {
-  font-size: 2.25rem;   /* 36px */
+  font-size: 2.25rem;
   line-height: 1.15;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-/* Top-bar page name / card name on detail page */
 .text-page-title {
   font-family: var(--font-display);
-  font-size: 1.0625rem; /* ~17px */
+  font-size: 1.0625rem;
   font-weight: 700;
   line-height: 1.3;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* Section headers within a page ("Features", "Main Deck · 60") */
 .text-section-label {
   font-family: var(--font-display);
-  font-size: 0.6875rem; /* 11px */
+  font-size: 0.6875rem;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-/* Card name in list rows / grids */
 .text-card-name {
-  font-size: 0.875rem;  /* 14px */
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.35;
 }
 
-/* Supporting body copy */
 .text-body {
-  font-size: 0.875rem;  /* 14px */
+  font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.55;
 }
 
-/* Prices, counts, stat numbers — always monospaced */
 .text-stat {
   font-family: var(--font-mono);
-  font-size: 0.875rem;  /* 14px */
+  font-size: 0.875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
 
-/* Small labels, badges, zone tags */
 .text-label {
-  font-size: 0.625rem;  /* 10px */
+  font-size: 0.625rem;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-/* Inline captions, attribution, footnotes */
 .text-caption {
-  font-size: 0.6875rem; /* 11px */
+  font-size: 0.6875rem;
   font-weight: 400;
   line-height: 1.45;
   color: var(--color-text-muted);
@@ -146,16 +155,15 @@ input[type="email"] {
   font-family: "Cinzel Decorative", Georgia, serif;
 }
 
-/* 5-color MTG gradient text */
+/* MTG-inspired gradient text — gold/lavender/violet tones */
 .text-mtg-gradient {
   background: linear-gradient(
     90deg,
-    #E8E0A8 0%,
-    #4AABDF 20%,
-    #C084FC 40%,
-    #F87171 60%,
-    #4ADE80 80%,
-    #E8E0A8 100%
+    #E4C97A 0%,
+    #9B82FF 25%,
+    #E8EAF0 50%,
+    #7C5CFC 75%,
+    #E4C97A 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -168,8 +176,7 @@ input[type="email"] {
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-/* ── Skeleton shimmer ────────────────────────────────────────────────────────
-   Sweeping highlight across the skeleton — more lifelike than simple pulse. */
+/* ── Skeleton shimmer ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
   from { background-position: -200% 0; }
   to   { background-position:  200% 0; }
@@ -186,9 +193,7 @@ input[type="email"] {
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
-/* ── Page transition ─────────────────────────────────────────────────────────
-   Fades in and slides up 10px on every page mount. Re-triggers on each
-   navigation because App Router unmounts/remounts the page tree. */
+/* ── Page transition ───────────────────────────────────────────────────────── */
 @keyframes page-enter {
   from {
     opacity: 0;
@@ -204,18 +209,14 @@ input[type="email"] {
   animation: page-enter 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-/* ── MTG Houdini dust animation — runs once on home page load, no layout shift */
+/* ── MTG Houdini dust animation ────────────────────────────────────────────── */
 @keyframes houdini-dust {
-  /* Solid to start */
   0%   { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
-  /* Blow out — scatter upward like dust in wind */
   25%  { opacity: 0.6; filter: blur(4px);                                         transform: scale(1.02) translateY(-3px); }
-  42%  { opacity: 0;   filter: blur(18px) brightness(1.6) drop-shadow(0 0 12px rgba(237,154,87,0.6)); transform: scale(1.06) translateY(-7px); }
-  /* Hold invisible */
-  55%  { opacity: 0;   filter: blur(18px)                 drop-shadow(0 0 8px  rgba(237,154,87,0.3)); transform: scale(1.06) translateY(-7px); }
-  /* Solidify — particles fall back and coalesce */
-  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4) drop-shadow(0 0 16px rgba(237,154,87,1));   transform: scale(1.02) translateY(-2px); }
-  86%  { opacity: 0.85; filter: blur(1.5px)               drop-shadow(0 0 6px  rgba(237,154,87,0.5)); transform: scale(1.002) translateY(0);  }
+  42%  { opacity: 0;   filter: blur(18px) brightness(1.6) drop-shadow(0 0 12px rgba(124,92,252,0.6)); transform: scale(1.06) translateY(-7px); }
+  55%  { opacity: 0;   filter: blur(18px)                 drop-shadow(0 0 8px  rgba(124,92,252,0.3)); transform: scale(1.06) translateY(-7px); }
+  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4) drop-shadow(0 0 16px rgba(124,92,252,1));   transform: scale(1.02) translateY(-2px); }
+  86%  { opacity: 0.85; filter: blur(1.5px)               drop-shadow(0 0 6px  rgba(124,92,252,0.5)); transform: scale(1.002) translateY(0);  }
   100% { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
 }
 
@@ -239,17 +240,13 @@ input[type="email"] {
   100% { opacity: 0;    transform: translate(-50%, calc(-50% - 85px)) scale(0.7); }
 }
 
-/* ── Focus rings ─────────────────────────────────────────────────────────────
-   Global fallback: any element focused by keyboard gets a visible accent ring.
-   Individual components override this with Tailwind ring utilities for finer
-   control (offset color, size, opacity). Mouse clicks do NOT trigger this. */
+/* ── Focus rings ───────────────────────────────────────────────────────────── */
 *:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 6px;
 }
 
-/* Remove browser default outline only on mouse focus */
 *:focus:not(:focus-visible) {
   outline: none;
 }

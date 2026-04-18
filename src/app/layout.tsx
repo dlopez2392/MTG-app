@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#121212",
+  themeColor: "#0B0E14",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,        // Allow accessibility zoom (iOS WCAG requirement)

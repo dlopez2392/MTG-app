@@ -81,30 +81,26 @@ function NavTab({
         isActive ? "text-accent" : "text-text-muted hover:text-text-secondary"
       )}
     >
-      {/* Active indicator bar — always rendered, animates width + opacity */}
+      {/* Active pill background */}
       <span
         className={cn(
-          "absolute top-0 left-1/2 -translate-x-1/2 h-0.5 rounded-full bg-accent transition-all duration-300 ease-out",
-          isActive
-            ? "w-6 opacity-100 shadow-[0_0_8px_2px_rgba(237,154,87,0.5)]"
-            : "w-0 opacity-0"
+          "absolute inset-x-2 inset-y-1.5 rounded-xl transition-all duration-300 ease-out",
+          isActive ? "bg-accent/10 opacity-100" : "opacity-0"
         )}
       />
 
-      {/* Icon — scales up slightly when active */}
       <span
         className={cn(
-          "transition-transform duration-200 ease-out",
+          "relative transition-transform duration-200 ease-out",
           isActive ? "scale-110" : "scale-100"
         )}
       >
         {icon}
       </span>
 
-      {/* Label — larger and bolder when active */}
       <span
         className={cn(
-          "text-[10px] tracking-wide transition-all duration-200",
+          "relative text-[11px] tracking-wide transition-all duration-200",
           isActive ? "font-semibold" : "font-medium"
         )}
       >
@@ -133,9 +129,8 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-bg-secondary/95 backdrop-blur border-t border-border">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50">
       <div className="flex items-center justify-around h-16 max-w-2xl mx-auto relative">
-        {/* Left tabs */}
         {leftTabs.map((tab) => (
           <NavTab
             key={tab.href}
@@ -146,7 +141,6 @@ export default function BottomNav() {
           />
         ))}
 
-        {/* Center scan button — 48px, lifts on active */}
         <Link
           href="/scan"
           className="flex items-center justify-center w-full h-full relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
@@ -155,8 +149,8 @@ export default function BottomNav() {
             className={cn(
               "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200",
               isScanActive
-                ? "bg-accent text-black shadow-[0_0_24px_6px_rgba(237,154,87,0.45)] scale-105"
-                : "bg-accent/90 text-black hover:bg-accent hover:scale-105 hover:shadow-[0_0_16px_2px_rgba(237,154,87,0.3)] shadow-lg"
+                ? "bg-gradient-to-br from-accent to-accent-dark text-white shadow-[0_0_24px_6px_color-mix(in_srgb,var(--color-accent)_40%,transparent)] scale-105"
+                : "bg-gradient-to-br from-accent to-accent-dark text-white hover:scale-105 hover:shadow-[0_0_16px_2px_color-mix(in_srgb,var(--color-accent)_25%,transparent)] shadow-lg"
             )}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -166,7 +160,6 @@ export default function BottomNav() {
           </div>
         </Link>
 
-        {/* Right tabs */}
         {rightTabs.map((tab) => (
           <NavTab
             key={tab.href}

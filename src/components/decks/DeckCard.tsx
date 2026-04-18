@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Deck, MTGColor } from "@/types/deck";
-import Badge from "@/components/ui/Badge";
+import ManaSymbol from "@/components/cards/ManaSymbol";
 
 interface DeckCardProps {
   deck: Deck;
@@ -20,43 +20,35 @@ const COLOR_GLOW: Record<MTGColor, string> = {
   colorless: "rgba(140, 140, 160, 0.5)",
 };
 
-const COLOR_BORDER: Record<MTGColor, string> = {
-  W: "#F0E8B0",
-  U: "#2B7FC4",
-  B: "#9B64D4",
-  R: "#CC3030",
-  G: "#28A050",
-  multi: "#D4A820",
-  colorless: "#6B6B80",
-};
+function toArtCrop(uri: string): string {
+  return uri
+    .replace("/normal/", "/art_crop/")
+    .replace("/small/", "/art_crop/")
+    .replace("/large/", "/art_crop/")
+    .replace("/png/", "/art_crop/");
+}
 
-const COLOR_SHIMMER: Record<MTGColor, string> = {
-  W: "linear-gradient(135deg, rgba(255,250,210,0.25) 0%, transparent 60%)",
-  U: "linear-gradient(135deg, rgba(50,140,220,0.25) 0%, transparent 60%)",
-  B: "linear-gradient(135deg, rgba(150,80,240,0.25) 0%, transparent 60%)",
-  R: "linear-gradient(135deg, rgba(220,60,60,0.25) 0%, transparent 60%)",
-  G: "linear-gradient(135deg, rgba(40,160,80,0.25) 0%, transparent 60%)",
-  multi: "linear-gradient(135deg, rgba(220,175,40,0.25) 0%, transparent 60%)",
-  colorless: "linear-gradient(135deg, rgba(160,160,180,0.15) 0%, transparent 60%)",
-};
+const COLOR_ORDER = ["W", "U", "B", "R", "G"] as const;
 
 export default function DeckCard({ deck, onClick, onDelete }: DeckCardProps) {
   const [active, setActive] = useState(false);
   const color = (deck.dominantColor ?? "colorless") as MTGColor;
   const glow = COLOR_GLOW[color];
-  const border = COLOR_BORDER[color];
-  const shimmer = COLOR_SHIMMER[color];
+
+  const artSrc = deck.coverImageUri ? toArtCrop(deck.coverImageUri) : null;
+  const deckColors = (deck.colors ?? []).filter((c) =>
+    COLOR_ORDER.includes(c as (typeof COLOR_ORDER)[number])
+  );
 
   return (
     <div
-      className="relative aspect-[3/4] rounded-xl overflow-hidden bg-bg-card group"
+      className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-bg-card group"
       style={{
-        border: `1px solid ${active ? border : "rgba(255,255,255,0.08)"}`,
         boxShadow: active
-          ? `0 0 24px 4px ${glow}, 0 0 8px 2px ${glow}`
-          : `0 0 0px 0px transparent`,
-        transform: active ? "scale(1.04)" : "scale(1)",
-        transition: "box-shadow 0.2s ease, border-color 0.2s ease, transform 0.15s ease",
+          ? `0 0 20px 2px ${glow}, 0 4px 16px rgba(0,0,0,0.4)`
+          : "0 2px 8px rgba(0,0,0,0.3)",
+        transform: active ? "scale(1.03)" : "scale(1)",
+        transition: "box-shadow 0.2s ease, transform 0.15s ease",
       }}
     >
       <button
@@ -67,9 +59,9 @@ export default function DeckCard({ deck, onClick, onDelete }: DeckCardProps) {
         onTouchEnd={() => setActive(false)}
         className="absolute inset-0 w-full h-full focus:outline-none"
       >
-        {deck.coverImageUri ? (
+        {artSrc ? (
           <img
-            src={deck.coverImageUri}
+            src={artSrc}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -81,25 +73,27 @@ export default function DeckCard({ deck, onClick, onDelete }: DeckCardProps) {
           </div>
         )}
 
-        {/* Base dark gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-        {/* Color shimmer overlay — appears on hover */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: shimmer }}
-        />
+        {/* Bottom info */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-display text-white font-bold text-sm uppercase tracking-wide truncate leading-tight">
+              {deck.name}
+            </p>
+            {deck.format && (
+              <p className="text-[10px] text-white/60 capitalize mt-0.5">{deck.format}</p>
+            )}
+          </div>
 
-        {/* Colored bottom glow strip */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-16 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: `linear-gradient(to top, ${glow.replace("0.75", "0.35")}, transparent)` }}
-        />
-
-        <div className="absolute bottom-0 left-0 right-0 p-3 text-left">
-          <p className="font-display text-white font-bold text-sm uppercase tracking-wide truncate">{deck.name}</p>
-          {deck.format && (
-            <Badge className="mt-1 capitalize text-[10px]">{deck.format}</Badge>
+          {/* Mana symbols */}
+          {deckColors.length > 0 && (
+            <div className="flex items-center gap-0.5 shrink-0">
+              {deckColors.map((c) => (
+                <ManaSymbol key={c} symbol={c} size={18} className="drop-shadow-sm" />
+              ))}
+            </div>
           )}
         </div>
       </button>

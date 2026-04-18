@@ -10,7 +10,7 @@ export default function Badge({ children, variant = "default", className }: Badg
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+        "inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium",
         {
           "bg-bg-card text-text-secondary": variant === "default",
           "bg-legal/20 text-legal": variant === "legal",

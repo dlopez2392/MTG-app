@@ -50,7 +50,7 @@ export default function Modal({ open, onClose, title, children, className }: Mod
         aria-modal="true"
         className={cn(
           "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[91]",
-          "bg-bg-secondary text-text-primary rounded-xl border border-border p-0",
+          "bg-bg-secondary text-text-primary rounded-2xl border border-border/50 p-0 shadow-2xl",
           "w-[90vw] max-w-lg max-h-[85dvh] flex flex-col",
           className
         )}

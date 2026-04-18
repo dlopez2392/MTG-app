@@ -288,7 +288,7 @@ export default function ScanPageClient() {
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <button
               onClick={() => setCameraStarted(true)}
-              className="w-full py-3 rounded-xl bg-accent text-black font-bold text-sm hover:bg-accent-dark transition-colors"
+              className="w-full py-3 rounded-xl bg-accent text-white font-bold text-sm hover:bg-accent-dark transition-colors"
             >
               Open Camera
             </button>
@@ -362,7 +362,7 @@ export default function ScanPageClient() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
           {scanList.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-black text-[9px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center">
               {scanList.length}
             </span>
           )}
@@ -379,12 +379,12 @@ export default function ScanPageClient() {
             style={{
               width: "86%",
               height: "43%",
-              borderColor: autoScan ? "#22c55e" : "#ED9A57",
-              boxShadow: `0 0 24px ${autoScan ? "rgba(34,197,94,0.35)" : "rgba(237,154,87,0.35)"}`,
+              borderColor: autoScan ? "#22c55e" : "#7C5CFC",
+              boxShadow: `0 0 24px ${autoScan ? "rgba(34,197,94,0.35)" : "rgba(124,92,252,0.35)"}`,
             }}
           />
           <p className="mt-2 text-xs font-medium px-3 py-1 rounded-full bg-black/60"
-            style={{ color: autoScan ? "#22c55e" : "#ED9A57" }}
+            style={{ color: autoScan ? "#22c55e" : "#7C5CFC" }}
           >
             {autoScan ? "Auto-scanning…" : hasHashIndex ? "Center card artwork here" : "Align card name at top"}
           </p>
@@ -482,7 +482,7 @@ export default function ScanPageClient() {
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => handleAddMatchedToList(matchedCard)}
-              className="flex-1 py-2 rounded-lg bg-accent text-black text-xs font-bold hover:bg-accent-dark transition-colors"
+              className="flex-1 py-2 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent-dark transition-colors"
             >
               + Add to List
             </button>
@@ -619,7 +619,7 @@ export default function ScanPageClient() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleBulkAdd("collection")}
-                className="flex-1 py-2.5 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors"
               >
                 Add to Collection
               </button>

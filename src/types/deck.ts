@@ -13,6 +13,7 @@ export interface Deck {
   coverCardId?: string;
   coverImageUri?: string;
   dominantColor?: MTGColor;
+  colors?: string[];
   createdAt: string;
   updatedAt: string;
 }

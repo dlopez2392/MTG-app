@@ -61,7 +61,7 @@ const FEATURES = [
     href: "/scan",
     title: "SCAN CARD",
     description: "Identify cards with your camera",
-    accent: "#A855F7",
+    accent: "#7C5CFC",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -134,31 +134,23 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* ── Hero ── */}
       <div className="relative overflow-hidden" style={{ minHeight: 300 }}>
-        {/* Fallback gradient — richer 5-color MTG feel */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0b2e] via-[#0d0d18] to-[#081420]" />
-        {/* Subtle radial warmth at center */}
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(237,154,87,0.07) 0%, transparent 70%)" }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-hero-from via-hero-via to-hero-to" />
+        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(124,92,252,0.08) 0%, transparent 70%)" }} />
 
-        {/* Card art — raised opacity for more visual impact */}
         {heroArt && (
           <img
             src={heroArt}
             alt=""
             aria-hidden
-            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700"
-            style={{
-              opacity: heroLoaded ? 0.5 : 0,
-              filter: "saturate(1.4) brightness(0.6)",
-            }}
+            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 hero-art"
+            style={{ opacity: heroLoaded ? 0.5 : 0 }}
             onLoad={() => setHeroLoaded(true)}
           />
         )}
 
-        {/* Gradient overlays — stronger bottom vignette, softer sides */}
         <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60" />
 
-        {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center max-w-2xl mx-auto w-full">
           <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-2 drop-shadow-lg">
             MTG Houdini
@@ -167,7 +159,6 @@ export default function HomePage() {
             Your ultimate Magic: The Gathering companion
           </p>
 
-          {/* Search bar */}
           <form onSubmit={handleSearch} className="w-full max-w-sm">
             <div className="relative flex items-center">
               <svg
@@ -184,12 +175,12 @@ export default function HomePage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search cards…"
-                className="w-full bg-bg-card/80 backdrop-blur border border-border rounded-xl pl-10 pr-24 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/50 transition-colors"
+                className="w-full bg-bg-card/80 backdrop-blur border border-border rounded-2xl pl-10 pr-24 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/50 transition-colors"
               />
               <button
                 type="submit"
                 suppressHydrationWarning
-                className="absolute right-1.5 px-4 py-1.5 rounded-lg bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+                className="absolute right-1.5 px-4 py-1.5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
               >
                 Search
               </button>
@@ -208,8 +199,8 @@ export default function HomePage() {
       {/* ── Search shortcut ── */}
       <div className="px-4 pt-1 pb-4 max-w-2xl mx-auto w-full">
         <Link href="/search">
-          <div className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-4 py-3 hover:border-accent/40 transition-colors active:scale-[0.98]">
-            <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+          <div className="flex items-center gap-3 bg-bg-card border border-border rounded-2xl px-4 py-3.5 hover:border-accent/40 transition-colors active:scale-[0.98]">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
@@ -230,20 +221,25 @@ export default function HomePage() {
         <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 [grid-auto-rows:1fr]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 [grid-auto-rows:1fr]">
           {FEATURES.map((feature) => (
             <Link key={feature.href} href={feature.href} className="block h-full">
-              <div className="group relative bg-bg-card border border-border rounded-xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/40 h-full">
+              <div className="group relative bg-bg-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/30 h-full">
+                {/* Subtle top accent line */}
+                <div
+                  className="absolute top-0 left-4 right-4 h-px opacity-40 group-hover:opacity-70 transition-opacity"
+                  style={{ background: `linear-gradient(90deg, transparent, ${feature.accent}, transparent)` }}
+                />
                 {/* Corner glow */}
                 <div
-                  className="absolute -top-6 -right-6 w-20 h-20 rounded-full opacity-15 blur-xl transition-opacity duration-200 group-hover:opacity-25"
+                  className="absolute -top-8 -right-8 w-24 h-24 rounded-full opacity-10 blur-2xl transition-opacity duration-200 group-hover:opacity-20"
                   style={{ background: feature.accent }}
                 />
 
                 <div className="relative z-10">
                   <div
-                    className="mb-3 w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{ background: `${feature.accent}22`, color: feature.accent }}
+                    className="mb-3 w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ background: `${feature.accent}18`, color: feature.accent }}
                   >
                     {feature.icon}
                   </div>

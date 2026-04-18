@@ -16,7 +16,7 @@ export default function TopBar({ title, showBack, rightContent, className }: Top
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 h-14 bg-bg-secondary/95 backdrop-blur border-b border-border",
+        "sticky top-0 z-40 h-14 glass border-b border-border/50",
         className
       )}
     >
