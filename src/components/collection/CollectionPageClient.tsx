@@ -94,8 +94,8 @@ export default function CollectionPageClient() {
         <ValueHistoryChart history={history} />
       </div>
 
-      <div className="px-4 pb-3 flex items-center justify-between gap-2">
-        <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} className="flex-1" />
+      <div className="px-4 pb-3 flex items-center gap-2">
+        <Tabs tabs={TABS} active={activeTab} onChange={setActiveTab} className="flex-1 min-w-0" />
         <CsvImportExport
           allCards={allCards}
           allBinders={allBinders}
