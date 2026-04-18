@@ -91,7 +91,7 @@ function cropArtworkToDataUrl(
   canvas.height = artH;
   const ctx = canvas.getContext("2d")!;
   ctx.drawImage(video, artX, artY, artW, artH, 0, 0, artW, artH);
-  return canvas.toDataURL("image/jpeg", 0.8);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 // ── OCR fallback (Tesseract) ──────────────────────────────────────────────────
@@ -163,10 +163,36 @@ export function useCameraScanner(): UseCameraScannerReturn {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 },
+        } as MediaTrackConstraints,
       });
+
+      // Apply advanced constraints (autofocus, exposure) after stream is acquired
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const capabilities = track.getCapabilities?.() as any;
+          const advanced: Record<string, unknown> = {};
+          if (capabilities?.focusMode?.includes("continuous")) {
+            advanced.focusMode = "continuous";
+          }
+          if (capabilities?.exposureMode?.includes("continuous")) {
+            advanced.exposureMode = "continuous";
+          }
+          if (capabilities?.whiteBalanceMode?.includes("continuous")) {
+            advanced.whiteBalanceMode = "continuous";
+          }
+          if (Object.keys(advanced).length > 0) {
+            await track.applyConstraints({ advanced: [advanced] } as MediaTrackConstraints);
+          }
+        } catch {
+          // Advanced constraints not supported — continue with defaults
+        }
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
