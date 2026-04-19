@@ -235,13 +235,14 @@ export default function LifePage() {
     );
   }
 
-  const panel = (index: number, rotation: number = 0) => {
+  const panel = (index: number, rotation: number = 0, playerNumber?: number) => {
     const p = players[index];
     const opponents = players.filter((_, i) => i !== index);
     const isActive = !choosingStarter && gameOptions.turnTimer && index === activePlayerIndex;
     return (
       <PlayerPanel
         player={p}
+        playerNumber={playerNumber}
         onLifeChange={(d) => { adjustLife(p.id, d); hideTurnTimerBriefly(); }}
         onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
         onPoisonChange={(d) => adjustPoison(p.id, d)}
@@ -270,6 +271,11 @@ export default function LifePage() {
     const layouts = LAYOUTS[playerCount];
     if (!layouts) return null;
     const layout = layouts.find((l) => l.id === gameOptions.layout) ?? layouts[0];
+    const visualOrder = layout.panels
+      .map((p, i) => ({ i, cy: p.y + p.h / 2, cx: p.x + p.w / 2 }))
+      .sort((a, b) => a.cy - b.cy || a.cx - b.cx);
+    const panelNumber = new Map<number, number>();
+    visualOrder.forEach((v, rank) => panelNumber.set(v.i, rank + 1));
     return (
       <div className="relative flex-1">
         {layout.panels.map((p, i) => {
@@ -287,7 +293,7 @@ export default function LifePage() {
                 padding: "2px",
               }}
             >
-              {panel(i, rotation)}
+              {panel(i, rotation, panelNumber.get(i))}
             </div>
           );
         })}
@@ -398,7 +404,10 @@ export default function LifePage() {
             )}
 
             {showMenu && (
-              <div className="absolute top-13 left-1/2 -translate-x-1/2 bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] z-30">
+              <div className={cn(
+                "absolute bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] z-30",
+                playerCount === 1 ? "top-13 left-0" : "top-13 left-1/2 -translate-x-1/2"
+              )}>
                 <button
                   type="button"
                   onClick={() => { setShowHistory(true); setShowMenu(false); }}
