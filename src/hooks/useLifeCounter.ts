@@ -9,6 +9,7 @@ interface UseLifeCounterReturn {
   players: Player[];
   events: LifeEvent[];
   gameStarted: boolean;
+  gameStartedAt: number;
   startingLife: number;
   playerCount: number;
   setupGame: (
@@ -31,6 +32,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
   const [players, setPlayers] = useState<Player[]>([]);
   const [events, setEvents] = useState<LifeEvent[]>([]);
   const [gameStarted, setGameStarted] = useState(false);
+  const [gameStartedAt, setGameStartedAt] = useState(0);
   const [startingLife, setStartingLife] = useState(20);
   const [playerCount, setPlayerCount] = useState(2);
 
@@ -71,6 +73,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
 
       setPlayers(newPlayers);
       setEvents([]);
+      setGameStartedAt(Date.now());
       setGameStarted(true);
     },
     []
@@ -149,6 +152,7 @@ export function useLifeCounter(): UseLifeCounterReturn {
     players,
     events,
     gameStarted,
+    gameStartedAt,
     startingLife,
     playerCount,
     setupGame,

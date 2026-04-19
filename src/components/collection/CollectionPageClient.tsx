@@ -129,7 +129,7 @@ export default function CollectionPageClient() {
       {activeTab === "collection" && (
         <button
           onClick={() => setShowCreate(true)}
-          className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-accent hover:bg-accent-dark text-black flex items-center justify-center shadow-lg transition-colors"
+          className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full btn-gradient flex items-center justify-center transition-colors"
           aria-label="Create new binder"
         >
           <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

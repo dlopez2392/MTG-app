@@ -43,6 +43,8 @@ interface PlayerPanelProps {
   onTapPanel?: () => void;
   disabled?: boolean;
   totalTime?: number;
+  /** Rotation in degrees so content faces outward toward nearest screen edge */
+  rotation?: number;
 }
 
 export default function PlayerPanel({
@@ -57,6 +59,7 @@ export default function PlayerPanel({
   onTapPanel,
   disabled = false,
   totalTime,
+  rotation = 0,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -105,16 +108,36 @@ export default function PlayerPanel({
   const cmdrTotal = Object.entries(player.commanderDamage)
     .reduce((sum, [, v]) => sum + v, 0);
 
+  // For 90/-90 rotation, the inner content needs to be sized to fill the
+  // rotated viewport (swap width/height dimensions).
+  const isSideways = rotation === 90 || rotation === -90;
+
   return (
     <div
       className={cn(
-        "relative flex flex-col select-none overflow-hidden rounded-2xl transition-transform duration-300",
+        "relative select-none overflow-hidden rounded-2xl transition-transform duration-300",
         className
       )}
       style={{
         backgroundColor: `${player.color}B3`,
       }}
     >
+      {/* Rotated content wrapper — rotates everything so content faces outward */}
+      <div
+        className="absolute inset-0"
+        style={
+          isSideways
+            ? {
+                width: "100%",
+                height: "100%",
+                transform: `rotate(${rotation}deg)`,
+                transformOrigin: "center center",
+              }
+            : rotation === 180
+              ? { transform: "rotate(180deg)", transformOrigin: "center center" }
+              : undefined
+        }
+      >
       {/* Art background */}
       {artUrl && (
         <img
@@ -344,6 +367,7 @@ export default function PlayerPanel({
           </button>
         </div>
       )}
+      </div>{/* end rotation wrapper */}
     </div>
   );
 }

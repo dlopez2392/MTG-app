@@ -19,7 +19,7 @@ export default function Tabs({ tabs, active, onChange, className }: TabsProps) {
           className={cn(
             "flex-1 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-card",
             active === tab.value
-              ? "bg-accent text-black"
+              ? "btn-gradient"
               : "text-text-secondary hover:text-text-primary"
           )}
         >

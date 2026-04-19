@@ -41,6 +41,18 @@ export const LAYOUTS: Record<number, LayoutOption[]> = {
 
 const PREVIEW_COLORS = ["#7E57C2", "#66BB6A", "#4DB6AC", "#42A5F5", "#AB47BC", "#EF5350"];
 
+/** Compute the rotation angle (degrees) so panel content faces outward toward the nearest screen edge. */
+export function getOutwardRotation(panel: { x: number; y: number; w: number; h: number }): number {
+  const cx = panel.x + panel.w / 2;
+  const cy = panel.y + panel.h / 2;
+  if (panel.w >= 0.9) return cy < 0.5 ? 180 : 0;
+  if (panel.h >= 0.9) return cx < 0.5 ? 90 : -90;
+  const dx = Math.abs(cx - 0.5);
+  const dy = Math.abs(cy - 0.5);
+  if (dx > dy) return cx < 0.5 ? 90 : -90;
+  return cy < 0.5 ? 180 : 0;
+}
+
 export interface GameOptions {
   poisonCounters: boolean;
   turnTimer: boolean;
@@ -59,6 +71,7 @@ interface PlayerSetupProps {
     playerColors: string[],
     options: GameOptions
   ) => void;
+  onShowMatchHistory?: () => void;
 }
 
 const FORMATS = [
@@ -74,6 +87,7 @@ export default function PlayerSetup({
   defaultPlayerCount = 2,
   defaultStartingLife = 20,
   onStart,
+  onShowMatchHistory,
 }: PlayerSetupProps) {
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount);
   const [startingLife, setStartingLife] = useState(defaultStartingLife);
@@ -113,17 +127,6 @@ export default function PlayerSetup({
     });
   }
 
-  function getOutwardRotation(panel: LayoutOption["panels"][number]): number {
-    const cx = panel.x + panel.w / 2;
-    const cy = panel.y + panel.h / 2;
-    if (panel.w >= 0.9) return cy < 0.5 ? 180 : 0;
-    if (panel.h >= 0.9) return cx < 0.5 ? 90 : -90;
-    const dx = Math.abs(cx - 0.5);
-    const dy = Math.abs(cy - 0.5);
-    if (dx > dy) return cx < 0.5 ? 90 : -90;
-    return cy < 0.5 ? 180 : 0;
-  }
-
   const hasMultipleLayouts = (LAYOUTS[playerCount]?.length ?? 0) > 1;
 
   if (showLayoutPage) {
@@ -160,16 +163,22 @@ export default function PlayerSetup({
                 )}
                 style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
               >
-                <div className="relative w-full h-full p-1">
+                <div className="relative w-full h-full">
                   {layout.panels.map((p, i) => (
                     <div
                       key={i}
-                      className="absolute rounded-lg flex items-center justify-center"
+                      className="absolute flex items-center justify-center"
                       style={{
-                        left: `calc(${p.x * 100}% + 4px)`,
-                        top: `calc(${p.y * 100}% + 4px)`,
-                        width: `calc(${p.w * 100}% - 6px)`,
-                        height: `calc(${p.h * 100}% - 6px)`,
+                        left: `${p.x * 100}%`,
+                        top: `${p.y * 100}%`,
+                        width: `${p.w * 100}%`,
+                        height: `${p.h * 100}%`,
+                        padding: "2px",
+                      }}
+                    >
+                    <div
+                      className="w-full h-full rounded-lg flex items-center justify-center"
+                      style={{
                         backgroundColor: MTG_PLAYER_COLORS.find((c) => c.key === selectedColorKeys[i])?.color ?? PREVIEW_COLORS[i % PREVIEW_COLORS.length],
                       }}
                     >
@@ -182,6 +191,7 @@ export default function PlayerSetup({
                         <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                       </svg>
                     </div>
+                    </div>
                   ))}
                 </div>
               </button>
@@ -192,7 +202,7 @@ export default function PlayerSetup({
           <button
             type="button"
             onClick={handleStart}
-            className="w-full py-4 rounded-2xl bg-accent text-black text-lg font-bold hover:bg-accent-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            className="w-full py-4 rounded-2xl btn-gradient text-lg font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
           >
             START GAME
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -207,10 +217,22 @@ export default function PlayerSetup({
   return (
     <div className="flex flex-col min-h-screen bg-bg-primary overflow-y-auto pb-24">
       {/* Header */}
-      <div className="px-6 pt-12 pb-4">
+      <div className="px-6 pt-12 pb-4 flex items-center justify-between">
         <h1 className="font-display text-3xl font-black uppercase tracking-wide text-text-primary">
           Life Counter
         </h1>
+        {onShowMatchHistory && (
+          <button
+            type="button"
+            onClick={onShowMatchHistory}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-bg-card border border-border text-text-muted hover:text-text-primary hover:border-accent/40 transition-all text-xs font-semibold cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M5 3v2l4 4-2.5 3.5L3 11v2l4 2 1 6h2l1-6 1.5-2L14 19h2l1-6 4-2v-2l-3.5 1.5L15 7l4-4V1l-5 5-2-2-2 2-5-5z" />
+            </svg>
+            History
+          </button>
+        )}
       </div>
 
       <div className="px-6 space-y-5">
@@ -253,7 +275,7 @@ export default function PlayerSetup({
                 className={cn(
                   "py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer",
                   startingLife === f.life
-                    ? "bg-accent text-black border-accent shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
+                    ? "btn-gradient border-transparent"
                     : "bg-bg-card text-text-secondary border-border hover:border-accent/40"
                 )}
               >
@@ -459,7 +481,7 @@ export default function PlayerSetup({
         <button
           type="button"
           onClick={hasMultipleLayouts ? () => setShowLayoutPage(true) : handleStart}
-          className="w-full py-4 rounded-2xl bg-accent text-black text-lg font-bold hover:bg-accent-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+          className="w-full py-4 rounded-2xl btn-gradient text-lg font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
         >
           {hasMultipleLayouts ? "NEXT" : "START GAME"}
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

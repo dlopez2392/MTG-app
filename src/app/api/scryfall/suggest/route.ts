@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
         card.image_uris?.small ??
         card.card_faces?.[0]?.image_uris?.small ??
         null,
+      setName: card.set_name ?? null,
+      prices: { usd: card.prices?.usd ?? null },
       manaCost: card.mana_cost ?? card.card_faces?.[0]?.mana_cost ?? null,
       typeLine: card.type_line ?? null,
     }));

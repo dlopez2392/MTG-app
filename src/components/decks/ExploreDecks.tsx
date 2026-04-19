@@ -145,7 +145,7 @@ export default function ExploreDecks() {
             onClick={() => { setFormat(f.value); setPage(1); }}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
               format === f.value
-                ? "bg-accent text-black"
+                ? "btn-gradient"
                 : "bg-bg-card text-text-secondary hover:text-text-primary border border-border"
             }`}
           >
@@ -174,7 +174,7 @@ export default function ExploreDecks() {
           <p className="text-text-muted text-sm">{error}</p>
           <button
             onClick={() => fetchDecks(1)}
-            className="mt-3 px-4 py-2 rounded-xl bg-accent text-black text-sm font-medium hover:bg-accent-dark transition-colors"
+            className="mt-3 px-4 py-2 rounded-xl btn-gradient text-sm font-medium transition-colors"
           >
             Retry
           </button>

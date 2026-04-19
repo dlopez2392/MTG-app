@@ -288,7 +288,7 @@ export default function ScanPageClient() {
           <div className="flex flex-col gap-3 w-full max-w-xs">
             <button
               onClick={() => setCameraStarted(true)}
-              className="w-full py-3 rounded-xl bg-accent text-black font-bold text-sm hover:bg-accent-dark transition-colors"
+              className="w-full py-3 rounded-xl btn-gradient font-bold text-sm transition-colors"
             >
               Open Camera
             </button>
@@ -490,7 +490,7 @@ export default function ScanPageClient() {
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => handleAddMatchedToList(matchedCard)}
-              className="flex-1 py-2 rounded-xl bg-accent text-black text-xs font-bold hover:bg-accent-dark transition-colors"
+              className="flex-1 py-2 rounded-xl btn-gradient text-xs font-bold transition-colors"
             >
               + Add to List
             </button>
@@ -624,7 +624,7 @@ export default function ScanPageClient() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleBulkAdd("collection")}
-                className="flex-1 py-2.5 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors"
+                className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-colors"
               >
                 Add to Collection
               </button>

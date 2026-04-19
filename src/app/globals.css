@@ -176,6 +176,30 @@ input[type="email"] {
   box-shadow: 0 0 16px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
+/* Gradient button — warm gold → orange → bold red-orange with depth */
+.btn-gradient {
+  background: linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%);
+  box-shadow:
+    0 2px 8px rgba(212, 96, 42, 0.4),
+    0 4px 16px rgba(237, 154, 87, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  color: #000;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(135deg, #F9D87E 0%, #ED8A3F 40%, #C24E1E 100%);
+  box-shadow:
+    0 4px 12px rgba(212, 96, 42, 0.5),
+    0 6px 24px rgba(237, 154, 87, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.btn-gradient:active {
+  box-shadow:
+    0 1px 4px rgba(212, 96, 42, 0.4),
+    inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
 /* ── Skeleton shimmer ──────────────────────────────────────────────────────── */
 @keyframes shimmer {
   from { background-position: -200% 0; }

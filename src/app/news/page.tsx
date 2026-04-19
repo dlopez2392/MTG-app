@@ -195,7 +195,7 @@ export default function NewsPage() {
             <div className="px-5 pt-3 pb-4">
               <button
                 onClick={applyFilter}
-                className="w-full py-3 rounded-xl bg-accent text-black font-bold text-sm hover:bg-accent-dark active:scale-[0.98] transition-all"
+                className="w-full py-3 rounded-xl btn-gradient font-bold text-sm active:scale-[0.98] transition-all"
               >
                 Apply
               </button>

@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const BASE_URL = "https://api.scryfall.com";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const fuzzy = searchParams.get("fuzzy");
-  const exact = searchParams.get("exact");
+  const fuzzy = request.nextUrl.searchParams.get("fuzzy");
+  const exact = request.nextUrl.searchParams.get("exact");
 
   if (!fuzzy && !exact) {
     return NextResponse.json({ error: "Missing fuzzy or exact parameter" }, { status: 400 });
