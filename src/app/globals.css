@@ -8,10 +8,10 @@
   --color-bg-card: #161B27;
   --color-bg-hover: #1E2433;
 
-  /* Violet-blue accent */
-  --color-accent: #7C5CFC;
-  --color-accent-dark: #6347E0;
-  --color-accent-light: #9B82FF;
+  /* Orange accent */
+  --color-accent: #ED9A57;
+  --color-accent-dark: #D4823F;
+  --color-accent-light: #F4B87A;
 
   /* Warm gold secondary accent */
   --color-accent-warm: #E4A94F;
@@ -160,9 +160,9 @@ input[type="email"] {
   background: linear-gradient(
     90deg,
     #E4C97A 0%,
-    #9B82FF 25%,
+    #F4B87A 25%,
     #E8EAF0 50%,
-    #7C5CFC 75%,
+    #ED9A57 75%,
     #E4C97A 100%
   );
   background-size: 200% auto;
@@ -213,10 +213,10 @@ input[type="email"] {
 @keyframes houdini-dust {
   0%   { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
   25%  { opacity: 0.6; filter: blur(4px);                                         transform: scale(1.02) translateY(-3px); }
-  42%  { opacity: 0;   filter: blur(18px) brightness(1.6) drop-shadow(0 0 12px rgba(124,92,252,0.6)); transform: scale(1.06) translateY(-7px); }
-  55%  { opacity: 0;   filter: blur(18px)                 drop-shadow(0 0 8px  rgba(124,92,252,0.3)); transform: scale(1.06) translateY(-7px); }
-  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4) drop-shadow(0 0 16px rgba(124,92,252,1));   transform: scale(1.02) translateY(-2px); }
-  86%  { opacity: 0.85; filter: blur(1.5px)               drop-shadow(0 0 6px  rgba(124,92,252,0.5)); transform: scale(1.002) translateY(0);  }
+  42%  { opacity: 0;   filter: blur(18px) brightness(1.6) drop-shadow(0 0 12px rgba(237,154,87,0.6)); transform: scale(1.06) translateY(-7px); }
+  55%  { opacity: 0;   filter: blur(18px)                 drop-shadow(0 0 8px  rgba(237,154,87,0.3)); transform: scale(1.06) translateY(-7px); }
+  70%  { opacity: 0.3; filter: blur(10px) brightness(1.4) drop-shadow(0 0 16px rgba(237,154,87,1));   transform: scale(1.02) translateY(-2px); }
+  86%  { opacity: 0.85; filter: blur(1.5px)               drop-shadow(0 0 6px  rgba(237,154,87,0.5)); transform: scale(1.002) translateY(0);  }
   100% { opacity: 1;   filter: blur(0px);                                        transform: scale(1)    translateY(0);   }
 }
 

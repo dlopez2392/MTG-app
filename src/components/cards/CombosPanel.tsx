@@ -41,7 +41,7 @@ function ComboCardThumb({ card, highlight }: { card: ComboCard; highlight: boole
       <div
         className={cn(
           "w-14 rounded-lg overflow-hidden border-2 transition-all",
-          highlight ? "border-accent shadow-[0_0_8px_rgba(124,92,252,0.5)]" : "border-border"
+          highlight ? "border-accent shadow-[0_0_8px_rgba(237,154,87,0.5)]" : "border-border"
         )}
         style={{ aspectRatio: "488/680" }}
       >

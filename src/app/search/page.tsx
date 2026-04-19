@@ -107,7 +107,7 @@ export default function SearchPage() {
       <HeroBanner
         title="Search"
         subtitle="Browse the full Scryfall database"
-        accent="#7C5CFC"
+        accent="#ED9A57"
         icon={SEARCH_ICON}
       >
         {tab === "cards" && (

@@ -200,7 +200,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
           Cancel
         </button>
         <button type="submit" disabled={!deckName.trim()}
-          className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors disabled:opacity-40">
+          className="px-4 py-2 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors disabled:opacity-40">
           Save
         </button>
       </div>
@@ -292,7 +292,7 @@ function GamesPageInner() {
               <button key={v} onClick={() => setView(v)}
                 className={cn(
                   "px-3 py-1.5 rounded text-xs font-semibold capitalize transition-colors",
-                  view === v ? "bg-accent text-white" : "text-text-muted hover:text-text-secondary"
+                  view === v ? "bg-accent text-black" : "text-text-muted hover:text-text-secondary"
                 )}>
                 {v}
               </button>
@@ -300,7 +300,7 @@ function GamesPageInner() {
           </div>
           <button
             onClick={() => setShowLog(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

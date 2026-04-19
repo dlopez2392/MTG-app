@@ -62,7 +62,7 @@ export default function DecksPageClient() {
       <HeroBanner
         title="Decks"
         subtitle="Build & manage your decks"
-        accent="#7C5CFC"
+        accent="#ED9A57"
         icon={DECK_ICON}
       />
 
@@ -73,7 +73,7 @@ export default function DecksPageClient() {
             onClick={() => setTab("decks")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               tab === "decks"
-                ? "bg-accent text-white"
+                ? "bg-accent text-black"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -86,7 +86,7 @@ export default function DecksPageClient() {
             onClick={() => setTab("explore")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               tab === "explore"
-                ? "bg-accent text-white"
+                ? "bg-accent text-black"
                 : "text-text-secondary hover:text-text-primary"
             }`}
           >
@@ -126,7 +126,7 @@ export default function DecksPageClient() {
                 </svg>
                 <span className="text-sm font-medium hidden sm:inline">Filter</span>
                 {formatFilter && (
-                  <span className="w-4 h-4 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="w-4 h-4 rounded-full bg-accent text-black text-[10px] font-bold flex items-center justify-center">
                     1
                   </span>
                 )}
@@ -193,7 +193,7 @@ export default function DecksPageClient() {
         {tab === "decks" && (
           <button
             onClick={() => router.push("/decks/new")}
-            className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full bg-accent text-white shadow-lg hover:bg-accent-dark transition-colors flex items-center justify-center"
+            className="fixed bottom-24 right-4 z-30 w-14 h-14 rounded-full bg-accent text-black shadow-lg hover:bg-accent-dark transition-colors flex items-center justify-center"
             aria-label="Create new deck"
           >
             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

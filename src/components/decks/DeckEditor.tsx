@@ -61,7 +61,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               onClick={() => setViewMode("list")}
               title="List view"
               className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                viewMode === "list" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary"
+                viewMode === "list" ? "bg-accent text-black" : "text-text-muted hover:text-text-primary"
               }`}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -72,7 +72,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               onClick={() => setViewMode("grid")}
               title="Grid view"
               className={`p-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                viewMode === "grid" ? "bg-accent text-white" : "text-text-muted hover:text-text-primary"
+                viewMode === "grid" ? "bg-accent text-black" : "text-text-muted hover:text-text-primary"
               }`}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -112,7 +112,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
 
           <button
             onClick={() => router.push(`/search?deckId=${deckId}&category=${activeTab}`)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent text-white hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl bg-accent text-black hover:bg-accent-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-bg-primary"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

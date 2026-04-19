@@ -317,7 +317,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-all active:scale-[0.98]"
+                className="flex-1 py-2.5 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-all active:scale-[0.98]"
               >
                 Keep
               </button>
@@ -333,7 +333,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
               <button
                 onClick={confirmMulligan}
                 disabled={putBack.size < putBackTarget}
-                className="flex-1 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:bg-accent-dark transition-all active:scale-[0.98] disabled:opacity-40"
+                className="flex-1 py-2.5 rounded-xl bg-accent text-black text-sm font-bold hover:bg-accent-dark transition-all active:scale-[0.98] disabled:opacity-40"
               >
                 Confirm ({putBack.size}/{putBackTarget})
               </button>

@@ -83,7 +83,7 @@ export default function PlayerSetup({
               className={cn(
                 "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
                 playerCount === count
-                  ? "bg-accent text-white border-accent"
+                  ? "bg-accent text-black border-accent"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >
@@ -106,7 +106,7 @@ export default function PlayerSetup({
               className={cn(
                 "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
                 startingLife === value
-                  ? "bg-accent text-white border-accent"
+                  ? "bg-accent text-black border-accent"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >

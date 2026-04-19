@@ -26,7 +26,7 @@ export default function BinderCard({
     <div className={cn("relative group", className)}>
       <Link
         href={`/collection/${id}`}
-        className="relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end block transition-all duration-200 active:scale-[0.97] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(124,92,252,0.15)]"
+        className="relative overflow-hidden rounded-xl border border-border bg-bg-card aspect-[3/4] flex flex-col justify-end block transition-all duration-200 active:scale-[0.97] hover:border-accent/40 hover:shadow-[0_4px_20px_rgba(237,154,87,0.15)]"
       >
         {/* Background image */}
         {coverImageUri ? (

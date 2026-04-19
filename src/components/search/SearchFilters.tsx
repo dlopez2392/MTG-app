@@ -150,7 +150,7 @@ export default function SearchFiltersPanel({ filters, onChange, className }: Sea
           </svg>
           Filters
           {activeCount > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent text-white text-[10px] font-bold">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-accent text-black text-[10px] font-bold">
               {activeCount}
             </span>
           )}

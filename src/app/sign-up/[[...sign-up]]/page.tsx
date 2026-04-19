@@ -5,7 +5,7 @@ const clerkAppearance = {
   variables: {
     colorBackground: "#111520",
     colorInputBackground: "#0B0E14",
-    colorPrimary: "#7C5CFC",
+    colorPrimary: "#ED9A57",
     colorText: "#E8EAF0",
     colorTextSecondary: "#8B90A0",
     colorInputText: "#E8EAF0",
@@ -29,14 +29,14 @@ const clerkAppearance = {
       color: "#E8EAF0",
     },
     formButtonPrimary: {
-      background: "#7C5CFC",
+      background: "#ED9A57",
       color: "#fff",
       fontWeight: "600",
-      "&:hover": { background: "#6347E0" },
+      "&:hover": { background: "#D4823F" },
     },
-    footerActionLink: { color: "#7C5CFC" },
+    footerActionLink: { color: "#ED9A57" },
     identityPreviewText: { color: "#E8EAF0" },
-    identityPreviewEditButton: { color: "#7C5CFC" },
+    identityPreviewEditButton: { color: "#ED9A57" },
     dividerLine: { background: "#1E2433" },
     dividerText: { color: "#4E5364" },
     socialButtonsBlockButton: {

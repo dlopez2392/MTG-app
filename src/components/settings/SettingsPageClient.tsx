@@ -164,7 +164,7 @@ export default function SettingsPageClient() {
               <div className="flex gap-2">
                 <button
                   onClick={() => router.push("/sign-in")}
-                  className="flex-1 py-2 rounded-xl bg-accent text-white text-sm font-semibold hover:bg-accent-dark transition-colors"
+                  className="flex-1 py-2 rounded-xl bg-accent text-black text-sm font-semibold hover:bg-accent-dark transition-colors"
                 >
                   Sign In
                 </button>

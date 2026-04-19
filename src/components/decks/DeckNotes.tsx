@@ -175,7 +175,7 @@ export default function DeckNotes({ deckId, initialValue = "", onSave }: DeckNot
                 <button
                   onClick={handleBlur}
                   disabled={saving}
-                  className="px-3 py-1.5 rounded-xl bg-accent text-white text-xs font-bold hover:bg-accent-dark transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 rounded-xl bg-accent text-black text-xs font-bold hover:bg-accent-dark transition-colors disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>
