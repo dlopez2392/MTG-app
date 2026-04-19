@@ -79,11 +79,12 @@ export default function PlayerSetup({
           {PLAYER_COUNT_OPTIONS.map((count) => (
             <button
               key={count}
+              type="button"
               onClick={() => setPlayerCount(count)}
               className={cn(
-                "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
+                "flex-1 py-3 rounded-xl text-lg font-bold transition-colors border cursor-pointer",
                 playerCount === count
-                  ? "bg-accent text-black border-accent"
+                  ? "bg-accent text-black border-accent shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >
@@ -102,11 +103,12 @@ export default function PlayerSetup({
           {LIFE_OPTIONS.map(({ value, label }) => (
             <button
               key={value}
+              type="button"
               onClick={() => setStartingLife(value)}
               className={cn(
-                "flex-1 py-3 rounded-lg text-lg font-bold transition-colors border",
+                "flex-1 py-3 rounded-xl text-lg font-bold transition-colors border cursor-pointer",
                 startingLife === value
-                  ? "bg-accent text-black border-accent"
+                  ? "bg-accent text-black border-accent shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent)_30%,transparent)]"
                   : "bg-bg-card text-text-secondary border-border hover:border-text-muted"
               )}
             >

@@ -67,7 +67,8 @@ interface PlayerPanelProps {
   onLifeChange: (delta: number) => void;
   onCommanderDamage: (delta: number, sourcePlayerId?: string) => void;
   onPoisonChange?: (delta: number) => void;
-  isRotated?: boolean;
+  rotation?: number;
+  onRotate?: () => void;
   className?: string;
   showPoisonCounters?: boolean;
   perCommanderTracking?: boolean;
@@ -79,7 +80,8 @@ export default function PlayerPanel({
   onLifeChange,
   onCommanderDamage,
   onPoisonChange,
-  isRotated = false,
+  rotation = 0,
+  onRotate,
   className,
   showPoisonCounters = false,
   perCommanderTracking = false,
@@ -131,11 +133,13 @@ export default function PlayerPanel({
   return (
     <div
       className={cn(
-        "relative flex flex-col select-none overflow-hidden rounded-xl",
-        isRotated && "rotate-180",
+        "relative flex flex-col select-none overflow-hidden rounded-xl transition-transform duration-300",
         className
       )}
-      style={{ backgroundColor: `${player.color}18` }}
+      style={{
+        backgroundColor: `${player.color}18`,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+      }}
     >
       {/* Card art background */}
       {artUrl && (
@@ -155,6 +159,19 @@ export default function PlayerPanel({
           background: `radial-gradient(ellipse at center, transparent 20%, ${player.color}28 100%)`,
         }}
       />
+
+      {/* Rotate button */}
+      {onRotate && (
+        <button
+          onClick={onRotate}
+          className="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white/50 hover:text-white/80 active:scale-90 transition-all"
+          aria-label="Rotate panel"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+          </svg>
+        </button>
+      )}
 
       {/* ── Top: player name ── */}
       <div className="relative z-10 flex items-center justify-center gap-2 pt-7 pb-0.5">

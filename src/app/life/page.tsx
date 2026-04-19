@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { useLifeCounter } from "@/hooks/useLifeCounter";
-import { loadSettings, useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/hooks/useSettings";
 import PlayerSetup from "@/components/life/PlayerSetup";
 import PlayerPanel from "@/components/life/PlayerPanel";
 import GameHistory from "@/components/life/GameHistory";
@@ -23,10 +23,11 @@ export default function LifePage() {
     newGame,
   } = useLifeCounter();
 
-  const { settings } = useSettings();
+  const { settings, mounted } = useSettings();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [rotations, setRotations] = useState<Record<number, number>>({});
 
   // Native Fullscreen API — supported on Android/Desktop, NOT on iOS Safari
   const supportsNativeFullscreen =
@@ -65,11 +66,11 @@ export default function LifePage() {
   }, [supportsNativeFullscreen, isFullscreen]);
 
   if (!gameStarted) {
-    const saved = loadSettings();
+    if (!mounted) return null;
     return (
       <PlayerSetup
-        defaultStartingLife={saved.defaultStartingLife}
-        defaultPlayerCount={saved.defaultPlayerCount}
+        defaultStartingLife={settings.defaultStartingLife}
+        defaultPlayerCount={settings.defaultPlayerCount}
         onStart={(count, life, names, colors) =>
           setupGame(count, life, names, colors)
         }
@@ -77,16 +78,25 @@ export default function LifePage() {
     );
   }
 
-  const panel = (index: number, rotated = false) => {
+  const cycleRotation = (index: number) => {
+    setRotations((prev) => ({
+      ...prev,
+      [index]: ((prev[index] ?? 0) + 90) % 360,
+    }));
+  };
+
+  const panel = (index: number, defaultRotated = false) => {
     const p = players[index];
     const opponents = players.filter((_, i) => i !== index);
+    const rotation = rotations[index] ?? (defaultRotated ? 180 : 0);
     return (
       <PlayerPanel
         player={p}
         onLifeChange={(d) => adjustLife(p.id, d)}
         onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
         onPoisonChange={(d) => adjustPoison(p.id, d)}
-        isRotated={rotated}
+        rotation={rotation}
+        onRotate={() => cycleRotation(index)}
         className="flex-1"
         showPoisonCounters={settings.showPoisonCounters}
         perCommanderTracking={settings.perCommanderTracking}
