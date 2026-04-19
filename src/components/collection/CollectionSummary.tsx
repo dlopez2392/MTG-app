@@ -68,68 +68,60 @@ export default function CollectionSummary({
         className
       )}
     >
-      <div className="flex items-center gap-4">
-        {/* Donut Chart */}
-        <div className="w-24 h-24 flex-shrink-0">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={25}
-                  outerRadius={40}
-                  paddingAngle={2}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {chartData.map((_, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={CHART_COLORS[index % CHART_COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    background: "#2a2a2a",
-                    border: "1px solid #3a3a3a",
-                    borderRadius: "8px",
-                    color: "#fff",
-                    fontSize: "12px",
-                  }}
-                  formatter={(value) => [`$${Number(value).toFixed(2)}`, "Value"]}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="w-full h-full rounded-full border-4 border-border flex items-center justify-center">
-              <span className="text-text-muted text-xs">Empty</span>
-            </div>
-          )}
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="bg-bg-primary/50 rounded-lg p-2.5 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-text-primary tabular-nums">{totalCards}</p>
+          <p className="text-[10px] sm:text-xs text-text-muted">Cards</p>
         </div>
-
-        {/* Stats */}
-        <div className="flex-1 grid grid-cols-3 gap-3">
-          <div>
-            <p className="text-2xl font-bold text-text-primary">{totalCards}</p>
-            <p className="text-xs text-text-muted">Total Cards</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-accent">
-              ${totalValue.toFixed(2)}
-            </p>
-            <p className="text-xs text-text-muted">Total Value</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-text-primary">
-              {binders.length}
-            </p>
-            <p className="text-xs text-text-muted">Binders</p>
-          </div>
+        <div className="bg-bg-primary/50 rounded-lg p-2.5 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-accent tabular-nums truncate">
+            ${totalValue.toFixed(2)}
+          </p>
+          <p className="text-[10px] sm:text-xs text-text-muted">Value</p>
+        </div>
+        <div className="bg-bg-primary/50 rounded-lg p-2.5 text-center">
+          <p className="text-lg sm:text-2xl font-bold text-text-primary tabular-nums">{binders.length}</p>
+          <p className="text-[10px] sm:text-xs text-text-muted">Binders</p>
         </div>
       </div>
+
+      {/* Donut Chart */}
+      {chartData.length > 0 && (
+        <div className="h-28">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={30}
+                outerRadius={48}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+              >
+                {chartData.map((_, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  background: "#2a2a2a",
+                  border: "1px solid #3a3a3a",
+                  borderRadius: "8px",
+                  color: "#fff",
+                  fontSize: "12px",
+                }}
+                formatter={(value) => [`$${Number(value).toFixed(2)}`, "Value"]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
