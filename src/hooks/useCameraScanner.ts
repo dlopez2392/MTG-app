@@ -28,6 +28,7 @@ interface UseCameraScannerReturn {
   matchedCard: ScryfallCard | null;
   error: string;
   hasHashIndex: boolean;
+  hasVisionAI: boolean;
   // Scan list
   scanList: ScanListItem[];
   totalValue: number;
@@ -127,16 +128,21 @@ export function useCameraScanner(): UseCameraScannerReturn {
   const [matchedCard, setMatchedCard] = useState<ScryfallCard | null>(null);
   const [error, setError] = useState("");
   const [scanList, setScanList] = useState<ScanListItem[]>([]);
-  const [autoScan, setAutoScan] = useState(false);
+  const [autoScan, setAutoScan] = useState(true);
   const [hasHashIndex, setHasHashIndex] = useState(false);
+  const [hasVisionAI, setHasVisionAI] = useState(false);
   const consecutiveFailsRef = useRef(0);
 
-  // Check if hash index exists on mount
+  // Check available scan backends on mount
   useEffect(() => {
     fetch("/api/scan/search")
       .then(r => r.json())
       .then(d => setHasHashIndex(d.indexed === true))
       .catch(() => setHasHashIndex(false));
+    fetch("/api/scan/identify")
+      .then(r => r.json())
+      .then(d => setHasVisionAI(d.available === true))
+      .catch(() => setHasVisionAI(false));
   }, []);
 
   const totalValue = scanList.reduce((sum, item) => {
@@ -385,54 +391,106 @@ export function useCameraScanner(): UseCameraScannerReturn {
         }
       }
 
-      // ── Phase 2: OCR fallback ─────────────────────────────────────────────────
+      // ── Phase 2: Cloud Vision AI (ML classifier) ──────────────────────────────
+      if (hasVisionAI) {
+        setStatusText("AI identifying card…");
+        const fullFrameUrl = cropArtworkToDataUrl(video, canvas, 0, 0, vw, vh);
+
+        try {
+          const visionRes = await fetch("/api/scan/identify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: fullFrameUrl }),
+          });
+          const visionResult = await visionRes.json() as {
+            cardName: string | null;
+            confidence: string;
+            provider: string;
+          };
+
+          if (visionResult.cardName) {
+            setStatusText(`Found: ${visionResult.cardName}`);
+            const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(visionResult.cardName)}`);
+            if (fuzzyRes.ok) {
+              const card: ScryfallCard = await fuzzyRes.json();
+              if (autoScan && card.name === lastMatchedNameRef.current) return;
+              lastMatchedNameRef.current = card.name;
+              consecutiveFailsRef.current = 0;
+              setMatchedCard(card);
+              setStatusText("");
+              return;
+            }
+            // Fuzzy didn't match — try suggest
+            const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(visionResult.cardName)}`);
+            if (suggestRes.ok) {
+              const data: CardScanSuggestion[] = await suggestRes.json();
+              if (data.length === 1) {
+                const r = await fetch(`/api/scryfall/cards/${data[0].id}`);
+                if (r.ok) {
+                  const card: ScryfallCard = await r.json();
+                  if (autoScan && card.name === lastMatchedNameRef.current) return;
+                  lastMatchedNameRef.current = card.name;
+                  consecutiveFailsRef.current = 0;
+                  setMatchedCard(card);
+                  setStatusText("");
+                  return;
+                }
+              } else if (data.length > 1) {
+                consecutiveFailsRef.current = 0;
+                setSuggestions(data.slice(0, 6));
+                setStatusText("");
+                return;
+              }
+            }
+          }
+        } catch {
+          // Vision API failed — fall through to OCR
+        }
+      }
+
+      // ── Phase 3: Local OCR fallback (Tesseract) ─────────────────────────────────
       const ocrText = await runOcrFallback(video, canvas);
 
-      if (!ocrText) {
-        if (!autoScan) setError("Couldn't read the card. Align the artwork in the frame and try again.");
-        return;
-      }
+      if (ocrText) {
+        setStatusText("Searching by name…");
 
-      setStatusText("Searching by name…");
+        const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(ocrText)}`);
+        if (fuzzyRes.ok) {
+          const card: ScryfallCard = await fuzzyRes.json();
+          if (autoScan && card.name === lastMatchedNameRef.current) return;
+          lastMatchedNameRef.current = card.name;
+          consecutiveFailsRef.current = 0;
+          setMatchedCard(card);
+          setStatusText("");
+          return;
+        }
 
-      // Fuzzy name search
-      const fuzzyRes = await fetch(`/api/scryfall/named?fuzzy=${encodeURIComponent(ocrText)}`);
-      if (fuzzyRes.ok) {
-        const card: ScryfallCard = await fuzzyRes.json();
-        if (autoScan && card.name === lastMatchedNameRef.current) return;
-        lastMatchedNameRef.current = card.name;
-        consecutiveFailsRef.current = 0;
-        setMatchedCard(card);
-        setStatusText("");
-        return;
-      }
-
-      // Autocomplete suggest
-      const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(ocrText)}`);
-      if (suggestRes.ok) {
-        const data: CardScanSuggestion[] = await suggestRes.json();
-        if (data.length === 1) {
-          const r = await fetch(`/api/scryfall/cards/${data[0].id}`);
-          if (r.ok) {
-            const card: ScryfallCard = await r.json();
-            if (autoScan && card.name === lastMatchedNameRef.current) return;
-            lastMatchedNameRef.current = card.name;
+        const suggestRes = await fetch(`/api/scryfall/suggest?q=${encodeURIComponent(ocrText)}`);
+        if (suggestRes.ok) {
+          const data: CardScanSuggestion[] = await suggestRes.json();
+          if (data.length === 1) {
+            const r = await fetch(`/api/scryfall/cards/${data[0].id}`);
+            if (r.ok) {
+              const card: ScryfallCard = await r.json();
+              if (autoScan && card.name === lastMatchedNameRef.current) return;
+              lastMatchedNameRef.current = card.name;
+              consecutiveFailsRef.current = 0;
+              setMatchedCard(card);
+              setStatusText("");
+              return;
+            }
+          } else if (data.length > 1) {
             consecutiveFailsRef.current = 0;
-            setMatchedCard(card);
+            setSuggestions(data.slice(0, 6));
             setStatusText("");
             return;
           }
-        } else if (data.length > 1) {
-          consecutiveFailsRef.current = 0;
-          setSuggestions(data.slice(0, 6));
-          setStatusText("");
-          return;
         }
       }
 
       consecutiveFailsRef.current++;
       if (!autoScan) {
-        setError(`Couldn't identify this card. Try adjusting the angle or lighting.`);
+        setError("Couldn't identify this card. Try adjusting the angle or lighting.");
       } else if (consecutiveFailsRef.current >= 3) {
         setStatusText("No card detected — try adjusting position");
       }
@@ -443,7 +501,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
       isProcessingRef.current = false;
       setIsProcessing(false);
     }
-  }, [hasHashIndex, runOcrFallback, autoScan]);
+  }, [hasHashIndex, hasVisionAI, runOcrFallback, autoScan]);
 
   // ── Auto-scan loop ────────────────────────────────────────────────────────────
 
@@ -488,7 +546,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
 
   return {
     videoRef, canvasRef, isStreaming, isProcessing, statusText,
-    suggestions, matchedCard, error, hasHashIndex,
+    suggestions, matchedCard, error, hasHashIndex, hasVisionAI,
     scanList, totalValue, addToScanList, removeFromScanList,
     updateScanListQty, toggleItemFoil, clearScanList,
     autoScan, setAutoScan,

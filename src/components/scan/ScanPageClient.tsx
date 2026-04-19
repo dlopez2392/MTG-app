@@ -113,6 +113,7 @@ export default function ScanPageClient() {
     updateScanListQty, toggleItemFoil, clearScanList,
     autoScan, setAutoScan,
     startCamera, stopCamera, captureAndRecognize, selectSuggestion, reset,
+    hasVisionAI,
   } = useCameraScanner();
 
   const { allBinders, addCardToBinder } = useCollection();
@@ -279,9 +280,11 @@ export default function ScanPageClient() {
               Point your camera at a Magic card to identify it instantly.
             </p>
             <p className="text-xs text-text-muted">
-              {hasHashIndex
-                ? "Works best with good lighting — center the card artwork in the frame."
-                : "Works best with good lighting and the card name clearly visible."}
+              {hasVisionAI
+                ? "AI-powered scanning — just point your camera at any card."
+                : hasHashIndex
+                  ? "Works best with good lighting — center the card artwork in the frame."
+                  : "Works best with good lighting and the card name clearly visible."}
             </p>
           </div>
 
@@ -394,7 +397,7 @@ export default function ScanPageClient() {
             }} />
           </div>
           <p className="mt-3 text-xs font-medium px-4 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white/80">
-            {autoScan ? "Auto-scanning…" : hasHashIndex ? "Center card artwork here" : "Align card name at top"}
+            {autoScan ? "Auto-scanning…" : hasVisionAI ? "Point at any card" : hasHashIndex ? "Center card artwork here" : "Align card name at top"}
           </p>
         </div>
       )}
