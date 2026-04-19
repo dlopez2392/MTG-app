@@ -298,39 +298,15 @@ export default function PlayerSetup({
             </div>
           </button>
 
-          {/* Turn Timer */}
-          <button
-            type="button"
-            onClick={() => setTurnTimer(!turnTimer)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
-              turnTimer
-                ? "bg-blue-900/30 border-blue-500/50"
-                : "bg-bg-card border-border"
-            )}
-          >
-            <svg className={cn("w-5 h-5 flex-shrink-0", turnTimer ? "text-blue-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className={cn("text-sm font-semibold flex-1 text-left", turnTimer ? "text-blue-400" : "text-text-secondary")}>
-              Turn Timer
-            </span>
-            <div className={cn(
-              "w-10 h-6 rounded-full transition-colors relative",
-              turnTimer ? "bg-blue-500" : "bg-white/10"
-            )}>
-              <div className={cn(
-                "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                turnTimer ? "translate-x-5" : "translate-x-1"
-              )} />
-            </div>
-          </button>
-
           {/* Game Timer */}
           <div>
             <button
               type="button"
-              onClick={() => setGameTimer(!gameTimer)}
+              onClick={() => {
+                const next = !gameTimer;
+                setGameTimer(next);
+                if (!next) setTurnTimer(false);
+              }}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
                 gameTimer
@@ -382,6 +358,41 @@ export default function PlayerSetup({
               </div>
             )}
           </div>
+
+          {/* Turn Timer (requires Game Timer) */}
+          <button
+            type="button"
+            onClick={() => gameTimer && setTurnTimer(!turnTimer)}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all",
+              !gameTimer && "opacity-40 cursor-not-allowed",
+              gameTimer && "cursor-pointer",
+              turnTimer
+                ? "bg-blue-900/30 border-blue-500/50"
+                : "bg-bg-card border-border"
+            )}
+          >
+            <svg className={cn("w-5 h-5 flex-shrink-0", turnTimer ? "text-blue-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 text-left">
+              <span className={cn("text-sm font-semibold block", turnTimer ? "text-blue-400" : "text-text-secondary")}>
+                Turn Timer
+              </span>
+              {!gameTimer && (
+                <span className="text-[10px] text-text-muted">Requires Game Timer</span>
+              )}
+            </div>
+            <div className={cn(
+              "w-10 h-6 rounded-full transition-colors relative",
+              turnTimer ? "bg-blue-500" : "bg-white/10"
+            )}>
+              <div className={cn(
+                "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+                turnTimer ? "translate-x-5" : "translate-x-1"
+              )} />
+            </div>
+          </button>
         </div>
 
         {/* ── Player Names (collapsible) ── */}

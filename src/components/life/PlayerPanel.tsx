@@ -42,6 +42,7 @@ interface PlayerPanelProps {
   opponents?: Player[];
   onTapPanel?: () => void;
   disabled?: boolean;
+  totalTime?: number;
 }
 
 export default function PlayerPanel({
@@ -55,6 +56,7 @@ export default function PlayerPanel({
   opponents = [],
   onTapPanel,
   disabled = false,
+  totalTime,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -208,6 +210,19 @@ export default function PlayerPanel({
           >
             {player.name}
           </span>
+
+          {/* Total time badge */}
+          {totalTime !== undefined && (
+            <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-lg bg-black/50 backdrop-blur-sm" style={{ zIndex: 2 }}>
+              <svg className="w-3 h-3 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Total Time</span>
+              <span className="text-xs font-bold tabular-nums text-white/80" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                {String(Math.floor(totalTime / 60)).padStart(2, "0")}:{String(totalTime % 60).padStart(2, "0")}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
