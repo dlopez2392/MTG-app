@@ -23,6 +23,11 @@ function getHashIndex(): HashEntry[] | null {
   }
 }
 
+export async function GET() {
+  const index = getHashIndex();
+  return NextResponse.json({ indexed: !!index && index.length > 0, count: index?.length ?? 0 });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json() as { image?: string };

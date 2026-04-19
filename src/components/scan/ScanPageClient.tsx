@@ -400,7 +400,7 @@ export default function ScanPageClient() {
       )}
 
       {/* ── Status text feedback ── */}
-      {statusText && !matchedCard && !isProcessing && (
+      {statusText && !matchedCard && (
         <div className="absolute z-20 top-[62%] left-1/2 -translate-x-1/2 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full whitespace-nowrap">
           <p className="text-xs text-white/80 font-medium">{statusText}</p>
         </div>

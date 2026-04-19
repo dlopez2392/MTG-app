@@ -129,14 +129,11 @@ export function useCameraScanner(): UseCameraScannerReturn {
   const [scanList, setScanList] = useState<ScanListItem[]>([]);
   const [autoScan, setAutoScan] = useState(false);
   const [hasHashIndex, setHasHashIndex] = useState(false);
+  const consecutiveFailsRef = useRef(0);
 
   // Check if hash index exists on mount
   useEffect(() => {
-    fetch("/api/scan/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: "data:image/jpeg;base64,/9j/4AAQ" }), // tiny probe
-    })
+    fetch("/api/scan/search")
       .then(r => r.json())
       .then(d => setHasHashIndex(d.indexed === true))
       .catch(() => setHasHashIndex(false));
@@ -252,17 +249,18 @@ export function useCameraScanner(): UseCameraScannerReturn {
   // ── OCR fallback ─────────────────────────────────────────────────────────────
 
   const runOcrFallback = useCallback(async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
-    setStatusText("Trying OCR fallback…");
+    setStatusText("Reading card name…");
     const vw = video.videoWidth || 640;
     const vh = video.videoHeight || 480;
     const worker = await getOcrWorker();
 
-    // Crop the name-bar region (top ~14% of frame)
+    // Crop the name-bar region — top portion of the card
+    // Wider and taller crop to be more forgiving of card positioning
     const scale = 4;
-    const sx = Math.floor(vw * 0.04);
-    const sy = Math.floor(vh * 0.04);
-    const sw = Math.floor(vw * 0.72);
-    const sh = Math.floor(vh * 0.14);
+    const sx = Math.floor(vw * 0.03);
+    const sy = Math.floor(vh * 0.02);
+    const sw = Math.floor(vw * 0.75);
+    const sh = Math.floor(vh * 0.18);
     canvas.width = sw * scale;
     canvas.height = sh * scale;
     const ctx = canvas.getContext("2d")!;
@@ -350,13 +348,13 @@ export function useCameraScanner(): UseCameraScannerReturn {
           const best = result.matches[0];
 
           if (best.distance <= 10) {
-            // Strong match — fetch full card data
             setStatusText("Match found!");
             const cardRes = await fetch(`/api/scryfall/cards/${best.id}`);
             if (cardRes.ok) {
               const card: ScryfallCard = await cardRes.json();
               if (autoScan && card.name === lastMatchedNameRef.current) return;
               lastMatchedNameRef.current = card.name;
+              consecutiveFailsRef.current = 0;
               setMatchedCard(card);
               setStatusText("");
               return;
@@ -403,6 +401,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
         const card: ScryfallCard = await fuzzyRes.json();
         if (autoScan && card.name === lastMatchedNameRef.current) return;
         lastMatchedNameRef.current = card.name;
+        consecutiveFailsRef.current = 0;
         setMatchedCard(card);
         setStatusText("");
         return;
@@ -418,26 +417,31 @@ export function useCameraScanner(): UseCameraScannerReturn {
             const card: ScryfallCard = await r.json();
             if (autoScan && card.name === lastMatchedNameRef.current) return;
             lastMatchedNameRef.current = card.name;
+            consecutiveFailsRef.current = 0;
             setMatchedCard(card);
             setStatusText("");
             return;
           }
         } else if (data.length > 1) {
+          consecutiveFailsRef.current = 0;
           setSuggestions(data.slice(0, 6));
           setStatusText("");
           return;
         }
       }
 
+      consecutiveFailsRef.current++;
       if (!autoScan) {
         setError(`Couldn't identify this card. Try adjusting the angle or lighting.`);
+      } else if (consecutiveFailsRef.current >= 3) {
+        setStatusText("No card detected — try adjusting position");
       }
     } catch (err) {
+      consecutiveFailsRef.current++;
       if (!autoScan) setError(err instanceof Error ? err.message : "Scan failed. Please try again.");
     } finally {
       isProcessingRef.current = false;
       setIsProcessing(false);
-      if (!matchedCard) setStatusText("");
     }
   }, [hasHashIndex, runOcrFallback, autoScan]);
 
@@ -449,10 +453,13 @@ export function useCameraScanner(): UseCameraScannerReturn {
       return;
     }
     function scheduleNext() {
+      const delay = consecutiveFailsRef.current >= 5 ? 5000
+                  : consecutiveFailsRef.current >= 2 ? 3500
+                  : 2500;
       autoScanTimerRef.current = setTimeout(async () => {
         if (!isProcessingRef.current) await captureAndRecognize();
         scheduleNext();
-      }, 2500);
+      }, delay);
     }
     scheduleNext();
     return () => { if (autoScanTimerRef.current) clearTimeout(autoScanTimerRef.current); };
@@ -476,6 +483,7 @@ export function useCameraScanner(): UseCameraScannerReturn {
     setStatusText("");
     setError("");
     lastMatchedNameRef.current = "";
+    consecutiveFailsRef.current = 0;
   }, []);
 
   return {
