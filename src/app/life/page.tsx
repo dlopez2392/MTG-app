@@ -216,7 +216,7 @@ export default function LifePage() {
         totalTime={gameOptions.turnTimer ? totalElapsed : undefined}
         className={cn(
           "w-full h-full",
-          highlightedPlayer === p.id && "ring-4 ring-accent ring-inset shadow-[inset_0_0_30px_rgba(237,154,87,0.3)]",
+          highlightedPlayer === p.id && "border-[6px] border-[#FF6600]",
           !highlightedPlayer && startingPlayer === p.id && "ring-2 ring-accent ring-inset"
         )}
         showPoisonCounters={gameOptions.poisonCounters || settings.showPoisonCounters}

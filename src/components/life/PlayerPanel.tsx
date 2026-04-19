@@ -64,6 +64,7 @@ export default function PlayerPanel({
   const [delta, setDelta] = useState<number | null>(null);
   const deltaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevLifeRef = useRef(player.life);
+  const [lifeHistory, setLifeHistory] = useState<{ id: number; delta: number; total: number }[]>([]);
 
   useEffect(() => {
     const mtgColor = hexToMtgQuery(player.color);
@@ -90,6 +91,8 @@ export default function PlayerPanel({
     setDelta((prev) => (prev ?? 0) + d);
     if (deltaTimer.current) clearTimeout(deltaTimer.current);
     deltaTimer.current = setTimeout(() => setDelta(null), 1200);
+
+    setLifeHistory((h) => [{ id: nextId++, delta: d, total: curr }, ...h].slice(0, 20));
 
     return () => clearTimeout(timer);
   }, [player.life]);
@@ -225,6 +228,29 @@ export default function PlayerPanel({
           )}
         </div>
       </div>
+
+      {/* ── Life history — right edge ── */}
+      {lifeHistory.length > 0 && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-[4] pointer-events-none flex flex-col items-end gap-0.5 max-h-[60%] overflow-hidden">
+          {lifeHistory.slice(0, 8).map((entry, i) => (
+            <div
+              key={entry.id}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/40"
+              style={{ opacity: 1 - i * 0.1 }}
+            >
+              <span className={cn(
+                "text-[10px] font-bold tabular-nums",
+                entry.delta > 0 ? "text-green-400" : "text-red-400"
+              )}>
+                {entry.delta > 0 ? `+${entry.delta}` : entry.delta}
+              </span>
+              <span className="text-[10px] text-white/40 tabular-nums">
+                {entry.total}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Bottom corners: poison (left) + commander damage (right) ── */}
       <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1">
