@@ -42,7 +42,14 @@ interface PlayerPanelProps {
   opponents?: Player[];
   onTapPanel?: () => void;
   disabled?: boolean;
-  totalTime?: number;
+  /** Turn timer state — only passed to the active player's panel */
+  turnTimer?: {
+    turnNumber: number;
+    turnSeconds: number;
+    running: boolean;
+    onToggle: () => void;
+    onNext: () => void;
+  };
   /** Rotation in degrees so content faces outward toward nearest screen edge */
   rotation?: number;
 }
@@ -58,7 +65,7 @@ export default function PlayerPanel({
   opponents = [],
   onTapPanel,
   disabled = false,
-  totalTime,
+  turnTimer,
   rotation = 0,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
@@ -237,18 +244,6 @@ export default function PlayerPanel({
             {player.name}
           </span>
 
-          {/* Total time badge */}
-          {totalTime !== undefined && (
-            <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-lg bg-black/50 backdrop-blur-sm" style={{ zIndex: 2 }}>
-              <svg className="w-3 h-3 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Total Time</span>
-              <span className="text-xs font-bold tabular-nums text-white/80" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-                {String(Math.floor(totalTime / 60)).padStart(2, "0")}:{String(totalTime % 60).padStart(2, "0")}
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -272,6 +267,43 @@ export default function PlayerPanel({
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Turn timer bar — only on active player, bottom center ── */}
+      {turnTimer && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-1.5 py-1 shadow-lg">
+          <span className="text-[11px] font-black uppercase tracking-wider text-accent/90 pl-2">
+            T{turnTimer.turnNumber}
+          </span>
+          <span className="text-base font-bold tabular-nums text-white" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+            {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
+          </span>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
+            className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30"
+          >
+            {turnTimer.running ? (
+              <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+              </svg>
+            ) : (
+              <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
+            className="px-3 py-1 rounded-full btn-gradient text-[10px] font-black uppercase tracking-wide active:scale-95 transition-transform z-30"
+          >
+            Next
+          </button>
+          {!turnTimer.running && (
+            <span className="text-[8px] font-bold uppercase tracking-widest text-amber-400/80 pr-1">Paused</span>
+          )}
         </div>
       )}
 
@@ -313,7 +345,7 @@ export default function PlayerPanel({
         </button>
       </div>
 
-      {/* Commander damage count badge — top corner */}
+      {/* Commander damage count badge — top-left corner */}
       {cmdrTotal > 0 && (
         <div className="absolute top-3 left-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm pointer-events-none">
           <svg className="w-3.5 h-3.5 text-white/60" fill="currentColor" viewBox="0 0 24 24">
@@ -324,6 +356,7 @@ export default function PlayerPanel({
           </span>
         </div>
       )}
+
 
 
       {/* ── Commander damage overlay ── */}

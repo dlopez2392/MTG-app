@@ -57,13 +57,19 @@ export default function LifePage() {
   const [gameTimerRunning, setGameTimerRunning] = useState(false);
   const gameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Turn timer (counts up per turn)
+  // Turn timer (counts up per player segment)
   const [turnSeconds, setTurnSeconds] = useState(0);
   const [turnNumber, setTurnNumber] = useState(1);
   const [turnTimerRunning, setTurnTimerRunning] = useState(false);
   const turnTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [turnTimerVisible, setTurnTimerVisible] = useState(true);
   const turnHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Active player tracking — "Next" cycles through players
+  const [activePlayerIndex, setActivePlayerIndex] = useState(0);
+
+  // Per-player cumulative turn time
+  const [playerTurnTimes, setPlayerTurnTimes] = useState<Record<string, number>>({});
 
   // Total elapsed time (counts up)
   const [totalElapsed, setTotalElapsed] = useState(0);
@@ -130,15 +136,19 @@ export default function LifePage() {
     return () => { if (gameTimerRef.current) clearInterval(gameTimerRef.current); };
   }, [gameTimerRunning, gameSecondsLeft]);
 
-  // Turn timer tick
+  // Turn timer tick — also accumulates per-player time
   useEffect(() => {
     if (turnTimerRunning) {
       turnTimerRef.current = setInterval(() => {
         setTurnSeconds((s) => s + 1);
+        const activeId = players[activePlayerIndex]?.id;
+        if (activeId) {
+          setPlayerTurnTimes((prev) => ({ ...prev, [activeId]: (prev[activeId] ?? 0) + 1 }));
+        }
       }, 1000);
     }
     return () => { if (turnTimerRef.current) clearInterval(turnTimerRef.current); };
-  }, [turnTimerRunning]);
+  }, [turnTimerRunning, activePlayerIndex, players]);
 
   // Total elapsed time tick
   useEffect(() => {
@@ -157,10 +167,14 @@ export default function LifePage() {
   }, [gameOptions.turnTimer]);
 
   const handleEndTurn = useCallback(() => {
-    setTurnNumber((n) => n + 1);
     setTurnSeconds(0);
+    const nextIndex = (activePlayerIndex + 1) % players.length;
+    if (nextIndex === 0) {
+      setTurnNumber((n) => n + 1);
+    }
+    setActivePlayerIndex(nextIndex);
     setTurnTimerRunning(true);
-  }, []);
+  }, [activePlayerIndex, players.length]);
 
   const handleRandomizeStarter = useCallback(() => {
     if (randomizing) return;
@@ -185,6 +199,7 @@ export default function LifePage() {
           setChoosingStarter(false);
           setRandomizing(false);
           setHighlightedPlayer(null);
+          setActivePlayerIndex(winnerIndex);
           if (gameOptions.gameTimer) { setGameTimerRunning(true); }
           if (gameOptions.turnTimer) { setTurnTimerRunning(true); }
         }, 2000);
@@ -223,18 +238,25 @@ export default function LifePage() {
   const panel = (index: number, rotation: number = 0) => {
     const p = players[index];
     const opponents = players.filter((_, i) => i !== index);
+    const isActive = !choosingStarter && gameOptions.turnTimer && index === activePlayerIndex;
     return (
       <PlayerPanel
         player={p}
         onLifeChange={(d) => { adjustLife(p.id, d); hideTurnTimerBriefly(); }}
         onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
         onPoisonChange={(d) => adjustPoison(p.id, d)}
-        totalTime={gameOptions.turnTimer ? totalElapsed : undefined}
+        turnTimer={isActive ? {
+          turnNumber,
+          turnSeconds,
+          running: turnTimerRunning,
+          onToggle: () => setTurnTimerRunning((r) => !r),
+          onNext: handleEndTurn,
+        } : undefined}
         rotation={rotation}
         className={cn(
           "w-full h-full",
           highlightedPlayer === p.id && "border-[6px] border-[#FF6600]",
-          !highlightedPlayer && startingPlayer === p.id && "ring-2 ring-accent ring-inset"
+          !highlightedPlayer && isActive && "border-[4px] border-[#FF6600]",
         )}
         showPoisonCounters={gameOptions.poisonCounters || settings.showPoisonCounters}
         perCommanderTracking={settings.perCommanderTracking}
@@ -310,6 +332,7 @@ export default function LifePage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setChoosingStarter(false);
+                    setActivePlayerIndex(0);
                     if (gameOptions.gameTimer) setGameTimerRunning(true);
                     if (gameOptions.turnTimer) setTurnTimerRunning(true);
                   }}
@@ -336,73 +359,10 @@ export default function LifePage() {
           </div>
         )}
 
-        {/* ── Floating timer bar (top center) ── */}
-        {!choosingStarter && (gameOptions.turnTimer || gameOptions.gameTimer) && turnTimerVisible && !showMenu && (
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/80 backdrop-blur-md border border-white/10 px-1 py-1 shadow-xl">
-            {/* Turn info */}
-            {gameOptions.turnTimer && (
-              <>
-                <div className="flex items-center gap-1.5 pl-3 pr-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-accent/90">
-                    T{turnNumber}
-                  </span>
-                  <span className="text-sm font-bold tabular-nums text-white" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-                    {Math.floor(turnSeconds / 60)}:{String(turnSeconds % 60).padStart(2, "0")}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setTurnTimerRunning((r) => !r)}
-                  className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
-                >
-                  {turnTimerRunning ? (
-                    <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleEndTurn}
-                  className="px-2.5 py-1 rounded-full btn-gradient text-[9px] font-black uppercase tracking-wide active:scale-95 transition-transform flex-shrink-0"
-                >
-                  Next
-                </button>
-              </>
-            )}
-            {/* Separator */}
-            {gameOptions.turnTimer && gameOptions.gameTimer && (
-              <div className="w-px h-5 bg-white/20 flex-shrink-0" />
-            )}
-            {/* Game countdown */}
-            {gameOptions.gameTimer && (
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold tabular-nums flex-shrink-0",
-                gameSecondsLeft <= 300 ? "text-red-400" : "text-white/70"
-              )}>
-                <svg className={cn("w-3 h-3 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/40")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
-              </div>
-            )}
-            {/* Paused indicator */}
-            {gameOptions.turnTimer && !turnTimerRunning && (
-              <div className="px-2">
-                <span className="text-[8px] font-bold uppercase tracking-widest text-amber-400/80">Paused</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── Center menu button ── */}
+        {/* ── Center menu + game timer ── */}
         {!choosingStarter && (
           <div className={cn(
-            "absolute z-20",
+            "absolute z-20 flex items-center gap-2",
             playerCount === 1
               ? "top-4 left-4"
               : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -410,12 +370,32 @@ export default function LifePage() {
             <button
               type="button"
               onClick={() => setShowMenu(!showMenu)}
-              className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg"
+              className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg flex-shrink-0"
             >
               <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
             </button>
+
+            {/* Game countdown timer — gradient border pill */}
+            {gameOptions.gameTimer && !showMenu && (
+              <div
+                className="rounded-full p-[2px] shadow-lg flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}
+              >
+                <div className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
+                  gameSecondsLeft <= 300 && "bg-red-950/90"
+                )}>
+                  <svg className={cn("w-3.5 h-3.5 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className={cn("text-xs font-bold tabular-nums", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/80")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                    {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {showMenu && (
               <div className="absolute top-13 left-1/2 -translate-x-1/2 bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] z-30">
@@ -467,6 +447,8 @@ export default function LifePage() {
                     setTurnSeconds(0);
                     setTurnNumber(1);
                     setTotalElapsed(0);
+                    setActivePlayerIndex(0);
+                    setPlayerTurnTimes({});
                   }}
                   className="text-left px-3 py-2.5 text-sm text-restricted hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -486,6 +468,8 @@ export default function LifePage() {
                     setTurnSeconds(0);
                     setTurnNumber(1);
                     setTotalElapsed(0);
+                    setActivePlayerIndex(0);
+                    setPlayerTurnTimes({});
                   }}
                   className="text-left px-3 py-2.5 text-sm text-banned hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
                 >
@@ -523,6 +507,8 @@ export default function LifePage() {
           setTurnSeconds(0);
           setTurnNumber(1);
           setTotalElapsed(0);
+          setActivePlayerIndex(0);
+          setPlayerTurnTimes({});
         }}
         players={players}
         startingLife={startingLife}
