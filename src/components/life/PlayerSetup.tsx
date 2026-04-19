@@ -6,6 +6,49 @@ import { MTG_PLAYER_COLORS, DEFAULT_PLAYER_COLOR_KEYS, type MtgPlayerColorKey } 
 import Input from "@/components/ui/Input";
 import ManaSymbol from "@/components/cards/ManaSymbol";
 
+export type LayoutId = string;
+
+export interface LayoutOption {
+  id: LayoutId;
+  panels: { x: number; y: number; w: number; h: number; rotated?: boolean }[];
+}
+
+export const LAYOUTS: Record<number, LayoutOption[]> = {
+  1: [
+    { id: "1-full", panels: [{ x: 0, y: 0, w: 1, h: 1 }] },
+  ],
+  2: [
+    { id: "2-stack", panels: [{ x: 0, y: 0, w: 1, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 1, h: 0.5 }] },
+    { id: "2-side", panels: [{ x: 0, y: 0, w: 0.5, h: 1, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 1 }] },
+  ],
+  3: [
+    { id: "3-top1-bot2", panels: [{ x: 0, y: 0, w: 1, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.5, h: 0.5 }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
+    { id: "3-left1-right2", panels: [{ x: 0, y: 0, w: 0.5, h: 1, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
+  ],
+  4: [
+    { id: "4-grid", panels: [{ x: 0, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.5, h: 0.5 }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
+    { id: "4-top1-mid2-bot1", panels: [{ x: 0, y: 0, w: 1, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 1, h: 0.33 }] },
+  ],
+  5: [
+    { id: "5-2-2-1", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 1, h: 0.33 }] },
+    { id: "5-2-1-2", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 1, h: 0.34 }, { x: 0, y: 0.67, w: 0.5, h: 0.33 }, { x: 0.5, y: 0.67, w: 0.5, h: 0.33 }] },
+  ],
+  6: [
+    { id: "6-grid", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 0.5, h: 0.33 }, { x: 0.5, y: 0.67, w: 0.5, h: 0.33 }] },
+    { id: "6-3col", panels: [{ x: 0, y: 0, w: 0.33, h: 0.5, rotated: true }, { x: 0.33, y: 0, w: 0.34, h: 0.5, rotated: true }, { x: 0.67, y: 0, w: 0.33, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.33, h: 0.5 }, { x: 0.33, y: 0.5, w: 0.34, h: 0.5 }, { x: 0.67, y: 0.5, w: 0.33, h: 0.5 }] },
+  ],
+};
+
+const PREVIEW_COLORS = ["#7E57C2", "#66BB6A", "#4DB6AC", "#42A5F5", "#AB47BC", "#EF5350"];
+
+export interface GameOptions {
+  poisonCounters: boolean;
+  turnTimer: boolean;
+  gameTimer: boolean;
+  gameTimerMinutes: number;
+  layout: LayoutId;
+}
+
 interface PlayerSetupProps {
   defaultPlayerCount?: number;
   defaultStartingLife?: number;
@@ -13,7 +56,8 @@ interface PlayerSetupProps {
     playerCount: number,
     startingLife: number,
     playerNames: string[],
-    playerColors: string[]
+    playerColors: string[],
+    options: GameOptions
   ) => void;
 }
 
@@ -24,7 +68,7 @@ const FORMATS = [
   { label: "Brawl", life: 25 },
 ];
 
-const PLAYER_COLORS = ["#7B8794", "#4CAF81", "#5BA8A0", "#6B7DB8", "#8B6BAD", "#A06BA0"];
+const PLAYER_COLORS = ["#607D8B", "#2E7D32", "#00838F", "#1565C0", "#6A1B9A", "#C62828"];
 
 export default function PlayerSetup({
   defaultPlayerCount = 2,
@@ -39,7 +83,13 @@ export default function PlayerSetup({
   const [selectedColorKeys, setSelectedColorKeys] = useState<MtgPlayerColorKey[]>(
     [...DEFAULT_PLAYER_COLOR_KEYS]
   );
+  const [selectedLayout, setSelectedLayout] = useState<LayoutId>(LAYOUTS[defaultPlayerCount]?.[0]?.id ?? "2-stack");
+  const [showLayoutPage, setShowLayoutPage] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
+  const [poisonCounters, setPoisonCounters] = useState(false);
+  const [turnTimer, setTurnTimer] = useState(false);
+  const [gameTimer, setGameTimer] = useState(false);
+  const [gameTimerMinutes, setGameTimerMinutes] = useState(90);
 
   function handleNameChange(index: number, name: string) {
     setPlayerNames((prev) => { const next = [...prev]; next[index] = name; return next; });
@@ -54,7 +104,104 @@ export default function PlayerSetup({
     const colors = selectedColorKeys
       .slice(0, playerCount)
       .map((k) => MTG_PLAYER_COLORS.find((c) => c.key === k)!.color);
-    onStart(playerCount, startingLife, names, colors);
+    onStart(playerCount, startingLife, names, colors, {
+      poisonCounters,
+      turnTimer,
+      gameTimer,
+      gameTimerMinutes,
+      layout: selectedLayout,
+    });
+  }
+
+  function getOutwardRotation(panel: LayoutOption["panels"][number]): number {
+    const cx = panel.x + panel.w / 2;
+    const cy = panel.y + panel.h / 2;
+    if (panel.w >= 0.9) return cy < 0.5 ? 180 : 0;
+    if (panel.h >= 0.9) return cx < 0.5 ? 90 : -90;
+    const dx = Math.abs(cx - 0.5);
+    const dy = Math.abs(cy - 0.5);
+    if (dx >= dy) return cx < 0.5 ? 90 : -90;
+    return cy < 0.5 ? 180 : 0;
+  }
+
+  const hasMultipleLayouts = (LAYOUTS[playerCount]?.length ?? 0) > 1;
+
+  if (showLayoutPage) {
+    return (
+      <div className="flex flex-col min-h-screen bg-bg-primary overflow-y-auto pb-24">
+        {/* Header with back button */}
+        <div className="px-6 pt-12 pb-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setShowLayoutPage(false)}
+            className="w-9 h-9 rounded-full bg-bg-card border border-border flex items-center justify-center text-text-muted hover:text-text-primary active:scale-90 transition-all cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <h1 className="font-display text-2xl font-black uppercase tracking-wide text-text-primary">
+            Select Layout
+          </h1>
+        </div>
+
+        <div className="px-6 space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            {LAYOUTS[playerCount]?.map((layout) => (
+              <button
+                key={layout.id}
+                type="button"
+                onClick={() => setSelectedLayout(layout.id)}
+                className={cn(
+                  "relative aspect-[9/16] rounded-2xl border-2 transition-all cursor-pointer",
+                  selectedLayout === layout.id
+                    ? "border-white shadow-lg scale-[1.02]"
+                    : "border-border/50 opacity-60 hover:opacity-90"
+                )}
+                style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+              >
+                <div className="relative w-full h-full p-1">
+                  {layout.panels.map((p, i) => (
+                    <div
+                      key={i}
+                      className="absolute rounded-lg flex items-center justify-center"
+                      style={{
+                        left: `calc(${p.x * 100}% + 4px)`,
+                        top: `calc(${p.y * 100}% + 4px)`,
+                        width: `calc(${p.w * 100}% - 6px)`,
+                        height: `calc(${p.h * 100}% - 6px)`,
+                        backgroundColor: MTG_PLAYER_COLORS.find((c) => c.key === selectedColorKeys[i])?.color ?? PREVIEW_COLORS[i % PREVIEW_COLORS.length],
+                      }}
+                    >
+                      <svg
+                        className="w-6 h-6 text-white/80"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                        style={{ transform: `rotate(${getOutwardRotation(p)}deg)` }}
+                      >
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Start Button ── */}
+          <button
+            type="button"
+            onClick={handleStart}
+            className="w-full py-4 rounded-2xl bg-accent text-black text-lg font-bold hover:bg-accent-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+          >
+            START GAME
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -77,7 +224,7 @@ export default function PlayerSetup({
               <button
                 key={count}
                 type="button"
-                onClick={() => setPlayerCount(count)}
+                onClick={() => { setPlayerCount(count); setSelectedLayout(LAYOUTS[count]?.[0]?.id ?? ""); }}
                 className={cn(
                   "aspect-square rounded-2xl flex items-center justify-center text-2xl font-black text-white cursor-pointer transition-all",
                   playerCount === count
@@ -114,6 +261,126 @@ export default function PlayerSetup({
                 <span className="block text-[10px] font-normal opacity-70">{f.life} life</span>
               </button>
             ))}
+          </div>
+        </div>
+
+        {/* ── Game Options ── */}
+        <div className="space-y-3">
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-widest">
+            Options
+          </label>
+
+          {/* Poison Counters */}
+          <button
+            type="button"
+            onClick={() => setPoisonCounters(!poisonCounters)}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
+              poisonCounters
+                ? "bg-green-900/30 border-green-500/50"
+                : "bg-bg-card border-border"
+            )}
+          >
+            <svg className={cn("w-5 h-5 flex-shrink-0", poisonCounters ? "text-green-400" : "text-text-muted")} fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
+            </svg>
+            <span className={cn("text-sm font-semibold flex-1 text-left", poisonCounters ? "text-green-400" : "text-text-secondary")}>
+              Poison Counters
+            </span>
+            <div className={cn(
+              "w-10 h-6 rounded-full transition-colors relative",
+              poisonCounters ? "bg-green-500" : "bg-white/10"
+            )}>
+              <div className={cn(
+                "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+                poisonCounters ? "translate-x-5" : "translate-x-1"
+              )} />
+            </div>
+          </button>
+
+          {/* Turn Timer */}
+          <button
+            type="button"
+            onClick={() => setTurnTimer(!turnTimer)}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
+              turnTimer
+                ? "bg-blue-900/30 border-blue-500/50"
+                : "bg-bg-card border-border"
+            )}
+          >
+            <svg className={cn("w-5 h-5 flex-shrink-0", turnTimer ? "text-blue-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className={cn("text-sm font-semibold flex-1 text-left", turnTimer ? "text-blue-400" : "text-text-secondary")}>
+              Turn Timer
+            </span>
+            <div className={cn(
+              "w-10 h-6 rounded-full transition-colors relative",
+              turnTimer ? "bg-blue-500" : "bg-white/10"
+            )}>
+              <div className={cn(
+                "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+                turnTimer ? "translate-x-5" : "translate-x-1"
+              )} />
+            </div>
+          </button>
+
+          {/* Game Timer */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setGameTimer(!gameTimer)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
+                gameTimer
+                  ? "bg-amber-900/30 border-amber-500/50"
+                  : "bg-bg-card border-border",
+                gameTimer && "rounded-b-none border-b-0"
+              )}
+            >
+              <svg className={cn("w-5 h-5 flex-shrink-0", gameTimer ? "text-amber-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 2h4M12 2v2" />
+              </svg>
+              <span className={cn("text-sm font-semibold flex-1 text-left", gameTimer ? "text-amber-400" : "text-text-secondary")}>
+                Game Timer
+              </span>
+              <div className={cn(
+                "w-10 h-6 rounded-full transition-colors relative",
+                gameTimer ? "bg-amber-500" : "bg-white/10"
+              )}>
+                <div className={cn(
+                  "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
+                  gameTimer ? "translate-x-5" : "translate-x-1"
+                )} />
+              </div>
+            </button>
+            {gameTimer && (
+              <div className="flex items-center justify-between px-4 py-3 bg-amber-900/30 border border-amber-500/50 border-t-0 rounded-b-xl">
+                <button
+                  type="button"
+                  onClick={() => setGameTimerMinutes((m) => Math.max(30, m - 30))}
+                  disabled={gameTimerMinutes <= 30}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
+                >
+                  −
+                </button>
+                <div className="text-center">
+                  <span className="text-lg font-bold text-amber-400 tabular-nums">
+                    {Math.floor(gameTimerMinutes / 60)}h {String(gameTimerMinutes % 60).padStart(2, "0")}m
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGameTimerMinutes((m) => Math.min(300, m + 30))}
+                  disabled={gameTimerMinutes >= 300}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -177,15 +444,19 @@ export default function PlayerSetup({
           )}
         </div>
 
-        {/* ── Start Button ── */}
+        {/* ── Next / Start Button ── */}
         <button
           type="button"
-          onClick={handleStart}
+          onClick={hasMultipleLayouts ? () => setShowLayoutPage(true) : handleStart}
           className="w-full py-4 rounded-2xl bg-accent text-black text-lg font-bold hover:bg-accent-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
         >
-          START GAME
+          {hasMultipleLayouts ? "NEXT" : "START GAME"}
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+            {hasMultipleLayouts ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+            )}
           </svg>
         </button>
       </div>

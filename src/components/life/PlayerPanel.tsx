@@ -107,7 +107,7 @@ export default function PlayerPanel({
         className
       )}
       style={{
-        backgroundColor: `${player.color}20`,
+        backgroundColor: `${player.color}B3`,
       }}
     >
       {/* Art background */}
