@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import { MTG_PLAYER_COLORS } from "@/lib/constants";
 import type { Player } from "@/types/life";
@@ -11,68 +11,37 @@ function hexToMtgQuery(hex: string): string {
 
 const CMDR_KEY = "__cmdr__";
 
-// ── Particle types ──────────────────────────────────────────────────────────
-
-interface SlashParticle {
-  id: number;
-  kind: "slash";
-  /** px offset from center of the life number, vertically */
-  offsetY: number;
-  /** rotation angle in degrees */
-  angle: number;
-  delay: number;
-}
-
-interface HealParticle {
-  id: number;
-  kind: "heal";
-  /** px offset from center of the life number, horizontally */
-  offsetX: number;
-  /** px offset from center of the life number, vertically (start position) */
-  offsetY: number;
-  delay: number;
-}
-
+interface SlashParticle { id: number; kind: "slash"; offsetY: number; angle: number; delay: number; }
+interface HealParticle { id: number; kind: "heal"; offsetX: number; offsetY: number; delay: number; }
 type Particle = SlashParticle | HealParticle;
 
 let nextId = 0;
 
 function spawnParticles(delta: number): Particle[] {
   if (delta < 0) {
-    // 3 thick red slash lines layered over the number
-    const offsets = [-16, 0, 16];
-    return offsets.map((offsetY, i): SlashParticle => ({
-      id: nextId++,
-      kind: "slash",
-      offsetY,
-      angle: -48 + Math.random() * 16,
-      delay: i * 60,
-    }));
-  } else {
-    // 7 large green pluses orbiting/floating around the number
-    return Array.from({ length: 7 }, (_, i): HealParticle => ({
-      id: nextId++,
-      kind: "heal",
-      offsetX: (Math.random() - 0.5) * 90, // ±45 px from center
-      offsetY: (Math.random() - 0.5) * 50, // ±25 px from center
-      delay: i * 70,
+    return [-16, 0, 16].map((offsetY, i): SlashParticle => ({
+      id: nextId++, kind: "slash", offsetY, angle: -48 + Math.random() * 16, delay: i * 60,
     }));
   }
+  return Array.from({ length: 7 }, (_, i): HealParticle => ({
+    id: nextId++, kind: "heal",
+    offsetX: (Math.random() - 0.5) * 90,
+    offsetY: (Math.random() - 0.5) * 50,
+    delay: i * 70,
+  }));
 }
-
-// ── Component ────────────────────────────────────────────────────────────────
 
 interface PlayerPanelProps {
   player: Player;
   onLifeChange: (delta: number) => void;
   onCommanderDamage: (delta: number, sourcePlayerId?: string) => void;
   onPoisonChange?: (delta: number) => void;
-  rotation?: number;
-  onRotate?: () => void;
   className?: string;
   showPoisonCounters?: boolean;
   perCommanderTracking?: boolean;
   opponents?: Player[];
+  onTapPanel?: () => void;
+  disabled?: boolean;
 }
 
 export default function PlayerPanel({
@@ -80,261 +49,260 @@ export default function PlayerPanel({
   onLifeChange,
   onCommanderDamage,
   onPoisonChange,
-  rotation = 0,
-  onRotate,
   className,
   showPoisonCounters = false,
   perCommanderTracking = false,
   opponents = [],
+  onTapPanel,
+  disabled = false,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [showCmdr, setShowCmdr] = useState(false);
+  const [delta, setDelta] = useState<number | null>(null);
+  const deltaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevLifeRef = useRef(player.life);
 
   useEffect(() => {
     const mtgColor = hexToMtgQuery(player.color);
-    fetch(
-      `https://api.scryfall.com/cards/random?q=type%3Alegendary+color%3A${mtgColor}`
-    )
+    fetch(`https://api.scryfall.com/cards/random?q=type%3Alegendary+color%3A${mtgColor}`)
       .then((r) => r.json())
       .then((card) => {
-        const url =
-          card?.image_uris?.art_crop ??
-          card?.card_faces?.[0]?.image_uris?.art_crop ??
-          null;
-        setArtUrl(url);
+        setArtUrl(card?.image_uris?.art_crop ?? card?.card_faces?.[0]?.image_uris?.art_crop ?? null);
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
 
-  // Spawn particles whenever life changes
   useEffect(() => {
     const prev = prevLifeRef.current;
     const curr = player.life;
     if (prev === curr) { prevLifeRef.current = curr; return; }
-
     prevLifeRef.current = curr;
-    const delta = curr - prev;
-    const spawned = spawnParticles(delta);
+    const d = curr - prev;
+    const spawned = spawnParticles(d);
     setParticles((p) => [...p, ...spawned]);
-
     const ids = new Set(spawned.map((s) => s.id));
-    const timer = setTimeout(
-      () => setParticles((p) => p.filter((x) => !ids.has(x.id))),
-      1000
-    );
+    const timer = setTimeout(() => setParticles((p) => p.filter((x) => !ids.has(x.id))), 1000);
+
+    setDelta((prev) => (prev ?? 0) + d);
+    if (deltaTimer.current) clearTimeout(deltaTimer.current);
+    deltaTimer.current = setTimeout(() => setDelta(null), 1200);
+
     return () => clearTimeout(timer);
   }, [player.life]);
 
-  const cmdrDmg = player.commanderDamage[CMDR_KEY] ?? 0;
-  const cmdrDangerous = cmdrDmg >= 21;
+  const handleTapZone = useCallback((isTop: boolean) => {
+    if (disabled) { onTapPanel?.(); return; }
+    onLifeChange(isTop ? 1 : -1);
+  }, [disabled, onTapPanel, onLifeChange]);
+
+  const cmdrTotal = Object.entries(player.commanderDamage)
+    .reduce((sum, [, v]) => sum + v, 0);
 
   return (
     <div
       className={cn(
-        "relative flex flex-col select-none overflow-hidden rounded-xl transition-transform duration-300",
+        "relative flex flex-col select-none overflow-hidden rounded-2xl transition-transform duration-300",
         className
       )}
       style={{
-        backgroundColor: `${player.color}18`,
-        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        backgroundColor: `${player.color}20`,
       }}
     >
-      {/* Card art background */}
+      {/* Art background */}
       {artUrl && (
         <img
-          src={artUrl}
-          alt=""
-          aria-hidden
+          src={artUrl} alt="" aria-hidden
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.50, filter: "saturate(1.4) brightness(0.75)" }}
+          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
         />
       )}
 
-      {/* Radial vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(ellipse at center, transparent 20%, ${player.color}28 100%)`,
-        }}
+      {/* Edge vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: `linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.4) 100%),
+                     linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.25) 100%)`,
+      }} />
+
+      {/* ── Tap zones (no visible buttons) ── */}
+      <button
+        type="button"
+        onClick={() => handleTapZone(true)}
+        className="absolute top-0 left-0 right-0 h-1/2 z-10 cursor-pointer active:bg-white/5 transition-colors"
+        aria-label="Increase life"
+      />
+      <button
+        type="button"
+        onClick={() => handleTapZone(false)}
+        className="absolute bottom-0 left-0 right-0 h-1/2 z-10 cursor-pointer active:bg-white/5 transition-colors"
+        aria-label="Decrease life"
       />
 
-      {/* Rotate button */}
-      {onRotate && (
-        <button
-          onClick={onRotate}
-          className="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-full bg-black/40 flex items-center justify-center text-white/50 hover:text-white/80 active:scale-90 transition-all"
-          aria-label="Rotate panel"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-          </svg>
-        </button>
-      )}
-
-      {/* ── Top: player name ── */}
-      <div className="relative z-10 flex items-center justify-center gap-2 pt-7 pb-0.5">
-        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: player.color }} />
-        <span className="text-xs font-medium text-text-secondary">{player.name}</span>
-      </div>
-
-      {/* ── Middle: life total ── */}
-      <div className="relative z-10 flex flex-col items-center justify-center flex-1 min-h-0">
-        <button
-          onClick={() => onLifeChange(1)}
-          className="flex items-center justify-center w-full py-1 text-3xl font-bold text-white/60 hover:text-white active:text-legal transition-colors"
-          aria-label="Increase life"
-        >
-          +
-        </button>
-
-        {/* Life number + particle origin — overflow visible so particles escape */}
-        <div className="relative" style={{ overflow: "visible" }}>
+      {/* ── Life total + player name — centered ── */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">
+        <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
           <span
-            className="relative text-6xl font-black tabular-nums drop-shadow-lg leading-none"
-            style={{ color: player.color, zIndex: 2 }}
+            className="text-[5rem] tabular-nums leading-none"
+            style={{
+              fontFamily: "'Arial', 'Helvetica', sans-serif",
+              fontWeight: 400,
+              letterSpacing: "0.02em",
+              color: "#fff",
+              textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)",
+              position: "relative",
+              zIndex: 2,
+            }}
           >
             {player.life}
           </span>
 
-          {/* Particles anchored to this div's center — z-index 1 so they sit behind the number */}
+          {/* Delta indicator */}
+          {delta !== null && (
+            <span
+              className={cn(
+                "absolute -top-5 left-1/2 -translate-x-1/2 text-lg font-black tabular-nums",
+                delta > 0 ? "text-green-400" : "text-red-400"
+              )}
+              style={{ zIndex: 3, textShadow: "0 0 8px currentColor" }}
+            >
+              {delta > 0 ? `+${delta}` : delta}
+            </span>
+          )}
+
+          {/* Particles */}
           {particles.map((p) => {
             if (p.kind === "slash") {
               return (
-                <div
-                  key={p.id}
-                  aria-hidden
-                  className="pointer-events-none absolute"
-                  style={{
-                    zIndex: 1,
-                    top: `calc(50% + ${p.offsetY}px)`,
-                    left: "-30px",
-                    right: "-30px",
-                    height: "10px",
-                    marginTop: "-5px",
-                    transformOrigin: "center center",
-                    transform: `rotate(${p.angle}deg)`,
-                    background:
-                      "linear-gradient(90deg, transparent 0%, #ff1111 15%, #ff5555 40%, #ffffff88 50%, #ff5555 60%, #ff1111 85%, transparent 100%)",
-                    borderRadius: "5px",
-                    boxShadow: "0 0 10px 3px rgba(255,20,20,0.8), 0 0 20px 4px rgba(255,20,20,0.4)",
-                    animation: `life-slash 0.7s ease-out ${p.delay}ms both`,
-                  }}
-                />
+                <div key={p.id} aria-hidden className="pointer-events-none absolute" style={{
+                  zIndex: 1, top: `calc(50% + ${p.offsetY}px)`, left: "-30px", right: "-30px",
+                  height: "10px", marginTop: "-5px", transformOrigin: "center center",
+                  transform: `rotate(${p.angle}deg)`,
+                  background: "linear-gradient(90deg, transparent 0%, #ff1111 15%, #ff5555 40%, #ffffff88 50%, #ff5555 60%, #ff1111 85%, transparent 100%)",
+                  borderRadius: "5px",
+                  boxShadow: "0 0 10px 3px rgba(255,20,20,0.8), 0 0 20px 4px rgba(255,20,20,0.4)",
+                  animation: `life-slash 0.7s ease-out ${p.delay}ms both`,
+                }} />
               );
             }
-
-            // heal plus
             return (
-              <div
-                key={p.id}
-                aria-hidden
-                className="pointer-events-none absolute font-black leading-none select-none"
-                style={{
-                  zIndex: 1,
-                  top: `calc(50% + ${p.offsetY}px)`,
-                  left: `calc(50% + ${p.offsetX}px)`,
-                  transform: "translate(-50%, -50%)",
-                  fontSize: "28px",
-                  color: "#00ff55",
-                  textShadow:
-                    "0 0 10px rgba(0,255,85,1), 0 0 22px rgba(0,255,85,0.7), 0 0 40px rgba(0,255,85,0.4)",
-                  animation: `life-heal 0.95s ease-out ${p.delay}ms both`,
-                }}
-              >
-                +
-              </div>
+              <div key={p.id} aria-hidden className="pointer-events-none absolute font-black leading-none select-none" style={{
+                zIndex: 1, top: `calc(50% + ${p.offsetY}px)`, left: `calc(50% + ${p.offsetX}px)`,
+                transform: "translate(-50%, -50%)", fontSize: "28px", color: "#00ff55",
+                textShadow: "0 0 10px rgba(0,255,85,1), 0 0 22px rgba(0,255,85,0.7), 0 0 40px rgba(0,255,85,0.4)",
+                animation: `life-heal 0.95s ease-out ${p.delay}ms both`,
+              }}>+</div>
             );
           })}
-        </div>
 
+          {/* Player name */}
+          <span
+            className="text-sm tracking-wide uppercase mt-1"
+            style={{
+              fontFamily: "'Arial', 'Helvetica', sans-serif",
+              fontWeight: 400,
+              color: "rgba(255,255,255,0.85)",
+              textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.5), 0 0 12px rgba(255,255,255,0.2)",
+              zIndex: 2,
+            }}
+          >
+            {player.name}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Bottom corners: poison (left) + commander damage (right) ── */}
+      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1">
+        {showPoisonCounters && onPoisonChange && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onPoisonChange(1); }}
+            className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
+          >
+            <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
+            </svg>
+            <span className={cn(
+              "text-xs font-bold tabular-nums",
+              player.poisonCounters >= 10 ? "text-red-400" : "text-white/80"
+            )}>
+              {player.poisonCounters}
+            </span>
+          </button>
+        )}
+      </div>
+
+      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1">
         <button
-          onClick={() => onLifeChange(-1)}
-          className="flex items-center justify-center w-full py-1 text-3xl font-bold text-white/60 hover:text-white active:text-banned transition-colors"
-          aria-label="Decrease life"
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
+          className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
         >
-          −
+          <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+          </svg>
+          {cmdrTotal > 0 && (
+            <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
+              {cmdrTotal}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* ── Bottom: poison + commander damage ── */}
-      <div className="relative z-10 flex flex-col items-center gap-1 pb-2">
-        {/* Poison counters */}
-        {showPoisonCounters && onPoisonChange && (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onPoisonChange(-1)}
-              disabled={player.poisonCounters <= 0}
-              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
-            >−</button>
-            <div className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
-              </svg>
-              <span className={cn(
-                "text-sm font-bold tabular-nums leading-none",
-                player.poisonCounters >= 10 ? "text-banned" : player.poisonCounters >= 5 ? "text-restricted" : "text-white/90"
-              )}>
-                {player.poisonCounters}
-              </span>
-            </div>
-            <button
-              onClick={() => onPoisonChange(1)}
-              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
-            >+</button>
-          </div>
-        )}
+      {/* Commander damage count badge — top corner */}
+      {cmdrTotal > 0 && (
+        <div className="absolute top-3 left-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm pointer-events-none">
+          <svg className="w-3.5 h-3.5 text-white/60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+          </svg>
+          <span className={cn("text-[10px] font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
+            {cmdrTotal}
+          </span>
+        </div>
+      )}
 
-        {/* Commander damage — per-opponent when tracking enabled, single total otherwise */}
-        {perCommanderTracking && opponents.length > 0 ? (
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
-            {opponents.map((opp) => {
+
+      {/* ── Commander damage overlay ── */}
+      {showCmdr && (
+        <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3">
+          <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold mb-1">Commander Damage</p>
+
+          {perCommanderTracking && opponents.length > 0 ? (
+            opponents.map((opp) => {
               const oppDmg = player.commanderDamage[opp.id] ?? 0;
-              const oppDangerous = oppDmg >= 21;
               return (
-                <div key={opp.id} className="flex items-center gap-0.5">
-                  <button
-                    onClick={() => onCommanderDamage(-1, opp.id)}
-                    disabled={oppDmg <= 0}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white disabled:opacity-30 leading-none"
-                  >−</button>
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: opp.color }} />
-                    <span className={cn("text-xs font-bold tabular-nums leading-none", oppDangerous ? "text-banned" : "text-white/90")}>
+                <div key={opp.id} className="flex items-center gap-2">
+                  <button type="button" onClick={() => onCommanderDamage(-1, opp.id)} disabled={oppDmg <= 0}
+                    className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm">−</button>
+                  <div className="flex items-center gap-1.5 min-w-[60px] justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: opp.color }} />
+                    <span className={cn("text-sm font-bold tabular-nums", oppDmg >= 21 ? "text-red-400" : "text-white")}>
                       {oppDmg}
                     </span>
                   </div>
-                  <button
-                    onClick={() => onCommanderDamage(1, opp.id)}
-                    className="w-5 h-5 flex items-center justify-center rounded bg-black/40 text-xs text-white/60 hover:text-white leading-none"
-                  >+</button>
+                  <button type="button" onClick={() => onCommanderDamage(1, opp.id)}
+                    className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm">+</button>
                 </div>
               );
-            })}
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onCommanderDamage(-1)}
-              disabled={cmdrDmg <= 0}
-              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white disabled:opacity-30 leading-none"
-            >−</button>
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
-              </svg>
-              <span className={cn("text-base font-bold tabular-nums leading-none", cmdrDangerous ? "text-banned" : "text-white/90")}>
-                {cmdrDmg}
+            })
+          ) : (
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => onCommanderDamage(-1)} disabled={(player.commanderDamage[CMDR_KEY] ?? 0) <= 0}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-lg">−</button>
+              <span className={cn("text-2xl font-bold tabular-nums", (player.commanderDamage[CMDR_KEY] ?? 0) >= 21 ? "text-red-400" : "text-white")}>
+                {player.commanderDamage[CMDR_KEY] ?? 0}
               </span>
+              <button type="button" onClick={() => onCommanderDamage(1)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-lg">+</button>
             </div>
-            <button
-              onClick={() => onCommanderDamage(1)}
-              className="w-6 h-6 flex items-center justify-center rounded bg-black/40 text-sm text-white/60 hover:text-white leading-none"
-            >+</button>
-          </div>
-        )}
-      </div>
+          )}
+
+          <button type="button" onClick={() => setShowCmdr(false)}
+            className="mt-1 px-4 py-1.5 rounded-full bg-white/10 text-xs font-semibold text-white/70 active:bg-white/20">
+            Done
+          </button>
+        </div>
+      )}
     </div>
   );
 }
