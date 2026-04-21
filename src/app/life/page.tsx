@@ -71,8 +71,31 @@ export default function LifePage() {
   // Per-player cumulative turn time
   const [playerTurnTimes, setPlayerTurnTimes] = useState<Record<string, number>>({});
 
+  // Clockwise turn order (array of player indices)
+  const [turnOrder, setTurnOrder] = useState<number[]>([]);
+
   // Total elapsed time (counts up)
   const [totalElapsed, setTotalElapsed] = useState(0);
+
+  // Compute clockwise order from panel center positions
+  const computeClockwiseOrder = useCallback((layoutId: string, count: number) => {
+    const layouts = LAYOUTS[count];
+    if (!layouts) return Array.from({ length: count }, (_, i) => i);
+    const layout = layouts.find((l) => l.id === layoutId) ?? layouts[0];
+    const centers = layout.panels.slice(0, count).map((p, i) => ({
+      i,
+      cx: p.x + p.w / 2,
+      cy: p.y + p.h / 2,
+    }));
+    // angle from center (0.5, 0.5), 0 = top, increasing clockwise
+    return centers
+      .map((c) => ({
+        i: c.i,
+        angle: Math.atan2(c.cx - 0.5, -(c.cy - 0.5)),
+      }))
+      .sort((a, b) => a.angle - b.angle)
+      .map((c) => c.i);
+  }, []);
 
   const supportsNativeFullscreen =
     typeof document !== "undefined" &&
@@ -168,13 +191,14 @@ export default function LifePage() {
 
   const handleEndTurn = useCallback(() => {
     setTurnSeconds(0);
-    const nextIndex = (activePlayerIndex + 1) % players.length;
-    if (nextIndex === 0) {
+    const currentPos = turnOrder.indexOf(activePlayerIndex);
+    const nextPos = (currentPos + 1) % turnOrder.length;
+    if (nextPos === 0) {
       setTurnNumber((n) => n + 1);
     }
-    setActivePlayerIndex(nextIndex);
+    setActivePlayerIndex(turnOrder[nextPos]);
     setTurnTimerRunning(true);
-  }, [activePlayerIndex, players.length]);
+  }, [activePlayerIndex, turnOrder]);
 
   const handleRandomizeStarter = useCallback(() => {
     if (randomizing) return;
@@ -200,6 +224,11 @@ export default function LifePage() {
           setRandomizing(false);
           setHighlightedPlayer(null);
           setActivePlayerIndex(winnerIndex);
+          // Rotate the clockwise order so the winner starts first
+          const pos = turnOrder.indexOf(winnerIndex);
+          if (pos > 0) {
+            setTurnOrder((prev) => [...prev.slice(pos), ...prev.slice(0, pos)]);
+          }
           if (gameOptions.gameTimer) { setGameTimerRunning(true); }
           if (gameOptions.turnTimer) { setTurnTimerRunning(true); }
         }, 2000);
@@ -218,6 +247,7 @@ export default function LifePage() {
         onShowMatchHistory={() => setShowMatchHistory(true)}
         onStart={(count, life, names, colors, options) => {
           setGameOptions(options);
+          setTurnOrder(computeClockwiseOrder(options.layout, count));
           if (options.gameTimer) {
             setGameSecondsLeft(options.gameTimerMinutes * 60);
             if (count === 1) setGameTimerRunning(true);
@@ -235,14 +265,13 @@ export default function LifePage() {
     );
   }
 
-  const panel = (index: number, rotation: number = 0, playerNumber?: number) => {
+  const panel = (index: number, rotation: number = 0) => {
     const p = players[index];
     const opponents = players.filter((_, i) => i !== index);
     const isActive = !choosingStarter && gameOptions.turnTimer && index === activePlayerIndex;
     return (
       <PlayerPanel
         player={p}
-        playerNumber={playerNumber}
         onLifeChange={(d) => { adjustLife(p.id, d); hideTurnTimerBriefly(); }}
         onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
         onPoisonChange={(d) => adjustPoison(p.id, d)}
@@ -271,11 +300,6 @@ export default function LifePage() {
     const layouts = LAYOUTS[playerCount];
     if (!layouts) return null;
     const layout = layouts.find((l) => l.id === gameOptions.layout) ?? layouts[0];
-    const visualOrder = layout.panels
-      .map((p, i) => ({ i, cy: p.y + p.h / 2, cx: p.x + p.w / 2 }))
-      .sort((a, b) => a.cy - b.cy || a.cx - b.cx);
-    const panelNumber = new Map<number, number>();
-    visualOrder.forEach((v, rank) => panelNumber.set(v.i, rank + 1));
     return (
       <div className="relative flex-1">
         {layout.panels.map((p, i) => {
@@ -293,7 +317,7 @@ export default function LifePage() {
                 padding: "2px",
               }}
             >
-              {panel(i, rotation, panelNumber.get(i))}
+              {panel(i, rotation)}
             </div>
           );
         })}
@@ -338,7 +362,7 @@ export default function LifePage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     setChoosingStarter(false);
-                    setActivePlayerIndex(0);
+                    setActivePlayerIndex(turnOrder[0] ?? 0);
                     if (gameOptions.gameTimer) setGameTimerRunning(true);
                     if (gameOptions.turnTimer) setTurnTimerRunning(true);
                   }}

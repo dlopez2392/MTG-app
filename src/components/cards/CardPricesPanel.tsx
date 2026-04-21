@@ -1,13 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { formatPrice } from "@/lib/utils/prices";
 import type { ScryfallCard } from "@/types/card";
-
-interface MtgjsonPrices {
-  cardKingdom: { retail: string | null; buylist: string | null; retailFoil: string | null; buylistFoil: string | null };
-  cardmarket: { retail: string | null; retailFoil: string | null };
-}
 
 interface Vendor {
   key: string;
@@ -16,8 +10,6 @@ interface Vendor {
   foil: string | null;
   currency: string;
   buyUrl: string | null;
-  note?: string;
-  tag?: string;
 }
 
 function BuyButton({ url, label }: { url: string; label: string }) {
@@ -41,23 +33,11 @@ interface CardPricesPanelProps {
 }
 
 export default function CardPricesPanel({ card }: CardPricesPanelProps) {
-  const { prices, purchase_uris, name, set, id } = card;
-  const [mtgjson, setMtgjson] = useState<MtgjsonPrices | null>(null);
-  const [mtgjsonLoading, setMtgjsonLoading] = useState(true);
+  const { prices, purchase_uris, name } = card;
 
-  useEffect(() => {
-    setMtgjsonLoading(true);
-    fetch(`/api/mtgjson/prices?set=${encodeURIComponent(set)}&scryfallId=${encodeURIComponent(id)}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => setMtgjson(d ?? null))
-      .catch(() => setMtgjson(null))
-      .finally(() => setMtgjsonLoading(false));
-  }, [id, set]);
-
-  const ckUrl = `https://www.cardkingdom.com/catalog/search?search=header&filter[name]=${encodeURIComponent(name)}`;
   const cmUrl = purchase_uris?.cardmarket ?? `https://www.cardmarket.com/en/Magic/Products/Search?searchString=${encodeURIComponent(name)}`;
 
-  const scryfallVendors: Vendor[] = [
+  const vendors: Vendor[] = [
     {
       key: "tcgplayer",
       name: "TCGPlayer",
@@ -66,68 +46,15 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
       currency: "usd",
       buyUrl: purchase_uris?.tcgplayer ?? null,
     },
-    ...(prices.tix
-      ? [{
-          key: "cardhoarder",
-          name: "MTGO",
-          normal: prices.tix,
-          foil: null,
-          currency: "tix",
-          buyUrl: purchase_uris?.cardhoarder ?? null,
-        } satisfies Vendor]
-      : []),
+    {
+      key: "cardmarket",
+      name: "Cardmarket",
+      normal: prices.eur,
+      foil: prices.eur_foil,
+      currency: "eur",
+      buyUrl: cmUrl,
+    },
   ];
-
-  const mtgjsonVendors: Vendor[] = mtgjson
-    ? [
-        {
-          key: "ck-retail",
-          name: "Card Kingdom",
-          tag: "Retail",
-          normal: mtgjson.cardKingdom.retail,
-          foil: mtgjson.cardKingdom.retailFoil,
-          currency: "usd",
-          buyUrl: ckUrl,
-        },
-        {
-          key: "ck-buylist",
-          name: "Card Kingdom",
-          tag: "Buylist",
-          normal: mtgjson.cardKingdom.buylist,
-          foil: mtgjson.cardKingdom.buylistFoil,
-          currency: "usd",
-          buyUrl: "https://www.cardkingdom.com/purchasing/mtg_singles",
-        },
-        {
-          key: "cardmarket",
-          name: "Cardmarket",
-          normal: mtgjson.cardmarket.retail ?? prices.eur,
-          foil: mtgjson.cardmarket.retailFoil ?? prices.eur_foil,
-          currency: "eur",
-          buyUrl: cmUrl,
-        },
-      ]
-    : [
-        {
-          key: "cardkingdom-placeholder",
-          name: "Card Kingdom",
-          normal: null,
-          foil: null,
-          currency: "usd",
-          buyUrl: ckUrl,
-          note: "Check site for price",
-        },
-        {
-          key: "cardmarket-placeholder",
-          name: "Cardmarket",
-          normal: prices.eur,
-          foil: prices.eur_foil,
-          currency: "eur",
-          buyUrl: cmUrl,
-        },
-      ];
-
-  const allVendors = [...scryfallVendors, ...mtgjsonVendors];
 
   return (
     <div className="rounded-xl border border-border overflow-hidden">
@@ -140,37 +67,21 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
       </div>
 
       {/* Rows */}
-      {allVendors.map((v) => (
+      {vendors.map((v) => (
         <div
           key={v.key}
           className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 border-b border-border last:border-0 hover:bg-bg-card/50 transition-colors"
         >
-          <span className="text-sm font-medium text-text-primary flex items-center gap-1.5">
+          <span className="text-sm font-medium text-text-primary">
             {v.name}
-            {v.tag && (
-              <span className="text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-bg-hover text-text-muted border border-border">
-                {v.tag}
-              </span>
-            )}
-            {mtgjsonLoading && (v.key === "ck-retail" || v.key === "ck-buylist" || v.key === "cardmarket") && (
-              <span className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin inline-block" />
-            )}
           </span>
 
           <span className="text-sm text-right font-mono tabular-nums text-text-primary min-w-[52px]">
-            {v.note ? (
-              <span className="text-[10px] text-text-muted italic">{v.note}</span>
-            ) : mtgjsonLoading && (v.key.startsWith("ck") || v.key === "cardmarket") ? (
-              <span className="text-text-muted">···</span>
-            ) : (
-              formatPrice(v.normal, v.currency)
-            )}
+            {formatPrice(v.normal, v.currency)}
           </span>
 
           <span className="text-sm text-right font-mono tabular-nums text-text-secondary min-w-[52px]">
-            {mtgjsonLoading && (v.key.startsWith("ck") || v.key === "cardmarket") ? (
-              <span className="text-text-muted">···</span>
-            ) : v.foil ? (
+            {v.foil ? (
               formatPrice(v.foil, v.currency)
             ) : (
               <span className="text-text-muted">—</span>
@@ -179,7 +90,7 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
 
           <span className="flex justify-end">
             {v.buyUrl ? (
-              <BuyButton url={v.buyUrl} label={v.tag === "Buylist" ? "Sell" : "Buy"} />
+              <BuyButton url={v.buyUrl} label="Buy" />
             ) : (
               <span className="w-10" />
             )}
@@ -208,7 +119,7 @@ export default function CardPricesPanel({ card }: CardPricesPanelProps) {
       )}
 
       <p className="text-caption px-3 py-1.5 border-t border-border">
-        Scryfall · MTGJSON · Updated daily
+        Prices via Scryfall · Updated daily
       </p>
     </div>
   );

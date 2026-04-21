@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useState, use, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import TopBar from "@/components/layout/TopBar";
+import Image from "next/image";
 import PageContainer from "@/components/layout/PageContainer";
 import CardImage from "@/components/cards/CardImage";
 import ManaCost from "@/components/cards/ManaCost";
@@ -17,10 +17,9 @@ import { useDecks } from "@/hooks/useDecks";
 import { useCollection } from "@/hooks/useCollection";
 import { useCardCombos } from "@/hooks/useCardCombos";
 import CombosPanel from "@/components/cards/CombosPanel";
-import DraftStatsPanel from "@/components/cards/DraftStatsPanel";
-import CardPricesPanel from "@/components/cards/CardPricesPanel";
 import { useWishlist } from "@/hooks/useWishlist";
 import { cn } from "@/lib/utils/cn";
+import { formatPrice } from "@/lib/utils/prices";
 import type { DeckCategory } from "@/types/deck";
 
 function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
@@ -28,8 +27,8 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { card, rulings, printings, loading, error } = useCardDetail(id);
-  const { addCardToDeck } = useDecks();
-  const { addCardToBinder } = useCollection();
+  const { allDecks, addCardToDeck } = useDecks();
+  const { allBinders, addCardToBinder } = useCollection();
   const { isOnWishlist, addItem: addToWishlist, removeItem: removeFromWishlist, items: wishlistItems } = useWishlist();
   const [activeTab, setActiveTab] = useState("versions");
   const comboState = useCardCombos(card?.name ?? "");
@@ -38,29 +37,34 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
     setActiveTab(tab);
     if (tab === "combos") comboState.load();
   }, [comboState]);
-  const [addedFeedback, setAddedFeedback] = useState(false);
-  const [addedCollectionFeedback, setAddedCollectionFeedback] = useState(false);
+
+  const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "ok" | "err">("idle");
   const saveStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showDeckPicker, setShowDeckPicker] = useState(false);
+  const [showBinderPicker, setShowBinderPicker] = useState(false);
 
   const deckId = searchParams.get("deckId");
   const category = (searchParams.get("category") ?? "main") as DeckCategory;
   const binderId = searchParams.get("binderId");
 
-  const handleAddToDeck = useCallback(async () => {
-    if (!card || !deckId) return;
-    await addCardToDeck(deckId, card, category);
-    setAddedFeedback(true);
-    setTimeout(() => setAddedFeedback(false), 1500);
-  }, [card, deckId, category, addCardToDeck]);
+  const handleAddToDeck = useCallback(async (targetDeckId: string) => {
+    if (!card) return;
+    await addCardToDeck(targetDeckId, card, "main");
+    setShowDeckPicker(false);
+    setMenuOpen(false);
+    setAddedFeedback("Added to deck!");
+    setTimeout(() => setAddedFeedback(null), 2000);
+  }, [card, addCardToDeck]);
 
-  const handleAddToCollection = useCallback(async () => {
-    if (!card || !binderId) return;
+  const handleAddToCollection = useCallback(async (targetBinderId: string) => {
+    if (!card) return;
     const imageUri = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal;
     try {
-      await addCardToBinder(binderId, {
+      await addCardToBinder(targetBinderId, {
         scryfallId: card.id,
         name: card.name,
         setCode: card.set,
@@ -71,11 +75,39 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
         imageUri,
         priceUsd: card.prices?.usd,
       });
-      setAddedCollectionFeedback(true);
-      setTimeout(() => setAddedCollectionFeedback(false), 1500);
-    } catch (err) {
-      alert(`Failed to add card: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setShowBinderPicker(false);
+      setMenuOpen(false);
+      setAddedFeedback("Added to collection!");
+      setTimeout(() => setAddedFeedback(null), 2000);
+    } catch {
+      // silent
     }
+  }, [card, addCardToBinder]);
+
+  // Direct add when coming from deck/binder context
+  const handleAddToDeckDirect = useCallback(async () => {
+    if (!card || !deckId) return;
+    await addCardToDeck(deckId, card, category);
+    setAddedFeedback("Added to deck!");
+    setTimeout(() => setAddedFeedback(null), 2000);
+  }, [card, deckId, category, addCardToDeck]);
+
+  const handleAddToCollectionDirect = useCallback(async () => {
+    if (!card || !binderId) return;
+    const imageUri = card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal;
+    await addCardToBinder(binderId, {
+      scryfallId: card.id,
+      name: card.name,
+      setCode: card.set,
+      setName: card.set_name,
+      collectorNumber: card.collector_number,
+      typeLine: card.type_line,
+      rarity: card.rarity,
+      imageUri,
+      priceUsd: card.prices?.usd,
+    });
+    setAddedFeedback("Added to collection!");
+    setTimeout(() => setAddedFeedback(null), 2000);
   }, [card, binderId, addCardToBinder]);
 
   const handleSaveImage = useCallback(async () => {
@@ -84,30 +116,24 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
       card?.card_faces?.[0]?.image_uris?.normal;
     if (!imageUrl || savingImage) return;
     setSavingImage(true);
+    setMenuOpen(false);
     try {
-      // Proxy through our API to avoid CORS issues with Scryfall image CDN
       const proxyUrl = `/api/scryfall/image-proxy?url=${encodeURIComponent(imageUrl)}`;
       const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const filename = `${card!.name.replace(/[^a-z0-9]/gi, "_")}.jpg`;
       const file = new File([blob], filename, { type: "image/jpeg" });
-
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
       if (isIOS) {
-        // iOS Safari: share sheet lets user tap "Save Image" → Photos
-        // navigator.share with files is supported on iOS 15+
         if (navigator.share) {
           await navigator.share({ files: [file], title: card!.name });
         } else {
-          // Older iOS: open image in new tab — long-press → Save to Photos
           const url = URL.createObjectURL(blob);
           window.open(url, "_blank");
           URL.revokeObjectURL(url);
         }
       } else {
-        // Android / Desktop: trigger direct download
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -119,7 +145,6 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
       }
       setSaveStatus("ok");
     } catch (err) {
-      // User cancelled the iOS share sheet — treat as success (not an error)
       const cancelled =
         err instanceof Error &&
         (err.name === "AbortError" || err.message.includes("cancel"));
@@ -134,6 +159,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const handleShare = useCallback(async () => {
     if (!card || sharing) return;
     setSharing(true);
+    setMenuOpen(false);
     const shareData = {
       title: card.name,
       text: `${card.name} · ${card.type_line} · ${card.set_name} (${card.set.toUpperCase()})`,
@@ -144,9 +170,11 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
         await navigator.share(shareData);
       } else {
         await navigator.clipboard.writeText(card.scryfall_uri);
+        setAddedFeedback("Link copied!");
+        setTimeout(() => setAddedFeedback(null), 2000);
       }
     } catch {
-      // user dismissed — no-op
+      // user dismissed
     } finally {
       setSharing(false);
     }
@@ -159,8 +187,10 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
 
   const handleToggleWishlist = useCallback(() => {
     if (!card) return;
+    setMenuOpen(false);
     if (wishlisted && wishlistId) {
       removeFromWishlist(wishlistId);
+      setAddedFeedback("Removed from wishlist");
     } else {
       const imageUri = card.image_uris?.small ?? card.card_faces?.[0]?.image_uris?.small;
       addToWishlist({
@@ -172,230 +202,320 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
         rarity: card.rarity,
         priceUsd: card.prices?.usd ?? undefined,
       });
+      setAddedFeedback("Added to wishlist!");
     }
+    setTimeout(() => setAddedFeedback(null), 2000);
   }, [card, wishlisted, wishlistId, addToWishlist, removeFromWishlist]);
 
   if (loading) {
     return (
-      <>
-        <TopBar title="Loading..." showBack />
-        <PageContainer>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Skeleton className="w-full sm:w-64 aspect-[488/680]" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-20 w-full" />
-            </div>
-          </div>
-        </PageContainer>
-      </>
+      <div className="pb-20">
+        <Skeleton className="w-full aspect-[4/3]" />
+        <div className="px-4 pt-4 space-y-3">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+      </div>
     );
   }
 
   if (error || !card) {
     return (
-      <>
-        <TopBar title="Error" showBack />
-        <PageContainer>
-          <p className="text-banned">{error || "Card not found"}</p>
-        </PageContainer>
-      </>
+      <div className="px-4 pt-12 pb-20">
+        <button onClick={() => router.back()} className="mb-4 text-accent text-sm font-medium">&larr; Back</button>
+        <p className="text-banned">{error || "Card not found"}</p>
+      </div>
     );
   }
 
   const oracleText = card.oracle_text || card.card_faces?.[0]?.oracle_text || "";
   const typeLine = card.type_line;
   const manaCost = card.mana_cost || card.card_faces?.[0]?.mana_cost || "";
+  const artCrop = card.image_uris?.art_crop ?? card.card_faces?.[0]?.image_uris?.art_crop;
+  const hasStats = card.power != null && card.toughness != null;
+  const price = card.prices;
 
   return (
-    <>
-      <TopBar title={card.name} showBack />
-      <PageContainer>
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Card Image + action buttons */}
-          <div className="w-full max-w-[200px] mx-auto sm:mx-0 sm:w-44 flex-shrink-0 flex flex-col gap-2">
-            <button
-              onClick={() => setLightboxOpen(true)}
-              className="block w-full rounded-lg overflow-hidden transition-transform duration-200 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent cursor-zoom-in"
-              aria-label="Enlarge card image"
-            >
-              <CardImage card={card} size="normal" />
-            </button>
-
-            {/* Wishlist / Save / Share */}
-            <div className="flex gap-2">
-              {/* Wishlist */}
-              <button
-                onClick={handleToggleWishlist}
-                title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
-                className={cn(
-                  "flex items-center justify-center py-2 px-2.5 rounded-xl border transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-                  wishlisted
-                    ? "bg-pink-500/10 border-pink-500/40 text-pink-400"
-                    : "bg-bg-card border-border text-text-secondary hover:text-pink-400 hover:border-pink-500/40"
-                )}
-              >
-                <svg className="w-4 h-4" fill={wishlisted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                </svg>
-              </button>
-
-              {/* Save Image */}
-              <button
-                onClick={handleSaveImage}
-                disabled={savingImage}
-                title="Save image"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-accent/40 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
-              >
-                {saveStatus === "ok" ? (
-                  <svg className="w-4 h-4 text-legal" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                ) : savingImage ? (
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                  </svg>
-                )}
-                <span className="text-xs font-medium">Save</span>
-              </button>
-
-              {/* Share */}
-              <button
-                onClick={handleShare}
-                disabled={sharing}
-                title="Share card"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-bg-card border border-border text-text-secondary hover:text-text-primary hover:border-accent/40 active:scale-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-                </svg>
-                <span className="text-xs font-medium">Share</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Card Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h1 className="text-card-name text-xl text-text-primary">{card.name}</h1>
-              {manaCost && <ManaCost cost={manaCost} />}
-            </div>
-
-            <p className="text-body text-text-secondary mb-1">{typeLine}</p>
-
-            {(card.power || card.card_faces?.[0]?.power) && (
-              <p className="text-sm text-text-secondary mb-2">
-                {card.power || card.card_faces?.[0]?.power}/{card.toughness || card.card_faces?.[0]?.toughness}
-              </p>
-            )}
-
-            {card.loyalty && (
-              <p className="text-sm text-text-secondary mb-2">Loyalty: {card.loyalty}</p>
-            )}
-
-            <div className="mb-4">
-              <p className="text-sm whitespace-pre-wrap">{oracleText}</p>
-            </div>
-
-            {/* Prices */}
-            <div className="mb-4">
-              <CardPricesPanel card={card} />
-            </div>
-
-            {/* Set Info */}
-            <p className="text-caption mb-4">
-              {card.set_name} ({card.set.toUpperCase()}) &middot; #{card.collector_number} &middot;{" "}
-              <span className="capitalize">{card.rarity}</span>
-            </p>
-
-            {/* Add to Deck button */}
-            {deckId && (
-              <button
-                onClick={handleAddToDeck}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all btn-gradient active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-              >
-                {addedFeedback ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    Added!
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add to Deck ({category})
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Add to Collection button */}
-            {binderId && (
-              <button
-                onClick={handleAddToCollection}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all bg-bg-card border border-accent/50 text-accent hover:bg-accent/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-              >
-                {addedCollectionFeedback ? (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                    Added to Collection!
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add to Collection
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Lightbox */}
-        {lightboxOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-            onClick={() => setLightboxOpen(false)}
+    <div className="pb-20 animate-page-enter">
+      {/* ── Large Art Crop ── */}
+      <div className="relative">
+        {artCrop ? (
+          <button
+            onClick={() => setLightboxOpen(true)}
+            className="block w-full cursor-zoom-in"
           >
-            <div
-              className="relative max-w-sm w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <CardImage card={card} size="large" />
-              <button
-                onClick={() => setLightboxOpen(false)}
-                className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                aria-label="Close"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
+            <Image
+              src={artCrop}
+              alt={card.name}
+              width={626}
+              height={457}
+              className="w-full aspect-[4/3] object-cover"
+              priority
+            />
+          </button>
+        ) : (
+          <div className="w-full aspect-[4/3] bg-bg-secondary flex items-center justify-center text-text-muted">
+            No artwork
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="mt-6">
+        {/* Back button overlay */}
+        <button
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/80 hover:text-white active:scale-90 transition-all z-10"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+      </div>
+
+      {/* ── Card Info ── */}
+      <div className="px-4 pt-4">
+        {/* Name + Mana + P/T */}
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <h1 className="text-xl font-bold text-text-primary leading-tight">{card.name}</h1>
+          <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+            {manaCost && <ManaCost cost={manaCost} />}
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-text-secondary">{typeLine}</p>
+          {hasStats && (
+            <span className="text-lg font-bold text-text-primary">{card.power}/{card.toughness}</span>
+          )}
+          {card.loyalty && (
+            <span className="text-lg font-bold text-text-primary">Loyalty: {card.loyalty}</span>
+          )}
+        </div>
+
+        {/* Oracle Text */}
+        {oracleText && (
+          <div className="mt-3 bg-bg-card border border-border rounded-xl p-4">
+            <p className="text-sm whitespace-pre-wrap leading-relaxed text-text-primary">{oracleText}</p>
+          </div>
+        )}
+
+        {/* ── Pricing Section ── */}
+        <div className="mt-5">
+          <p className="text-xs font-bold text-accent uppercase tracking-widest mb-1">Pricing</p>
+          <p className="text-[10px] text-text-muted mb-3">TCGplayer</p>
+
+          <div className="bg-bg-card border border-border rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              {/* Small card thumbnail */}
+              <div className="w-16 flex-shrink-0">
+                <CardImage card={card} size="small" className="rounded-lg" />
+                <p className="text-[9px] text-text-muted text-center mt-1">#{card.collector_number}</p>
+              </div>
+
+              {/* Price columns */}
+              <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide">Low</p>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">
+                    {price.usd ? formatPrice(price.usd) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">Mid</p>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">
+                    {price.usd ? formatPrice(price.usd) : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-wide">Market</p>
+                  <p className="text-sm font-semibold text-text-primary tabular-nums">
+                    {price.usd ? formatPrice(price.usd) : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Menu button */}
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="w-11 h-11 rounded-xl btn-gradient flex items-center justify-center active:scale-90 transition-all"
+                >
+                  <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  </svg>
+                </button>
+
+                {/* Action menu */}
+                {menuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => { setMenuOpen(false); setShowDeckPicker(false); setShowBinderPicker(false); }} />
+                    <div className="absolute right-0 bottom-14 z-50 bg-bg-secondary border border-border rounded-xl shadow-2xl p-1.5 min-w-[200px]">
+                      {/* Share */}
+                      <button
+                        onClick={handleShare}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                        </svg>
+                        Share Card
+                      </button>
+
+                      {/* Add to Deck */}
+                      {deckId ? (
+                        <button
+                          onClick={handleAddToDeckDirect}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                          </svg>
+                          Add to Deck
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setShowDeckPicker(!showDeckPicker); setShowBinderPicker(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                          </svg>
+                          Add to Deck
+                          <svg className="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </button>
+                      )}
+                      {showDeckPicker && !deckId && (
+                        <div className="ml-4 border-l border-border pl-2 py-1 max-h-40 overflow-y-auto">
+                          {allDecks.length === 0 ? (
+                            <p className="text-xs text-text-muted px-2 py-1">No decks yet</p>
+                          ) : allDecks.map((d) => (
+                            <button
+                              key={d.id}
+                              onClick={() => handleAddToDeck(d.id!)}
+                              className="w-full text-left px-2 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors truncate"
+                            >
+                              {d.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add to Collection */}
+                      {binderId ? (
+                        <button
+                          onClick={handleAddToCollectionDirect}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
+                          </svg>
+                          Add to Collection
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { setShowBinderPicker(!showBinderPicker); setShowDeckPicker(false); }}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8" />
+                          </svg>
+                          Add to Collection
+                          <svg className="w-3 h-3 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                          </svg>
+                        </button>
+                      )}
+                      {showBinderPicker && !binderId && (
+                        <div className="ml-4 border-l border-border pl-2 py-1 max-h-40 overflow-y-auto">
+                          {allBinders.length === 0 ? (
+                            <p className="text-xs text-text-muted px-2 py-1">No binders yet</p>
+                          ) : allBinders.map((b) => (
+                            <button
+                              key={b.id}
+                              onClick={() => handleAddToCollection(b.id!)}
+                              className="w-full text-left px-2 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded transition-colors truncate"
+                            >
+                              {b.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="border-t border-border my-1" />
+
+                      {/* Save Image */}
+                      <button
+                        onClick={handleSaveImage}
+                        disabled={savingImage}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Save Image
+                      </button>
+
+                      {/* Wishlist */}
+                      <button
+                        onClick={handleToggleWishlist}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill={wishlisted ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                        </svg>
+                        {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Set info line */}
+            <p className="text-[10px] text-text-muted mt-2">
+              {card.set_name} ({card.set.toUpperCase()}) · <span className="capitalize">{card.rarity}</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Foil price row if available */}
+        {price.usd_foil && (
+          <div className="mt-2 bg-bg-card border border-border rounded-xl px-4 py-2.5 flex items-center justify-between">
+            <span className="text-xs text-text-muted">Foil</span>
+            <span className="text-sm font-semibold text-accent tabular-nums">{formatPrice(price.usd_foil)}</span>
+          </div>
+        )}
+
+        {/* Cardmarket EUR if available */}
+        {price.eur && (
+          <div className="mt-2 bg-bg-card border border-border rounded-xl px-4 py-2.5 flex items-center justify-between">
+            <span className="text-xs text-text-muted">Cardmarket</span>
+            <span className="text-sm font-semibold text-text-primary tabular-nums">{formatPrice(price.eur, "eur")}</span>
+          </div>
+        )}
+
+        {/* Buy link */}
+        {card.purchase_uris?.tcgplayer && (
+          <a
+            href={card.purchase_uris.tcgplayer}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl btn-gradient text-sm font-bold active:scale-[0.98] transition-all"
+          >
+            Buy on TCGplayer
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+          </a>
+        )}
+
+        {/* ── Tabs ── */}
+        <div className="mt-5">
           <Tabs
             tabs={[
-              { value: "versions", label: "Printings" },
-              { value: "rulings", label: "Rulings" },
+              { value: "versions", label: "Versions" },
+              { value: "rulings", label: "Ruling" },
               { value: "combos", label: `Combos${comboState.loaded && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
-              { value: "draft", label: "Draft" },
             ]}
             active={activeTab}
             onChange={handleTabChange}
@@ -418,10 +538,6 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
             </div>
           )}
 
-          {activeTab === "draft" && (
-            <DraftStatsPanel cardName={card.name} setCode={card.set} />
-          )}
-
           {activeTab === "combos" && (
             <CombosPanel
               cardName={card.name}
@@ -433,8 +549,39 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
             />
           )}
         </div>
-      </PageContainer>
-    </>
+      </div>
+
+      {/* Feedback toast */}
+      {addedFeedback && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-legal/90 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-lg backdrop-blur-sm animate-page-enter">
+          {addedFeedback}
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div
+            className="relative max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardImage card={card} size="large" />
+            <button
+              onClick={() => setLightboxOpen(false)}
+              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+              aria-label="Close"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

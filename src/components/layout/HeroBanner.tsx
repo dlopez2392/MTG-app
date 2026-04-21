@@ -8,6 +8,7 @@ interface HeroBannerProps {
   accent: string;         // hex colour for icon bg + corner glow
   icon: React.ReactNode;
   children?: React.ReactNode; // optional content rendered below the title (e.g. search bar)
+  onBack?: () => void;
 }
 
 interface HeroCard {
@@ -17,7 +18,7 @@ interface HeroCard {
   card_faces?: Array<{ image_uris?: { art_crop?: string } }>;
 }
 
-export default function HeroBanner({ title, subtitle, accent, icon, children }: HeroBannerProps) {
+export default function HeroBanner({ title, subtitle, accent, icon, children, onBack }: HeroBannerProps) {
   const [card, setCard] = useState<HeroCard | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -65,6 +66,17 @@ export default function HeroBanner({ title, subtitle, accent, icon, children }: 
       {/* Content */}
       <div className="relative z-20 px-4 pt-8 pb-5 max-w-2xl mx-auto">
         <div className="flex items-center gap-3 mb-1">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="w-9 h-9 rounded-full bg-bg-card/60 backdrop-blur border border-border/50 flex items-center justify-center text-text-muted hover:text-text-primary active:scale-90 transition-all cursor-pointer flex-shrink-0"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            </button>
+          )}
           <div
             className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: `${accent}18`, color: accent, boxShadow: `0 0 20px ${accent}30` }}

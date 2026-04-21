@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import PageContainer from "@/components/layout/PageContainer";
 import HeroBanner from "@/components/layout/HeroBanner";
@@ -59,18 +59,22 @@ export default function SearchPage() {
     }
   }, [initialized, search]);
 
+  // Debounced live search as user types
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!initialized) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const query = filters.query.trim();
+    if (query.length < 2) return;
+    debounceRef.current = setTimeout(() => {
+      search(filters);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [filters.query, initialized]);
+
   const handleSearch = useCallback(() => {
     search(filters);
   }, [filters, search]);
-
-  const handleSelect = useCallback(
-    (name: string) => {
-      const updated = { ...filters, query: name };
-      setFilters(updated);
-      search(updated);
-    },
-    [filters, search]
-  );
 
   const handleSetSelect = useCallback(
     (set: ScryfallSet) => {
@@ -109,13 +113,13 @@ export default function SearchPage() {
         subtitle="Browse the full Scryfall database"
         accent="#ED9A57"
         icon={SEARCH_ICON}
+        onBack={() => router.back()}
       >
         {tab === "cards" && (
           <SearchBar
             value={filters.query}
             onChange={(query) => setFilters((f) => ({ ...f, query }))}
             onSubmit={handleSearch}
-            onSelect={handleSelect}
           />
         )}
       </HeroBanner>
@@ -154,76 +158,82 @@ export default function SearchPage() {
         {tab === "sets" ? (
           <SetsTab onSetSelect={handleSetSelect} />
         ) : (
-          <>
-            <SearchFilters filters={filters} onChange={setFilters} className="mb-4" />
-
-            <div className="flex items-center justify-between mb-3">
-              {totalCards > 0 && (
-                <span className="text-sm text-text-muted">
-                  {totalCards.toLocaleString()} cards found
-                </span>
-              )}
-              <ViewToggle view={view} onChange={setView} />
+          <div className="flex flex-col lg:flex-row lg:gap-6 lg:items-start">
+            {/* Filters — sidebar on large screens */}
+            <div className="lg:w-64 lg:flex-shrink-0 lg:sticky lg:top-14 mb-4 lg:mb-0">
+              <SearchFilters filters={filters} onChange={setFilters} />
             </div>
 
-            {error && (
-              <div className="bg-banned/10 border border-banned/20 rounded-lg p-3 mb-4">
-                <p className="text-sm text-banned">{error}</p>
-              </div>
-            )}
-
-            {loading && cards.length === 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-[488/680] w-full" />
-                ))}
-              </div>
-            )}
-
-            {!loading && cards.length === 0 && !error && (
-              <EmptyState
-                icon={
-                  <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                }
-                title="Search for cards"
-                description="Enter a card name or use filters to find Magic: The Gathering cards"
-              />
-            )}
-
-            {cards.length > 0 && (
-              <>
-                {view === "grid" ? (
-                  <CardGrid
-                    cards={cards}
-                    onCardClick={handleCardClick}
-                    collectionMap={deckContext ? collectionMap : undefined}
-                    deckFormat={deckContext ? deckFormat ?? undefined : undefined}
-                  />
-                ) : (
-                  <CardList
-                    cards={cards}
-                    onCardClick={handleCardClick}
-                    collectionMap={deckContext ? collectionMap : undefined}
-                    deckFormat={deckContext ? deckFormat ?? undefined : undefined}
-                  />
+            {/* Results */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-3">
+                {totalCards > 0 && (
+                  <span className="text-sm text-text-muted">
+                    {totalCards.toLocaleString()} cards found
+                  </span>
                 )}
+                <ViewToggle view={view} onChange={setView} />
+              </div>
 
-                {hasMore && (
-                  <div className="flex justify-center mt-6">
-                    <Button
-                      variant="secondary"
-                      onClick={() => loadMore(filters)}
-                      disabled={loading}
-                    >
-                      {loading ? "Loading…" : "Load More"}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </>
+              {error && (
+                <div className="bg-banned/10 border border-banned/20 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-banned">{error}</p>
+                </div>
+              )}
+
+              {loading && cards.length === 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <Skeleton key={i} className="aspect-[488/680] w-full" />
+                  ))}
+                </div>
+              )}
+
+              {!loading && cards.length === 0 && !error && (
+                <EmptyState
+                  icon={
+                    <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  }
+                  title="Search for cards"
+                  description="Enter a card name or use filters to find Magic: The Gathering cards"
+                />
+              )}
+
+              {cards.length > 0 && (
+                <>
+                  {view === "grid" ? (
+                    <CardGrid
+                      cards={cards}
+                      onCardClick={handleCardClick}
+                      collectionMap={deckContext ? collectionMap : undefined}
+                      deckFormat={deckContext ? deckFormat ?? undefined : undefined}
+                    />
+                  ) : (
+                    <CardList
+                      cards={cards}
+                      onCardClick={handleCardClick}
+                      collectionMap={deckContext ? collectionMap : undefined}
+                      deckFormat={deckContext ? deckFormat ?? undefined : undefined}
+                    />
+                  )}
+
+                  {hasMore && (
+                    <div className="flex justify-center mt-6">
+                      <Button
+                        variant="secondary"
+                        onClick={() => loadMore(filters)}
+                        disabled={loading}
+                      >
+                        {loading ? "Loading…" : "Load More"}
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         )}
       </PageContainer>
     </>

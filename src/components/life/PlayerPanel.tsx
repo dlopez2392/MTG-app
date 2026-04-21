@@ -42,7 +42,6 @@ interface PlayerPanelProps {
   opponents?: Player[];
   onTapPanel?: () => void;
   disabled?: boolean;
-  playerNumber?: number;
   /** Turn timer state — only passed to the active player's panel */
   turnTimer?: {
     turnNumber: number;
@@ -66,7 +65,6 @@ export default function PlayerPanel({
   opponents = [],
   onTapPanel,
   disabled = false,
-  playerNumber,
   turnTimer,
   rotation = 0,
 }: PlayerPanelProps) {
@@ -346,13 +344,6 @@ export default function PlayerPanel({
           )}
         </button>
       </div>
-
-      {/* Player number badge — top-right corner */}
-      {playerNumber != null && (
-        <div className="absolute top-3 right-3 z-20 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center pointer-events-none">
-          <span className="text-xs font-bold text-white/80 tabular-nums">{playerNumber}</span>
-        </div>
-      )}
 
       {/* Commander damage count badge — top-left corner */}
       {cmdrTotal > 0 && (

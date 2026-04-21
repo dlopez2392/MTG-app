@@ -81,7 +81,14 @@ const FORMATS = [
   { label: "Brawl", life: 25 },
 ];
 
-const PLAYER_COLORS = ["#607D8B", "#2E7D32", "#00838F", "#1565C0", "#6A1B9A", "#C62828"];
+const PLAYER_COLORS = [
+  { base: "#607D8B", light: "#90A4AE", dark: "#37474F" },
+  { base: "#2E7D32", light: "#66BB6A", dark: "#1B5E20" },
+  { base: "#00838F", light: "#26C6DA", dark: "#004D40" },
+  { base: "#1565C0", light: "#42A5F5", dark: "#0D47A1" },
+  { base: "#6A1B9A", light: "#AB47BC", dark: "#4A148C" },
+  { base: "#C62828", light: "#EF5350", dark: "#8E0000" },
+];
 
 export default function PlayerSetup({
   defaultPlayerCount = 2,
@@ -99,7 +106,6 @@ export default function PlayerSetup({
   );
   const [selectedLayout, setSelectedLayout] = useState<LayoutId>(LAYOUTS[defaultPlayerCount]?.[0]?.id ?? "2-stack");
   const [showLayoutPage, setShowLayoutPage] = useState(false);
-  const [showPlayers, setShowPlayers] = useState(false);
   const [poisonCounters, setPoisonCounters] = useState(false);
   const [turnTimer, setTurnTimer] = useState(false);
   const [gameTimer, setGameTimer] = useState(false);
@@ -373,22 +379,32 @@ export default function PlayerSetup({
             Players
           </label>
           <div className="grid grid-cols-6 gap-2">
-            {[1, 2, 3, 4, 5, 6].map((count, i) => (
-              <button
-                key={count}
-                type="button"
-                onClick={() => { setPlayerCount(count); setSelectedLayout(LAYOUTS[count]?.[0]?.id ?? ""); }}
-                className={cn(
-                  "aspect-square rounded-2xl flex items-center justify-center text-2xl font-black text-white cursor-pointer transition-all",
-                  playerCount === count
-                    ? "scale-105 shadow-lg ring-2 ring-white ring-offset-2 ring-offset-bg-primary"
-                    : "opacity-60 hover:opacity-90 active:scale-95"
-                )}
-                style={{ backgroundColor: PLAYER_COLORS[i] }}
-              >
-                {count}
-              </button>
-            ))}
+            {[1, 2, 3, 4, 5, 6].map((count, i) => {
+              const c = PLAYER_COLORS[i];
+              const isActive = playerCount === count;
+              return (
+                <button
+                  key={count}
+                  type="button"
+                  onClick={() => { setPlayerCount(count); setSelectedLayout(LAYOUTS[count]?.[0]?.id ?? ""); }}
+                  className={cn(
+                    "aspect-square rounded-2xl flex items-center justify-center text-2xl font-black text-white cursor-pointer transition-all border-b-4",
+                    isActive
+                      ? "scale-105 ring-2 ring-white ring-offset-2 ring-offset-bg-primary"
+                      : "opacity-60 hover:opacity-90 active:scale-95 active:border-b-2 active:translate-y-[2px]"
+                  )}
+                  style={{
+                    background: `linear-gradient(135deg, ${c.light} 0%, ${c.base} 50%, ${c.dark} 100%)`,
+                    borderBottomColor: c.dark,
+                    boxShadow: isActive
+                      ? `0 4px 14px ${c.base}80, inset 0 1px 1px ${c.light}60`
+                      : `0 4px 8px ${c.dark}60, inset 0 1px 1px ${c.light}40`,
+                  }}
+                >
+                  <span style={{ textShadow: `0 2px 4px ${c.dark}90` }}>{count}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -548,64 +564,49 @@ export default function PlayerSetup({
           </button>
         </div>
 
-        {/* ── Player Names (collapsible) ── */}
+        {/* ── Customize Players ── */}
         <div>
-          <button
-            type="button"
-            onClick={() => setShowPlayers(!showPlayers)}
-            className="flex items-center justify-between w-full mb-2"
-          >
-            <span className="text-xs font-bold text-text-muted uppercase tracking-widest">
-              Customize Players
-            </span>
-            <svg
-              className={cn("w-4 h-4 text-text-muted transition-transform", showPlayers && "rotate-180")}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
-
-          {showPlayers && (
-            <div className="space-y-2">
-              {Array.from({ length: playerCount }, (_, i) => {
-                const selectedKey = selectedColorKeys[i] ?? "R";
-                const selectedMtgColor = MTG_PLAYER_COLORS.find((c) => c.key === selectedKey)!;
-                return (
-                  <div key={i} className="bg-bg-card border border-border rounded-xl p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedMtgColor.color }} />
-                      <Input
-                        value={playerNames[i]}
-                        onChange={(e) => handleNameChange(i, e.target.value)}
-                        placeholder={`Player ${i + 1}`}
-                        className="flex-1"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-text-muted uppercase tracking-wide mr-1">Color</span>
-                      {MTG_PLAYER_COLORS.map((c) => (
-                        <button
-                          key={c.key}
-                          type="button"
-                          onClick={() => handleColorChange(i, c.key as MtgPlayerColorKey)}
-                          title={c.label}
-                          className={cn(
-                            "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150",
-                            selectedKey === c.key
-                              ? "ring-2 ring-white ring-offset-1 ring-offset-bg-card scale-110"
-                              : "opacity-60 hover:opacity-90"
-                          )}
-                        >
-                          <ManaSymbol symbol={c.key} size={18} />
-                        </button>
-                      ))}
-                    </div>
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
+            Customize Players
+          </label>
+          <div className="space-y-2">
+            {Array.from({ length: playerCount }, (_, i) => {
+              const selectedKey = selectedColorKeys[i] ?? "R";
+              const selectedMtgColor = MTG_PLAYER_COLORS.find((c) => c.key === selectedKey)!;
+              return (
+                <div key={i} className="bg-bg-card border border-border rounded-xl p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedMtgColor.color }} />
+                    <Input
+                      value={playerNames[i]}
+                      onChange={(e) => handleNameChange(i, e.target.value)}
+                      placeholder={`Player ${i + 1}`}
+                      className="flex-1"
+                    />
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-text-muted uppercase tracking-wide mr-1">Color</span>
+                    {MTG_PLAYER_COLORS.map((c) => (
+                      <button
+                        key={c.key}
+                        type="button"
+                        onClick={() => handleColorChange(i, c.key as MtgPlayerColorKey)}
+                        title={c.label}
+                        className={cn(
+                          "w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150",
+                          selectedKey === c.key
+                            ? "ring-2 ring-white ring-offset-1 ring-offset-bg-card scale-110"
+                            : "opacity-60 hover:opacity-90"
+                        )}
+                      >
+                        <ManaSymbol symbol={c.key} size={18} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Next / Start Button ── */}

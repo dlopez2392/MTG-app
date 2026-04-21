@@ -116,7 +116,7 @@ export default function CardGrid({ cards, onCardClick, className, collectionMap,
   if (cards.length === 0) return null;
 
   return (
-    <div className={cn("grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6", className)}>
+    <div className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4", className)}>
       {cards.map((card) => (
         <CardGridItem
           key={card.id}
