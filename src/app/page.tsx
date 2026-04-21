@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import NewsWidget from "@/components/news/NewsWidget";
 
 interface HeroCard {
@@ -47,6 +46,17 @@ const FEATURES = [
     ),
   },
   {
+    href: "/trades",
+    title: "TRADING",
+    description: "Track & evaluate card trades",
+    accent: "#F97316",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+      </svg>
+    ),
+  },
+  {
     href: "/games",
     title: "GAME LOG",
     description: "Track wins, losses & stats",
@@ -82,10 +92,8 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
   const [heroCard, setHeroCard] = useState<HeroCard | null>(null);
   const [heroLoaded, setHeroLoaded] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetch("https://api.scryfall.com/cards/random?q=type%3Alegendary")
@@ -97,15 +105,6 @@ export default function HomePage() {
   const heroArt =
     heroCard?.image_uris?.art_crop ??
     heroCard?.card_faces?.[0]?.image_uris?.art_crop;
-
-  const handleSearch = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      const q = searchQuery.trim();
-      router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
-    },
-    [searchQuery, router]
-  );
 
   return (
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
@@ -132,37 +131,9 @@ export default function HomePage() {
           <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-2 drop-shadow-lg">
             MTG Houdini
           </h1>
-          <p className="text-body text-text-secondary mb-8 max-w-xs">
+          <p className="text-body text-text-secondary mb-4 max-w-xs">
             Your ultimate Magic: The Gathering companion
           </p>
-
-          <form onSubmit={handleSearch} className="w-full max-w-sm">
-            <div className="relative flex items-center">
-              <svg
-                className="absolute left-3.5 w-4 h-4 text-text-muted pointer-events-none"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search cards…"
-                className="w-full bg-bg-card/80 backdrop-blur border border-border rounded-2xl pl-10 pr-24 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/50 transition-colors"
-              />
-              <button
-                type="submit"
-                suppressHydrationWarning
-                className="absolute right-1.5 px-4 py-1.5 rounded-xl btn-gradient text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
-              >
-                Search
-              </button>
-            </div>
-          </form>
 
           {heroCard && (
             <p className="text-caption mt-3 opacity-50">

@@ -40,9 +40,10 @@ interface LogFormProps {
   initial?: Partial<GameEntry>;
   onSave: (entry: Omit<GameEntry, "id">) => void;
   onCancel: () => void;
+  saveLabel?: string;
 }
 
-function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
+function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFormProps) {
   const [deckName, setDeckName]     = useState(initial?.deckName ?? decks[0]?.name ?? "");
   const [deckId, setDeckId]         = useState(initial?.deckId ?? decks[0]?.id ?? "");
   const [result, setResult]         = useState<GameResult>(initial?.result ?? "win");
@@ -201,7 +202,7 @@ function LogForm({ decks, initial, onSave, onCancel }: LogFormProps) {
         </button>
         <button type="submit" disabled={!deckName.trim()}
           className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors disabled:opacity-40">
-          Save
+          {saveLabel}
         </button>
       </div>
     </form>
@@ -227,14 +228,14 @@ function WinRateBar({ wins, losses, draws }: { wins: number; losses: number; dra
 // ── Page ─────────────────────────────────────────────────────────────────────
 function GamesPageInner() {
   const searchParams = useSearchParams();
-  const { entries, addEntry, deleteEntry } = useGameLog();
+  const { entries, loading: entriesLoading, addEntry, deleteEntry, updateEntry } = useGameLog();
   const { allDecks } = useDecks();
   const [showLog, setShowLog]       = useState(false);
+  const [editingEntry, setEditingEntry] = useState<GameEntry | null>(null);
   const [filterDeck, setFilterDeck] = useState<string>("all");
   const [view, setView]             = useState<"log" | "stats">("log");
   const [preselectedDeck, setPreselectedDeck] = useState<{ id?: string; name: string } | undefined>();
 
-  // If coming from a deck page (?deck=NAME&deckId=ID), open log modal pre-filled
   useEffect(() => {
     const deckName = searchParams.get("deck");
     const deckId   = searchParams.get("deckId");
@@ -269,6 +270,12 @@ function GamesPageInner() {
 
   const deckStats = useMemo(() => computeStats(entries), [entries]);
 
+  const handleEditSave = useCallback((data: Omit<GameEntry, "id">) => {
+    if (!editingEntry) return;
+    updateEntry(editingEntry.id, data);
+    setEditingEntry(null);
+  }, [editingEntry, updateEntry]);
+
   const ICON = (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
@@ -280,7 +287,7 @@ function GamesPageInner() {
       <HeroBanner
         title="Game Log"
         subtitle={total > 0 ? `${total} games · ${winRate}% win rate` : "Track your match results"}
-        accent="#3B82F6"
+        accent="#06B6D4"
         icon={ICON}
       />
 
@@ -309,7 +316,13 @@ function GamesPageInner() {
           </button>
         </div>
 
-        {entries.length === 0 ? (
+        {entriesLoading ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-16 bg-bg-card rounded-xl border border-border skeleton-shimmer" />
+            ))}
+          </div>
+        ) : entries.length === 0 ? (
           <EmptyState
             icon={
               <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -322,7 +335,6 @@ function GamesPageInner() {
         ) : view === "stats" ? (
           /* ── Stats view ── */
           <div className="space-y-4">
-            {/* Overall summary */}
             <div className="bg-bg-card rounded-xl border border-border p-4">
               <p className="text-section-label text-text-muted mb-3">Overall</p>
               <div className="grid grid-cols-4 gap-3 mb-3">
@@ -346,7 +358,6 @@ function GamesPageInner() {
               <WinRateBar wins={totalWins} losses={totalLosses} draws={totalDraws} />
             </div>
 
-            {/* Per-deck stats */}
             <p className="text-section-label text-text-muted">By Deck</p>
             <div className="flex flex-col gap-2">
               {deckStats.map((ds) => (
@@ -374,7 +385,6 @@ function GamesPageInner() {
         ) : (
           /* ── Log view ── */
           <>
-            {/* Deck filter */}
             {deckOptions.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none -mx-1 px-1">
                 <button
@@ -405,7 +415,6 @@ function GamesPageInner() {
               </div>
             )}
 
-            {/* Summary strip for filtered view */}
             {total > 0 && (
               <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-bg-card rounded-xl border border-border">
                 <WinRateBar wins={totalWins} losses={totalLosses} draws={totalDraws} />
@@ -447,6 +456,17 @@ function GamesPageInner() {
                     )}
                   </div>
 
+                  {/* Edit */}
+                  <button
+                    onClick={() => setEditingEntry(entry)}
+                    className="flex-shrink-0 p-1.5 text-text-muted hover:text-accent transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    title="Edit entry"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </button>
+
                   {/* Delete */}
                   <button
                     onClick={() => deleteEntry(entry.id)}
@@ -476,6 +496,19 @@ function GamesPageInner() {
           onSave={(entry) => { addEntry(entry); setShowLog(false); }}
           onCancel={() => setShowLog(false)}
         />
+      </Modal>
+
+      {/* Edit game modal */}
+      <Modal open={!!editingEntry} onClose={() => setEditingEntry(null)} title="Edit Game">
+        {editingEntry && (
+          <LogForm
+            decks={deckOptions}
+            initial={editingEntry}
+            onSave={handleEditSave}
+            onCancel={() => setEditingEntry(null)}
+            saveLabel="Update"
+          />
+        )}
       </Modal>
     </>
   );

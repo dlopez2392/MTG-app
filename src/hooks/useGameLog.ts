@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 import type { GameEntry, GameResult } from "@/types/game";
 
 const LS_KEY = "mtg_game_log";
@@ -25,7 +26,7 @@ export interface DeckStats {
   losses: number;
   draws: number;
   total: number;
-  winRate: number;  // 0–100
+  winRate: number;
 }
 
 export function computeStats(entries: GameEntry[]): DeckStats[] {
@@ -46,36 +47,103 @@ export function computeStats(entries: GameEntry[]): DeckStats[] {
 }
 
 export function useGameLog() {
+  const { isSignedIn } = useUser();
   const [entries, setEntries] = useState<GameEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch from API if signed in, otherwise localStorage
   useEffect(() => {
-    setEntries(lsGet<GameEntry[]>(LS_KEY, []));
-  }, []);
+    if (isSignedIn === undefined) return; // still loading auth
+    if (isSignedIn) {
+      setLoading(true);
+      fetch("/api/game-logs")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) setEntries(data);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else {
+      setEntries(lsGet<GameEntry[]>(LS_KEY, []));
+      setLoading(false);
+    }
+  }, [isSignedIn]);
 
-  const addEntry = useCallback((entry: Omit<GameEntry, "id">) => {
-    const newEntry: GameEntry = { ...entry, id: uuid() };
-    setEntries((prev) => {
-      const updated = [newEntry, ...prev];
-      lsSet(LS_KEY, updated);
-      return updated;
-    });
-  }, []);
+  const addEntry = useCallback(async (entry: Omit<GameEntry, "id">) => {
+    if (isSignedIn) {
+      try {
+        const res = await fetch("/api/game-logs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry),
+        });
+        const created = await res.json();
+        if (created.id) {
+          setEntries((prev) => [created, ...prev]);
+        }
+      } catch { /* silent */ }
+    } else {
+      const newEntry: GameEntry = { ...entry, id: uuid() };
+      setEntries((prev) => {
+        const updated = [newEntry, ...prev];
+        lsSet(LS_KEY, updated);
+        return updated;
+      });
+    }
+  }, [isSignedIn]);
 
-  const deleteEntry = useCallback((id: string) => {
-    setEntries((prev) => {
-      const updated = prev.filter((e) => e.id !== id);
-      lsSet(LS_KEY, updated);
-      return updated;
-    });
-  }, []);
+  const deleteEntry = useCallback(async (id: string) => {
+    if (isSignedIn) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      try {
+        await fetch("/api/game-logs", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+      } catch {
+        // Re-fetch on error to restore
+        fetch("/api/game-logs").then((r) => r.json()).then((data) => {
+          if (Array.isArray(data)) setEntries(data);
+        }).catch(() => {});
+      }
+    } else {
+      setEntries((prev) => {
+        const updated = prev.filter((e) => e.id !== id);
+        lsSet(LS_KEY, updated);
+        return updated;
+      });
+    }
+  }, [isSignedIn]);
 
-  const updateEntry = useCallback((id: string, changes: Partial<Omit<GameEntry, "id">>) => {
-    setEntries((prev) => {
-      const updated = prev.map((e) => e.id === id ? { ...e, ...changes } : e);
-      lsSet(LS_KEY, updated);
-      return updated;
-    });
-  }, []);
+  const updateEntry = useCallback(async (id: string, changes: Partial<Omit<GameEntry, "id">>) => {
+    if (isSignedIn) {
+      // Optimistic update
+      setEntries((prev) => prev.map((e) => e.id === id ? { ...e, ...changes } : e));
+      try {
+        const res = await fetch("/api/game-logs", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, ...changes }),
+        });
+        const updated = await res.json();
+        if (updated.id) {
+          setEntries((prev) => prev.map((e) => e.id === id ? updated : e));
+        }
+      } catch {
+        // Re-fetch on error
+        fetch("/api/game-logs").then((r) => r.json()).then((data) => {
+          if (Array.isArray(data)) setEntries(data);
+        }).catch(() => {});
+      }
+    } else {
+      setEntries((prev) => {
+        const updated = prev.map((e) => e.id === id ? { ...e, ...changes } : e);
+        lsSet(LS_KEY, updated);
+        return updated;
+      });
+    }
+  }, [isSignedIn]);
 
-  return { entries, addEntry, deleteEntry, updateEntry };
+  return { entries, loading, addEntry, deleteEntry, updateEntry };
 }
