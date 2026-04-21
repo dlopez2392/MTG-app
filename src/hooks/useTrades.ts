@@ -39,7 +39,7 @@ export function useTrades() {
     }
   }, [isSignedIn]);
 
-  const addTrade = useCallback(async (trade: Omit<Trade, "id">) => {
+  const addTrade = useCallback(async (trade: Omit<Trade, "id">): Promise<Trade | null> => {
     if (isSignedIn) {
       try {
         const res = await fetch("/api/trades", {
@@ -47,19 +47,30 @@ export function useTrades() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(trade),
         });
+        if (!res.ok) throw new Error("API error");
         const created = await res.json();
-        if (created.id) setTrades((prev) => [created, ...prev]);
-        return created as Trade;
-      } catch { return null; }
-    } else {
-      const newTrade: Trade = { ...trade, id: uuid() };
-      setTrades((prev) => {
-        const updated = [newTrade, ...prev];
-        lsSet(LS_KEY, updated);
-        return updated;
-      });
-      return newTrade;
+        if (created.id) {
+          setTrades((prev) => [created, ...prev]);
+          return created as Trade;
+        }
+        throw new Error("No id");
+      } catch {
+        const fallback: Trade = { ...trade, id: uuid() };
+        setTrades((prev) => {
+          const updated = [fallback, ...prev];
+          lsSet(LS_KEY, updated);
+          return updated;
+        });
+        return fallback;
+      }
     }
+    const newTrade: Trade = { ...trade, id: uuid() };
+    setTrades((prev) => {
+      const updated = [newTrade, ...prev];
+      lsSet(LS_KEY, updated);
+      return updated;
+    });
+    return newTrade;
   }, [isSignedIn]);
 
   const updateTrade = useCallback(async (id: string, changes: Partial<Omit<Trade, "id">>) => {
