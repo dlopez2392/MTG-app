@@ -160,38 +160,39 @@ function TradeSide({ label, cards, onAdd, onRemove, onQuantity, total, accentCol
 }) {
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <div className="text-center mb-3">
+      <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-bold tracking-widest uppercase" style={{ color: accentColor }}>{label}</p>
+        <p className="text-sm font-bold text-text-primary">${total.toFixed(2)}</p>
       </div>
-      <div className="flex-1 space-y-2 min-h-[120px]">
+      <div className="flex-1 space-y-2 min-h-[60px]">
         {cards.length === 0 && (
-          <p className="text-center text-text-muted text-xs py-8 opacity-60">No cards yet</p>
+          <p className="text-center text-text-muted text-xs py-6 opacity-60">No cards yet</p>
         )}
         {cards.map((c, i) => (
-          <div key={`${c.scryfallId}-${i}`} className="group flex items-center gap-2 bg-white/5 rounded-xl p-2 hover:bg-white/8 transition-colors">
-            {c.imageUri && <img src={c.imageUri} alt="" className="w-8 h-11 rounded object-cover flex-shrink-0" />}
+          <div key={`${c.scryfallId}-${i}`} className="group flex items-center gap-3 bg-white/5 rounded-xl p-2.5 hover:bg-white/8 transition-colors">
+            {c.imageUri && <img src={c.imageUri} alt="" className="w-10 h-14 rounded object-cover flex-shrink-0" />}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-text-primary font-medium truncate leading-tight">{c.name}</p>
-              <p className="text-[10px] text-text-muted truncate">{c.setName}{c.foil ? " (Foil)" : ""}</p>
+              <p className="text-sm text-text-primary font-medium truncate leading-tight">{c.name}</p>
+              <p className="text-xs text-text-muted truncate">{c.setName}{c.foil ? " (Foil)" : ""}</p>
               {c.priceUsd !== null && (
-                <p className="text-[10px] font-semibold" style={{ color: accentColor }}>${(c.priceUsd * c.quantity).toFixed(2)}</p>
+                <p className="text-xs font-semibold mt-0.5" style={{ color: accentColor }}>${(c.priceUsd * c.quantity).toFixed(2)}</p>
               )}
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <button
                 onClick={() => onQuantity(i, Math.max(1, c.quantity - 1))}
-                className="w-5 h-5 rounded flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/10 text-xs"
-              >-</button>
-              <span className="text-xs text-text-primary w-4 text-center">{c.quantity}</span>
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary bg-white/5 hover:bg-white/10 text-sm font-bold"
+              >−</button>
+              <span className="text-sm text-text-primary w-5 text-center font-semibold tabular-nums">{c.quantity}</span>
               <button
                 onClick={() => onQuantity(i, c.quantity + 1)}
-                className="w-5 h-5 rounded flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white/10 text-xs"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text-primary bg-white/5 hover:bg-white/10 text-sm font-bold"
               >+</button>
               <button
                 onClick={() => onRemove(i)}
-                className="w-5 h-5 rounded flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/10 ml-0.5"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-500/10 ml-1"
               >
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -201,17 +202,13 @@ function TradeSide({ label, cards, onAdd, onRemove, onQuantity, total, accentCol
       </div>
       <button
         onClick={onAdd}
-        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-border hover:border-accent/40 text-text-muted hover:text-accent transition-colors"
+        className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-border hover:border-accent/40 text-text-muted hover:text-accent transition-colors"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
         </svg>
-        <span className="text-xs font-medium">Add Card</span>
+        <span className="text-sm font-medium">Add Card</span>
       </button>
-      <div className="mt-3 text-center">
-        <p className="text-lg font-bold text-text-primary">${total.toFixed(2)}</p>
-        <p className="text-[10px] text-text-muted uppercase tracking-wider">Market Value</p>
-      </div>
     </div>
   );
 }
@@ -325,9 +322,9 @@ function TradeDetail({ trade, onUpdate, onBack, onDelete }: {
         </div>
       </div>
 
-      {/* Two-column trade area */}
+      {/* Trade area — stacked on mobile, side-by-side on sm+ */}
       <div className="flex-1 px-4 pt-4">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-3">
           <TradeSide
             label="You Give"
             cards={offering}
@@ -337,7 +334,8 @@ function TradeDetail({ trade, onUpdate, onBack, onDelete }: {
             total={oTotal}
             accentColor="#EF4444"
           />
-          <div className="w-px bg-border/60 self-stretch flex-shrink-0" />
+          <div className="hidden sm:block w-px bg-border/60 self-stretch flex-shrink-0" />
+          <div className="sm:hidden h-px bg-border/60 flex-shrink-0" />
           <TradeSide
             label="You Get"
             cards={receiving}
