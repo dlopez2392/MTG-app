@@ -46,7 +46,7 @@ export default function ValueHistoryChart({ history, className }: ValueHistoryCh
 
   if (filtered.length < 2) {
     return (
-      <div className={cn("bg-bg-card rounded-xl border border-border p-4", className)}>
+      <div className={cn("glass-card rounded-xl border border-border p-4", className)}>
         <p className="text-section-label text-text-muted mb-1">Value History</p>
         <p className="text-xs text-text-muted italic">
           {filtered.length === 0
@@ -71,7 +71,7 @@ export default function ValueHistoryChart({ history, className }: ValueHistoryCh
   const tickCount = range === 7 ? filtered.length : 5;
 
   return (
-    <div className={cn("bg-bg-card rounded-xl border border-border p-4", className)}>
+    <div className={cn("glass-card rounded-xl border border-border p-4", className)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>

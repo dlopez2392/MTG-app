@@ -35,7 +35,7 @@ export default function NewsWidget() {
 
   return (
     <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
-      <div className="bg-bg-card border border-border rounded-xl overflow-hidden">
+      <div className="glass-card border border-border rounded-xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">

@@ -128,6 +128,14 @@ export default function LifePage() {
     }
   }, [gameStarted, players.length]);
 
+  const exitFullscreen = useCallback(() => {
+    if (supportsNativeFullscreen && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    setIsFullscreen(false);
+    screen.orientation?.unlock?.();
+  }, [supportsNativeFullscreen]);
+
   const toggleFullscreen = useCallback(async () => {
     if (supportsNativeFullscreen) {
       if (!document.fullscreenElement) {
@@ -493,6 +501,7 @@ export default function LifePage() {
                 <button
                   type="button"
                   onClick={() => {
+                    exitFullscreen();
                     newGame();
                     setShowMenu(false);
                     setGameTimerRunning(false);
@@ -533,6 +542,7 @@ export default function LifePage() {
           await saveMatch(payload);
           setSavingMatch(false);
           setShowEndGame(false);
+          exitFullscreen();
           newGame();
           setGameTimerRunning(false);
           setTurnTimerRunning(false);

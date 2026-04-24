@@ -352,7 +352,7 @@ function TradeDetail({ trade, onUpdate, onBack, onDelete }: {
 
       {/* Bottom value bar */}
       <div className="sticky bottom-16 mx-4 mb-2">
-        <div className="bg-bg-card/95 backdrop-blur border border-border rounded-2xl px-5 py-3 flex items-center justify-between">
+        <div className="glass-card border border-border rounded-2xl px-5 py-3 flex items-center justify-between">
           <div className="text-center flex-1">
             <p className="text-xs text-text-muted">Giving</p>
             <p className="text-sm font-bold text-red-400">${oTotal.toFixed(2)}</p>
@@ -459,7 +459,7 @@ export default function TradesPage() {
                     <button
                       key={trade.id}
                       onClick={() => setSelectedId(trade.id)}
-                      className="w-full text-left bg-bg-card border border-border rounded-2xl p-4 hover:border-accent/30 transition-all active:scale-[0.98]"
+                      className="w-full text-left glass-card border border-border rounded-2xl p-4 hover:border-accent/30 transition-all active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-sm font-semibold text-text-primary">{trade.name}</p>

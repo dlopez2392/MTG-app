@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import HeroBanner from "@/components/layout/HeroBanner";
 import PageContainer from "@/components/layout/PageContainer";
 import Modal from "@/components/ui/Modal";
@@ -227,6 +227,7 @@ function WinRateBar({ wins, losses, draws }: { wins: number; losses: number; dra
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 function GamesPageInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { entries, loading: entriesLoading, addEntry, deleteEntry, updateEntry } = useGameLog();
   const { allDecks } = useDecks();
@@ -289,12 +290,13 @@ function GamesPageInner() {
         subtitle={total > 0 ? `${total} games · ${winRate}% win rate` : "Track your match results"}
         accent="#06B6D4"
         icon={ICON}
+        onBack={() => router.back()}
       />
 
       <PageContainer>
         {/* View toggle */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex bg-bg-card border border-border rounded-lg p-0.5 gap-0.5">
+          <div className="flex glass-card border border-border rounded-lg p-0.5 gap-0.5">
             {(["log", "stats"] as const).map((v) => (
               <button key={v} onClick={() => setView(v)}
                 className={cn(

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ManaSymbol from "@/components/cards/ManaSymbol";
+import { cn } from "@/lib/utils/cn";
 
 interface ExploreDeck {
   id: string;
@@ -24,6 +25,12 @@ interface ExploreResult {
   page: number;
 }
 
+const SOURCES = [
+  { key: "archidekt", label: "Archidekt", color: "#8B5CF6" },
+  { key: "edhrec", label: "EDHREC", color: "#22C55E" },
+  { key: "mtgtop8", label: "MTGTop8", color: "#F59E0B" },
+];
+
 const FORMATS = [
   { value: "commander", label: "Commander" },
   { value: "standard", label: "Standard" },
@@ -37,6 +44,14 @@ function formatViews(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return String(n);
+}
+
+function sourceLabel(source: string) {
+  return SOURCES.find((s) => s.key === source)?.label ?? source;
+}
+
+function sourceColor(source: string) {
+  return SOURCES.find((s) => s.key === source)?.color ?? "#888";
 }
 
 function ExploreCard({ deck }: { deck: ExploreDeck }) {
@@ -61,17 +76,22 @@ function ExploreCard({ deck }: { deck: ExploreDeck }) {
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
       {/* Source + views badge */}
-      <div className="absolute top-2 left-2 flex items-center gap-1.5">
-        <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] text-white/70 font-medium uppercase tracking-wider">
-          Archidekt
+      <div className="absolute top-2 left-2 right-2 flex items-center gap-1.5">
+        <span
+          className="px-1.5 py-0.5 rounded-md text-[9px] text-white font-medium uppercase tracking-wider"
+          style={{ background: sourceColor(deck.source) + "CC" }}
+        >
+          {sourceLabel(deck.source)}
         </span>
-        <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] text-white/50 font-medium flex items-center gap-0.5">
-          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-          </svg>
-          {formatViews(deck.viewCount)}
-        </span>
+        {deck.viewCount > 0 && (
+          <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] text-white/50 font-medium flex items-center gap-0.5">
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+            </svg>
+            {deck.source === "edhrec" ? `${formatViews(deck.viewCount)} decks` : deck.source === "mtgtop8" ? `${deck.viewCount}% meta` : formatViews(deck.viewCount)}
+          </span>
+        )}
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2">
@@ -80,7 +100,7 @@ function ExploreCard({ deck }: { deck: ExploreDeck }) {
             {deck.name}
           </p>
           <p className="text-[10px] text-white/50 truncate mt-0.5">
-            by {deck.owner}
+            {deck.owner}
           </p>
         </div>
 
@@ -97,6 +117,7 @@ function ExploreCard({ deck }: { deck: ExploreDeck }) {
 }
 
 export default function ExploreDecks() {
+  const [source, setSource] = useState("archidekt");
   const [format, setFormat] = useState("commander");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -115,7 +136,7 @@ export default function ExploreDecks() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ format, page: String(p) });
+      const params = new URLSearchParams({ format, page: String(p), source });
       if (debouncedSearch) params.set("q", debouncedSearch);
       const res = await fetch(`/api/explore-decks?${params}`);
       if (!res.ok) throw new Error("Failed to fetch");
@@ -124,35 +145,58 @@ export default function ExploreDecks() {
       setHasMore(data.hasMore);
       setPage(data.page);
     } catch {
-      setError("Couldn't load explore decks. Try again later.");
+      setError("Couldn't load decks. Try again later.");
       if (!append) setDecks([]);
     } finally {
       setLoading(false);
     }
-  }, [format, debouncedSearch]);
+  }, [format, debouncedSearch, source]);
 
   useEffect(() => {
     fetchDecks(1);
   }, [fetchDecks]);
 
+  const isEdhrec = source === "edhrec";
+
   return (
     <div className="space-y-4">
-      {/* Format chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {FORMATS.map((f) => (
+      {/* Source selector */}
+      <div className="glass-card border border-border rounded-2xl p-1 flex gap-1">
+        {SOURCES.map((s) => (
           <button
-            key={f.value}
-            onClick={() => { setFormat(f.value); setPage(1); }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
-              format === f.value
-                ? "btn-gradient"
-                : "bg-bg-card text-text-secondary hover:text-text-primary border border-border"
-            }`}
+            key={s.key}
+            onClick={() => { setSource(s.key); setPage(1); setDecks([]); }}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-xs font-semibold transition-all text-center",
+              source === s.key
+                ? "text-white shadow-md"
+                : "text-text-muted hover:text-text-primary"
+            )}
+            style={source === s.key ? { background: s.color } : undefined}
           >
-            {f.label}
+            {s.label}
           </button>
         ))}
       </div>
+
+      {/* Format chips — hidden for EDHREC (commander only) */}
+      {!isEdhrec && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {FORMATS.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => { setFormat(f.value); setPage(1); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-colors ${
+                format === f.value
+                  ? "btn-gradient"
+                  : "bg-bg-card text-text-secondary hover:text-text-primary border border-border"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative">
@@ -161,7 +205,7 @@ export default function ExploreDecks() {
         </svg>
         <input
           type="text"
-          placeholder="Search popular decks..."
+          placeholder={isEdhrec ? "Search commanders..." : "Search decks..."}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2 rounded-xl bg-bg-primary border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"

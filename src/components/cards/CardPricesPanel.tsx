@@ -1,32 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { formatPrice } from "@/lib/utils/prices";
+import { cn } from "@/lib/utils/cn";
 import type { ScryfallCard } from "@/types/card";
-
-interface Vendor {
-  key: string;
-  name: string;
-  normal: string | null;
-  foil: string | null;
-  currency: string;
-  buyUrl: string | null;
-}
-
-function BuyButton({ url, label }: { url: string; label: string }) {
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/25 hover:bg-accent/25 transition-colors"
-    >
-      {label}
-      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-      </svg>
-    </a>
-  );
-}
 
 interface CardPricesPanelProps {
   card: ScryfallCard;
@@ -34,87 +11,101 @@ interface CardPricesPanelProps {
 
 export default function CardPricesPanel({ card }: CardPricesPanelProps) {
   const { prices, purchase_uris, name } = card;
+  const [source, setSource] = useState<"tcg" | "cardmarket" | "cardhoarder">("tcg");
 
   const cmUrl = purchase_uris?.cardmarket ?? `https://www.cardmarket.com/en/Magic/Products/Search?searchString=${encodeURIComponent(name)}`;
 
-  const vendors: Vendor[] = [
-    {
-      key: "tcgplayer",
-      name: "TCGPlayer",
-      normal: prices.usd,
-      foil: prices.usd_foil,
-      currency: "usd",
-      buyUrl: purchase_uris?.tcgplayer ?? null,
-    },
-    {
-      key: "cardmarket",
-      name: "Cardmarket",
-      normal: prices.eur,
-      foil: prices.eur_foil,
-      currency: "eur",
-      buyUrl: cmUrl,
-    },
+  const sources = [
+    { key: "tcg" as const, label: "TCGplayer" },
+    { key: "cardmarket" as const, label: "Cardmarket" },
+    { key: "cardhoarder" as const, label: "Cardhoarder" },
   ];
 
+  const buyUrl =
+    source === "tcg" ? (purchase_uris?.tcgplayer ?? null) :
+    source === "cardmarket" ? cmUrl :
+    (purchase_uris?.cardhoarder ?? null);
+
+  const buyLabel =
+    source === "tcg" ? "TCGplayer" :
+    source === "cardmarket" ? "Cardmarket" : "Cardhoarder";
+
   return (
-    <div className="rounded-xl border border-border overflow-hidden">
-      {/* Header */}
-      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 py-2 bg-bg-hover border-b border-border text-label text-text-muted">
-        <span>Vendor</span>
-        <span className="text-right">Normal</span>
-        <span className="text-right">Foil</span>
-        <span />
+    <div className="rounded-2xl border border-border overflow-hidden glass-card">
+      {/* Source toggle */}
+      <div className="px-3 py-2 bg-bg-hover border-b border-border">
+        <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-border">
+          {sources.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setSource(s.key)}
+              className={cn(
+                "flex-1 py-1 rounded-md text-[10px] font-semibold transition-all text-center",
+                source === s.key ? "bg-accent text-white shadow-sm" : "text-text-muted hover:text-text-primary"
+              )}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Rows */}
-      {vendors.map((v) => (
-        <div
-          key={v.key}
-          className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 border-b border-border last:border-0 hover:bg-bg-card/50 transition-colors"
-        >
-          <span className="text-sm font-medium text-text-primary">
-            {v.name}
-          </span>
-
-          <span className="text-sm text-right font-mono tabular-nums text-text-primary min-w-[52px]">
-            {formatPrice(v.normal, v.currency)}
-          </span>
-
-          <span className="text-sm text-right font-mono tabular-nums text-text-secondary min-w-[52px]">
-            {v.foil ? (
-              formatPrice(v.foil, v.currency)
-            ) : (
-              <span className="text-text-muted">—</span>
+      {/* Price chips */}
+      <div className="px-3 py-3">
+        {source === "tcg" && (
+          <div className={cn("grid gap-2", prices.usd_etched ? "grid-cols-3" : "grid-cols-2")}>
+            <div className="bg-emerald-500/10 rounded-xl py-2.5 px-2 text-center">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-0.5">Normal</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{prices.usd ? formatPrice(prices.usd) : "—"}</p>
+            </div>
+            <div className="bg-purple-500/10 rounded-xl py-2.5 px-2 text-center">
+              <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wide mb-0.5">Foil</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{prices.usd_foil ? formatPrice(prices.usd_foil) : "—"}</p>
+            </div>
+            {prices.usd_etched && (
+              <div className="bg-amber-500/10 rounded-xl py-2.5 px-2 text-center">
+                <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-0.5">Etched</p>
+                <p className="text-sm font-bold text-text-primary tabular-nums">{formatPrice(prices.usd_etched)}</p>
+              </div>
             )}
-          </span>
+          </div>
+        )}
+        {source === "cardmarket" && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-blue-500/10 rounded-xl py-2.5 px-2 text-center">
+              <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide mb-0.5">Normal</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{prices.eur ? formatPrice(prices.eur, "eur") : "—"}</p>
+            </div>
+            <div className="bg-purple-500/10 rounded-xl py-2.5 px-2 text-center">
+              <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wide mb-0.5">Foil</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{prices.eur_foil ? formatPrice(prices.eur_foil, "eur") : "—"}</p>
+            </div>
+          </div>
+        )}
+        {source === "cardhoarder" && (
+          <div className="grid grid-cols-1 gap-2">
+            <div className="bg-cyan-500/10 rounded-xl py-2.5 px-2 text-center">
+              <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-wide mb-0.5">MTGO Tix</p>
+              <p className="text-sm font-bold text-text-primary tabular-nums">{prices.tix ? `${prices.tix} tix` : "—"}</p>
+            </div>
+          </div>
+        )}
+      </div>
 
-          <span className="flex justify-end">
-            {v.buyUrl ? (
-              <BuyButton url={v.buyUrl} label="Buy" />
-            ) : (
-              <span className="w-10" />
-            )}
-          </span>
-        </div>
-      ))}
-
-      {/* Etched foil */}
-      {prices.usd_etched && (
-        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 border-t border-border hover:bg-bg-card/50 transition-colors">
-          <span className="text-sm font-medium text-text-primary">
-            TCGPlayer <span className="text-[10px] text-text-muted font-normal">Etched</span>
-          </span>
-          <span className="text-sm text-right font-mono tabular-nums text-text-primary min-w-[52px]">
-            {formatPrice(prices.usd_etched)}
-          </span>
-          <span className="text-sm text-right text-text-muted min-w-[52px]">—</span>
-          <span className="flex justify-end">
-            {purchase_uris?.tcgplayer ? (
-              <BuyButton url={purchase_uris.tcgplayer} label="Buy" />
-            ) : (
-              <span className="w-10" />
-            )}
-          </span>
+      {/* Buy link */}
+      {buyUrl && (
+        <div className="px-3 pb-3">
+          <a
+            href={buyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 py-2 rounded-xl btn-gradient text-xs font-bold active:scale-[0.98] transition-all"
+          >
+            <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+            <span className="text-black">Buy on {buyLabel}</span>
+          </a>
         </div>
       )}
 

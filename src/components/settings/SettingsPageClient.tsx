@@ -134,7 +134,7 @@ export default function SettingsPageClient() {
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Account</h2>
           {isSignedIn && user ? (
-            <div className="bg-bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+            <div className="glass-card rounded-2xl border border-border p-4 flex items-center gap-3">
               {user.imageUrl && (
                 <img src={user.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
               )}
@@ -158,7 +158,7 @@ export default function SettingsPageClient() {
               </div>
             </div>
           ) : (
-            <div className="bg-bg-card rounded-2xl border border-border p-4">
+            <div className="glass-card rounded-2xl border border-border p-4">
               <p className="text-sm text-text-secondary mb-1">You&apos;re using guest mode</p>
               <p className="text-xs text-text-muted mb-3">Your data is saved on this device only. Sign in to sync across devices.</p>
               <div className="flex gap-2">
@@ -182,7 +182,7 @@ export default function SettingsPageClient() {
         {/* Display */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Display</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Search View">
               <Select
                 value={settings.defaultSearchView}
@@ -215,7 +215,7 @@ export default function SettingsPageClient() {
         {/* Pricing */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Pricing</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Preferred Currency">
               <Select
                 value={settings.preferredCurrency}
@@ -229,7 +229,7 @@ export default function SettingsPageClient() {
         {/* Life Counter */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Life Counter</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Starting Life">
               <Select
                 value={String(settings.defaultStartingLife)}
@@ -260,7 +260,7 @@ export default function SettingsPageClient() {
         {/* Gameplay */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Gameplay</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow
               label="Show Poison Counters"
               description="Display poison counter tracker on each player panel"
@@ -285,7 +285,7 @@ export default function SettingsPageClient() {
         {/* Collection */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Collection</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Condition" description="Used when adding cards to your collection">
               <Select
                 value={settings.defaultCondition}
@@ -311,7 +311,7 @@ export default function SettingsPageClient() {
         {/* Data */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
-          <div className="bg-bg-card rounded-2xl border border-border px-4 divide-y divide-border">
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             {!isSignedIn && (
               <>
                 <SettingRow
@@ -349,7 +349,7 @@ export default function SettingsPageClient() {
         {/* About */}
         <section className="pb-8">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">About</h2>
-          <div className="bg-bg-card rounded-2xl border border-border p-4 space-y-3">
+          <div className="glass-card rounded-2xl border border-border p-4 space-y-3">
             <p className="text-sm text-text-secondary">MTG Houdini is your ultimate Magic: The Gathering companion app.</p>
             <p className="text-xs text-text-muted">Card data provided by <span className="text-accent">Scryfall</span>. Card names, artwork, and other Magic: The Gathering content are property of Wizards of the Coast.</p>
             <p className="text-sm text-text-muted">Designed by Dan Lopez</p>

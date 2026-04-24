@@ -68,7 +68,7 @@ export default function DecksPageClient() {
 
       <PageContainer>
         {/* Tabs */}
-        <div className="flex items-center gap-1 bg-bg-card rounded-xl p-1 mb-4">
+        <div className="flex items-center gap-1 glass-card rounded-xl p-1 mb-4">
           <button
             onClick={() => setTab("decks")}
             className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -135,7 +135,7 @@ export default function DecksPageClient() {
 
             {/* Filter dropdown */}
             {showFilters && (
-              <div className="mb-4 p-3 rounded-xl bg-bg-card border border-border space-y-2">
+              <div className="mb-4 p-3 rounded-xl glass-card border border-border space-y-2">
                 <label className="text-xs font-medium text-text-secondary uppercase tracking-wider">Format</label>
                 <select
                   value={formatFilter}

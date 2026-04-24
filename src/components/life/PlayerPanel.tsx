@@ -119,6 +119,36 @@ export default function PlayerPanel({
   // rotated viewport (swap width/height dimensions).
   const isSideways = rotation === 90 || rotation === -90;
 
+  // Position buttons on the panel's outward edge (away from screen center / menu button)
+  const pos = (() => {
+    switch (rotation) {
+      case 180: return {
+        poison:    "top-3 right-3",
+        commander: "top-3 left-3",
+        badge:     "top-12 left-3",
+        turnTimer: "top-3 left-1/2 -translate-x-1/2",
+      };
+      case 90: return {
+        poison:    "top-3 left-3",
+        commander: "bottom-3 left-3",
+        badge:     "bottom-12 left-3",
+        turnTimer: "top-1/2 -translate-y-1/2 left-3",
+      };
+      case -90: return {
+        poison:    "bottom-3 right-3",
+        commander: "top-3 right-3",
+        badge:     "top-12 right-3",
+        turnTimer: "top-1/2 -translate-y-1/2 right-3",
+      };
+      default: return {
+        poison:    "bottom-3 left-3",
+        commander: "bottom-3 right-3",
+        badge:     "bottom-12 right-3",
+        turnTimer: "bottom-3 left-1/2 -translate-x-1/2",
+      };
+    }
+  })();
+
   return (
     <div
       className={cn(
@@ -270,9 +300,11 @@ export default function PlayerPanel({
         </div>
       )}
 
-      {/* ── Turn timer bar — only on active player, bottom center ── */}
+      </div>{/* end rotation wrapper */}
+
+      {/* ── Turn timer bar — outside rotation wrapper so it stays upright ── */}
       {turnTimer && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-1.5 py-1 shadow-lg">
+        <div className={cn("absolute z-20 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-1.5 py-1 shadow-lg", pos.turnTimer)}>
           <span className="text-[11px] font-black uppercase tracking-wider text-accent/90 pl-2">
             T{turnTimer.turnNumber}
           </span>
@@ -308,7 +340,8 @@ export default function PlayerPanel({
       )}
 
       {/* ── Bottom corners: poison (left) + commander damage (right) ── */}
-      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-1">
+      {/* These sit outside the rotation wrapper so they stay in consistent positions */}
+      <div className={cn("absolute z-20 flex items-center gap-1", pos.poison)}>
         {showPoisonCounters && onPoisonChange && (
           <button
             type="button"
@@ -328,36 +361,34 @@ export default function PlayerPanel({
         )}
       </div>
 
-      <div className="absolute bottom-3 right-3 z-20 flex items-center gap-1">
+      <div className={cn("absolute z-20 flex items-center gap-1", pos.commander)}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-          className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
         >
-          <svg className="w-4 h-4 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+          <svg className="w-6 h-6 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 3.18l1.87 3.78L18 8.8l-3 2.93.71 4.12L12 13.77l-3.71 2.08.71-4.12-3-2.93 4.13-.84L12 4.18z" />
           </svg>
           {cmdrTotal > 0 && (
-            <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
+            <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
               {cmdrTotal}
             </span>
           )}
         </button>
       </div>
 
-      {/* Commander damage count badge — top-left corner */}
+      {/* Commander damage count badge — near commander button */}
       {cmdrTotal > 0 && (
-        <div className="absolute top-3 left-3 z-20 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50 backdrop-blur-sm pointer-events-none">
-          <svg className="w-3.5 h-3.5 text-white/60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 17h18v2H3v-2zM4 7l3.5 7 4.5-5 4.5 5L20 7v8H4V7z" />
+        <div className={cn("absolute z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm pointer-events-none", pos.badge)}>
+          <svg className="w-4 h-4 text-white/60" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 3.18l1.87 3.78L18 8.8l-3 2.93.71 4.12L12 13.77l-3.71 2.08.71-4.12-3-2.93 4.13-.84L12 4.18z" />
           </svg>
-          <span className={cn("text-[10px] font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
+          <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
             {cmdrTotal}
           </span>
         </div>
       )}
-
-
 
       {/* ── Commander damage overlay ── */}
       {showCmdr && (
@@ -400,7 +431,6 @@ export default function PlayerPanel({
           </button>
         </div>
       )}
-      </div>{/* end rotation wrapper */}
     </div>
   );
 }

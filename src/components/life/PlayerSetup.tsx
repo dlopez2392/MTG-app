@@ -137,7 +137,7 @@ export default function PlayerSetup({
 
   if (showLayoutPage) {
     return (
-      <div className="flex flex-col min-h-screen bg-bg-primary overflow-y-auto pb-24">
+      <div className="flex flex-col min-h-screen overflow-y-auto pb-24">
         {/* Header with back button */}
         <div className="px-6 pt-12 pb-4 flex items-center gap-3">
           <button
@@ -162,7 +162,7 @@ export default function PlayerSetup({
                 type="button"
                 onClick={() => setSelectedLayout(layout.id)}
                 className={cn(
-                  "relative aspect-[9/16] rounded-2xl border-2 transition-all cursor-pointer",
+                  "relative aspect-[16/9] rounded-2xl border-2 transition-all cursor-pointer",
                   selectedLayout === layout.id
                     ? "border-white shadow-lg scale-[1.02]"
                     : "border-border/50 opacity-60 hover:opacity-90"
@@ -204,137 +204,6 @@ export default function PlayerSetup({
             ))}
           </div>
 
-          {/* ── Game Options ── */}
-          <div className="space-y-3">
-            <label className="block text-xs font-bold text-text-muted uppercase tracking-widest">
-              Options
-            </label>
-
-            {/* Poison Counters */}
-            <button
-              type="button"
-              onClick={() => setPoisonCounters(!poisonCounters)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
-                poisonCounters
-                  ? "bg-green-900/30 border-green-500/50"
-                  : "bg-bg-card border-border"
-              )}
-            >
-              <svg className={cn("w-5 h-5 flex-shrink-0", poisonCounters ? "text-green-400" : "text-text-muted")} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
-              </svg>
-              <span className={cn("text-sm font-semibold flex-1 text-left", poisonCounters ? "text-green-400" : "text-text-secondary")}>
-                Poison Counters
-              </span>
-              <div className={cn(
-                "w-10 h-6 rounded-full transition-colors relative",
-                poisonCounters ? "bg-green-500" : "bg-white/10"
-              )}>
-                <div className={cn(
-                  "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                  poisonCounters ? "translate-x-5" : "translate-x-1"
-                )} />
-              </div>
-            </button>
-
-            {/* Game Timer */}
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  const next = !gameTimer;
-                  setGameTimer(next);
-                  if (!next) setTurnTimer(false);
-                }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
-                  gameTimer
-                    ? "bg-amber-900/30 border-amber-500/50"
-                    : "bg-bg-card border-border",
-                  gameTimer && "rounded-b-none border-b-0"
-                )}
-              >
-                <svg className={cn("w-5 h-5 flex-shrink-0", gameTimer ? "text-amber-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 2h4M12 2v2" />
-                </svg>
-                <span className={cn("text-sm font-semibold flex-1 text-left", gameTimer ? "text-amber-400" : "text-text-secondary")}>
-                  Game Timer
-                </span>
-                <div className={cn(
-                  "w-10 h-6 rounded-full transition-colors relative",
-                  gameTimer ? "bg-amber-500" : "bg-white/10"
-                )}>
-                  <div className={cn(
-                    "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                    gameTimer ? "translate-x-5" : "translate-x-1"
-                  )} />
-                </div>
-              </button>
-              {gameTimer && (
-                <div className="flex items-center justify-between px-4 py-3 bg-amber-900/30 border border-amber-500/50 border-t-0 rounded-b-xl">
-                  <button
-                    type="button"
-                    onClick={() => setGameTimerMinutes((m) => Math.max(30, m - 30))}
-                    disabled={gameTimerMinutes <= 30}
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
-                  >
-                    −
-                  </button>
-                  <div className="text-center">
-                    <span className="text-lg font-bold text-amber-400 tabular-nums">
-                      {Math.floor(gameTimerMinutes / 60)}h {String(gameTimerMinutes % 60).padStart(2, "0")}m
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setGameTimerMinutes((m) => Math.min(300, m + 30))}
-                    disabled={gameTimerMinutes >= 300}
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
-                  >
-                    +
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Turn Timer (requires Game Timer) */}
-            <button
-              type="button"
-              onClick={() => gameTimer && setTurnTimer(!turnTimer)}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all",
-                !gameTimer && "opacity-40 cursor-not-allowed",
-                gameTimer && "cursor-pointer",
-                turnTimer
-                  ? "bg-blue-900/30 border-blue-500/50"
-                  : "bg-bg-card border-border"
-              )}
-            >
-              <svg className={cn("w-5 h-5 flex-shrink-0", turnTimer ? "text-blue-400" : "text-text-muted")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1 text-left">
-                <span className={cn("text-sm font-semibold block", turnTimer ? "text-blue-400" : "text-text-secondary")}>
-                  Turn Timer
-                </span>
-                {!gameTimer && (
-                  <span className="text-[10px] text-text-muted">Requires Game Timer</span>
-                )}
-              </div>
-              <div className={cn(
-                "w-10 h-6 rounded-full transition-colors relative",
-                turnTimer ? "bg-blue-500" : "bg-white/10"
-              )}>
-                <div className={cn(
-                  "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                  turnTimer ? "translate-x-5" : "translate-x-1"
-                )} />
-              </div>
-            </button>
-          </div>
-
           {/* ── Start Button ── */}
           <button
             type="button"
@@ -352,7 +221,7 @@ export default function PlayerSetup({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-bg-primary overflow-y-auto pb-24">
+    <div className="flex flex-col min-h-screen overflow-y-auto pb-24">
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-center justify-between">
         <h1 className="font-display text-3xl font-black uppercase tracking-wide text-text-primary">
@@ -574,9 +443,23 @@ export default function PlayerSetup({
               const selectedKey = selectedColorKeys[i] ?? "R";
               const selectedMtgColor = MTG_PLAYER_COLORS.find((c) => c.key === selectedKey)!;
               return (
-                <div key={i} className="bg-bg-card border border-border rounded-xl p-3 space-y-2">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={i}
+                  className="glass-card rounded-xl overflow-hidden border-2 transition-colors duration-200"
+                  style={{ borderColor: selectedMtgColor.color }}
+                >
+                  {/* Colored header bar */}
+                  <div
+                    className="flex items-center gap-2 px-3 py-2"
+                    style={{ backgroundColor: `${selectedMtgColor.color}30` }}
+                  >
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: selectedMtgColor.color }} />
+                    <span className="text-xs font-bold uppercase tracking-wide" style={{ color: selectedMtgColor.color }}>
+                      Player {i + 1}
+                    </span>
+                  </div>
+                  <div className="p-3 space-y-2">
+                  <div className="flex items-center gap-2">
                     <Input
                       value={playerNames[i]}
                       onChange={(e) => handleNameChange(i, e.target.value)}
@@ -602,6 +485,7 @@ export default function PlayerSetup({
                         <ManaSymbol symbol={c.key} size={18} />
                       </button>
                     ))}
+                  </div>
                   </div>
                 </div>
               );

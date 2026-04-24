@@ -1,50 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import NewsWidget from "@/components/news/NewsWidget";
 
-interface HeroCard {
-  name: string;
-  artist?: string;
-  image_uris?: { art_crop?: string };
-  card_faces?: Array<{ image_uris?: { art_crop?: string } }>;
-}
-
 const FEATURES = [
-  {
-    href: "/decks",
-    title: "DECKS",
-    description: "Build & manage your decks",
-    accent: "#3B82F6",
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-  },
-  {
-    href: "/collection",
-    title: "COLLECTION",
-    description: "Track your card collection",
-    accent: "#22C55E",
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-      </svg>
-    ),
-  },
-  {
-    href: "/life",
-    title: "LIFE COUNTER",
-    description: "Track game life totals",
-    accent: "#EF4444",
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    ),
-  },
   {
     href: "/trades",
     title: "TRADING",
@@ -92,62 +51,27 @@ const FEATURES = [
 ];
 
 export default function HomePage() {
-  const [heroCard, setHeroCard] = useState<HeroCard | null>(null);
-  const [heroLoaded, setHeroLoaded] = useState(false);
-
-  useEffect(() => {
-    fetch("https://api.scryfall.com/cards/random?q=type%3Alegendary")
-      .then((r) => r.json())
-      .then((card: HeroCard) => setHeroCard(card))
-      .catch(() => {});
-  }, []);
-
-  const heroArt =
-    heroCard?.image_uris?.art_crop ??
-    heroCard?.card_faces?.[0]?.image_uris?.art_crop;
-
   return (
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* ── Hero ── */}
-      <div className="relative overflow-hidden" style={{ minHeight: 300 }}>
-        <div className="absolute inset-0 bg-gradient-to-br from-hero-from via-hero-via to-hero-to" />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-hero-from/60 via-transparent to-hero-to/60" />
         <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(237,154,87,0.08) 0%, transparent 70%)" }} />
 
-        {heroArt && (
-          <img
-            src={heroArt}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 hero-art"
-            style={{ opacity: heroLoaded ? 0.5 : 0 }}
-            onLoad={() => setHeroLoaded(true)}
-          />
-        )}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-bg-primary/60 via-transparent to-bg-primary/60" />
-
-        <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-14 pb-10 text-center max-w-2xl mx-auto w-full">
-          <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-2 drop-shadow-lg">
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-12 pb-4 text-center max-w-2xl mx-auto w-full">
+          <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-1 drop-shadow-lg">
             MTG Houdini
           </h1>
-          <p className="text-body text-text-secondary mb-4 max-w-xs">
+          <p className="text-body text-text-secondary max-w-xs">
             Your ultimate Magic: The Gathering companion
           </p>
-
-          {heroCard && (
-            <p className="text-caption mt-3 opacity-50">
-              Art: {heroCard.name}
-              {heroCard.artist && <> · {heroCard.artist}</>}
-            </p>
-          )}
         </div>
       </div>
 
       {/* ── Search shortcut ── */}
-      <div className="px-4 pt-1 pb-4 max-w-2xl mx-auto w-full">
+      <div className="px-4 pt-1 pb-2 max-w-2xl mx-auto w-full">
         <Link href="/search">
-          <div className="flex items-center gap-3 bg-bg-card border border-border rounded-2xl px-4 py-3.5 hover:border-accent/40 transition-colors active:scale-[0.98]">
+          <div className="flex items-center gap-3 glass-card border border-border rounded-2xl px-4 py-3.5 hover:border-accent/40 transition-colors active:scale-[0.98]">
             <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -165,14 +89,14 @@ export default function HomePage() {
       </div>
 
       {/* ── Feature Grid ── */}
-      <div className="px-4 pb-4 max-w-2xl mx-auto w-full">
+      <div className="px-4 pb-3 max-w-2xl mx-auto w-full">
         <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 [grid-auto-rows:1fr]">
+        <div className="grid grid-cols-2 gap-3.5 [grid-auto-rows:1fr]">
           {FEATURES.map((feature) => (
             <Link key={feature.href} href={feature.href} className="block h-full">
-              <div className="group relative bg-bg-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/30 h-full">
+              <div className="group relative glass-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/30 h-full">
                 {/* Subtle top accent line */}
                 <div
                   className="absolute top-0 left-4 right-4 h-[2px] opacity-60 group-hover:opacity-90 transition-opacity"

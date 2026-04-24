@@ -64,7 +64,7 @@ export default function CollectionSummary({
   return (
     <div
       className={cn(
-        "bg-bg-card rounded-xl p-4 border border-border",
+        "glass-card rounded-xl p-4 border border-border",
         className
       )}
     >

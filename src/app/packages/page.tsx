@@ -265,6 +265,7 @@ function PackagesPageInner() {
         subtitle={deckId ? "Add staple bundles to your deck" : "Curated Commander staple packages"}
         accent="#F59E0B"
         icon={PUZZLE_ICON}
+        onBack={() => router.back()}
       />
 
       <PageContainer>

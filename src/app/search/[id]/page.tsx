@@ -46,6 +46,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showDeckPicker, setShowDeckPicker] = useState(false);
   const [showBinderPicker, setShowBinderPicker] = useState(false);
+  const [pricingSource, setPricingSource] = useState<"tcg" | "cardmarket" | "cardhoarder">("tcg");
 
   const deckId = searchParams.get("deckId");
   const category = (searchParams.get("category") ?? "main") as DeckCategory;
@@ -299,47 +300,120 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
 
         {/* ── Pricing Section ── */}
         <div className="mt-5">
-          <p className="text-xs font-bold text-accent uppercase tracking-widest mb-1">Pricing</p>
-          <p className="text-[10px] text-text-muted mb-3">TCGplayer</p>
-
-          <div className="bg-bg-card border border-border rounded-xl p-3">
-            <div className="flex items-center gap-3">
-              {/* Small card thumbnail */}
-              <div className="w-16 flex-shrink-0">
-                <CardImage card={card} size="small" className="rounded-lg" />
-                <p className="text-[9px] text-text-muted text-center mt-1">#{card.collector_number}</p>
+          <div className="bg-bg-card border border-border rounded-2xl">
+            {/* Header: source toggle */}
+            <div className="px-4 py-2.5 border-b border-border">
+              <div className="flex items-center bg-white/5 rounded-lg p-0.5 border border-border">
+                {(["tcg", "cardmarket", "cardhoarder"] as const).map((src) => (
+                  <button
+                    key={src}
+                    onClick={() => setPricingSource(src)}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-md text-[11px] font-semibold transition-all text-center",
+                      pricingSource === src ? "bg-accent text-white shadow-sm" : "text-text-muted hover:text-text-primary"
+                    )}
+                  >
+                    {src === "tcg" ? "TCGplayer" : src === "cardmarket" ? "Cardmarket" : "Cardhoarder"}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Price columns */}
-              <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-[10px] font-bold text-red-400 uppercase tracking-wide">Low</p>
-                  <p className="text-sm font-semibold text-text-primary tabular-nums">
-                    {price.usd ? formatPrice(price.usd) : "—"}
-                  </p>
+            {/* Price chips */}
+            <div className="px-4 py-3">
+              {pricingSource === "tcg" && (
+                <div className={cn("grid gap-2", price.usd_etched ? "grid-cols-3" : "grid-cols-2")}>
+                  <div className="bg-emerald-500/10 rounded-xl py-3 px-2 text-center">
+                    <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide mb-1">Normal</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums">{price.usd ? formatPrice(price.usd) : "—"}</p>
+                  </div>
+                  <div className="bg-purple-500/10 rounded-xl py-3 px-2 text-center">
+                    <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wide mb-1">Foil</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums">{price.usd_foil ? formatPrice(price.usd_foil) : "—"}</p>
+                  </div>
+                  {price.usd_etched && (
+                    <div className="bg-amber-500/10 rounded-xl py-3 px-2 text-center">
+                      <p className="text-[10px] font-bold text-amber-400 uppercase tracking-wide mb-1">Etched</p>
+                      <p className="text-lg font-bold text-text-primary tabular-nums">{formatPrice(price.usd_etched)}</p>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">Mid</p>
-                  <p className="text-sm font-semibold text-text-primary tabular-nums">
-                    {price.usd ? formatPrice(price.usd) : "—"}
-                  </p>
+              )}
+              {pricingSource === "cardmarket" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-blue-500/10 rounded-xl py-3 px-2 text-center">
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide mb-1">Normal</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums">{price.eur ? formatPrice(price.eur, "eur") : "—"}</p>
+                  </div>
+                  <div className="bg-purple-500/10 rounded-xl py-3 px-2 text-center">
+                    <p className="text-[10px] font-bold text-purple-400 uppercase tracking-wide mb-1">Foil</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums">{price.eur_foil ? formatPrice(price.eur_foil, "eur") : "—"}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-bold text-yellow-400 uppercase tracking-wide">Market</p>
-                  <p className="text-sm font-semibold text-text-primary tabular-nums">
-                    {price.usd ? formatPrice(price.usd) : "—"}
-                  </p>
+              )}
+              {pricingSource === "cardhoarder" && (
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="bg-cyan-500/10 rounded-xl py-3 px-2 text-center">
+                    <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-wide mb-1">MTGO Tix</p>
+                    <p className="text-lg font-bold text-text-primary tabular-nums">{price.tix ? `${price.tix} tix` : "—"}</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Menu button */}
+              {/* Set info */}
+              <p className="text-[10px] text-text-muted mt-2.5">
+                {card.set_name} ({card.set.toUpperCase()}) · #{card.collector_number} · <span className="capitalize">{card.rarity}</span>
+              </p>
+            </div>
+
+            {/* Action buttons row */}
+            <div className="flex gap-2 px-4 pb-3">
+              {pricingSource === "tcg" && card.purchase_uris?.tcgplayer && (
+                <a
+                  href={card.purchase_uris.tcgplayer}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl btn-gradient text-xs font-bold active:scale-[0.98] transition-all"
+                >
+                  <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                  </svg>
+                  <span className="text-black">Buy on TCGplayer</span>
+                </a>
+              )}
+              {pricingSource === "cardmarket" && card.purchase_uris?.cardmarket && (
+                <a
+                  href={card.purchase_uris.cardmarket}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl btn-gradient text-xs font-bold active:scale-[0.98] transition-all"
+                >
+                  <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                  </svg>
+                  <span className="text-black">Buy on Cardmarket</span>
+                </a>
+              )}
+              {pricingSource === "cardhoarder" && card.purchase_uris?.cardhoarder && (
+                <a
+                  href={card.purchase_uris.cardhoarder}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl btn-gradient text-xs font-bold active:scale-[0.98] transition-all"
+                >
+                  <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                  </svg>
+                  <span className="text-black">Buy on Cardhoarder</span>
+                </a>
+              )}
               <div className="relative flex-shrink-0">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="w-11 h-11 rounded-xl btn-gradient flex items-center justify-center active:scale-90 transition-all"
+                  className="h-full px-4 py-2.5 rounded-xl btn-gradient flex items-center justify-center active:scale-90 transition-all"
                 >
-                  <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                  <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                   </svg>
                 </button>
 
@@ -470,44 +544,8 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
                 )}
               </div>
             </div>
-
-            {/* Set info line */}
-            <p className="text-[10px] text-text-muted mt-2">
-              {card.set_name} ({card.set.toUpperCase()}) · <span className="capitalize">{card.rarity}</span>
-            </p>
           </div>
         </div>
-
-        {/* Foil price row if available */}
-        {price.usd_foil && (
-          <div className="mt-2 bg-bg-card border border-border rounded-xl px-4 py-2.5 flex items-center justify-between">
-            <span className="text-xs text-text-muted">Foil</span>
-            <span className="text-sm font-semibold text-accent tabular-nums">{formatPrice(price.usd_foil)}</span>
-          </div>
-        )}
-
-        {/* Cardmarket EUR if available */}
-        {price.eur && (
-          <div className="mt-2 bg-bg-card border border-border rounded-xl px-4 py-2.5 flex items-center justify-between">
-            <span className="text-xs text-text-muted">Cardmarket</span>
-            <span className="text-sm font-semibold text-text-primary tabular-nums">{formatPrice(price.eur, "eur")}</span>
-          </div>
-        )}
-
-        {/* Buy link */}
-        {card.purchase_uris?.tcgplayer && (
-          <a
-            href={card.purchase_uris.tcgplayer}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 flex items-center justify-center gap-2 py-2.5 rounded-xl btn-gradient text-sm font-bold active:scale-[0.98] transition-all"
-          >
-            Buy on TCGplayer
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-            </svg>
-          </a>
-        )}
 
         {/* ── Tabs ── */}
         <div className="mt-5">

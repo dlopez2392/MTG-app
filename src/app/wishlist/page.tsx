@@ -62,7 +62,7 @@ function WishlistRow({
   }
 
   return (
-    <div className="flex items-center gap-3 bg-bg-card border border-border rounded-xl px-3 py-2.5 hover:border-border/70 transition-colors">
+    <div className="flex items-center gap-3 glass-card border border-border rounded-xl px-3 py-2.5 hover:border-border/70 transition-colors">
       {/* Card thumb */}
       <button
         onClick={() => onClick(item.scryfallId)}
@@ -185,6 +185,7 @@ export default function WishlistPage() {
         }
         accent="#EC4899"
         icon={HEART_ICON}
+        onBack={() => router.back()}
       />
 
       <PageContainer>
