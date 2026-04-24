@@ -245,6 +245,24 @@ export default function LifePage() {
     cycle();
   }, [randomizing, players, gameOptions]);
 
+  const handleManualStarter = useCallback((playerIndex: number) => {
+    const id = players[playerIndex]?.id;
+    if (!id) return;
+    setStartingPlayer(id);
+    setHighlightedPlayer(id);
+    setTimeout(() => {
+      setChoosingStarter(false);
+      setHighlightedPlayer(null);
+      setActivePlayerIndex(playerIndex);
+      const pos = turnOrder.indexOf(playerIndex);
+      if (pos > 0) {
+        setTurnOrder((prev) => [...prev.slice(pos), ...prev.slice(0, pos)]);
+      }
+      if (gameOptions.gameTimer) setGameTimerRunning(true);
+      if (gameOptions.turnTimer) setTurnTimerRunning(true);
+    }, 1500);
+  }, [players, turnOrder, gameOptions]);
+
   if (!gameStarted) {
     if (!mounted) return null;
     return (
@@ -365,22 +383,23 @@ export default function LifePage() {
                     Tap anywhere to randomize starting player
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setChoosingStarter(false);
-                    setActivePlayerIndex(turnOrder[0] ?? 0);
-                    if (gameOptions.gameTimer) setGameTimerRunning(true);
-                    if (gameOptions.turnTimer) setTurnTimerRunning(true);
-                  }}
-                  className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/70 backdrop-blur-sm text-white/80 text-sm font-medium active:bg-black/90 z-10"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  Skip
-                </button>
+                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">or choose</span>
+                  <div className="flex items-center gap-2">
+                    {players.map((p, i) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleManualStarter(i); }}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-black/70 backdrop-blur-sm text-white text-xs font-semibold active:scale-95 transition-transform"
+                        style={{ borderWidth: 2, borderColor: p.color }}
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
           </div>
