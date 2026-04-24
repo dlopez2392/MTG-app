@@ -18,24 +18,19 @@ export const LAYOUTS: Record<number, LayoutOption[]> = {
     { id: "1-full", panels: [{ x: 0, y: 0, w: 1, h: 1 }] },
   ],
   2: [
-    { id: "2-stack", panels: [{ x: 0, y: 0, w: 1, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 1, h: 0.5 }] },
     { id: "2-side", panels: [{ x: 0, y: 0, w: 0.5, h: 1, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 1 }] },
   ],
   3: [
     { id: "3-top1-bot2", panels: [{ x: 0, y: 0, w: 1, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.5, h: 0.5 }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
-    { id: "3-left1-right2", panels: [{ x: 0, y: 0, w: 0.5, h: 1, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
   ],
   4: [
     { id: "4-grid", panels: [{ x: 0, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.5, h: 0.5 }, { x: 0.5, y: 0.5, w: 0.5, h: 0.5 }] },
-    { id: "4-top1-mid2-bot1", panels: [{ x: 0, y: 0, w: 1, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 1, h: 0.33 }] },
   ],
   5: [
     { id: "5-2-2-1", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 1, h: 0.33 }] },
-    { id: "5-2-1-2", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 1, h: 0.34 }, { x: 0, y: 0.67, w: 0.5, h: 0.33 }, { x: 0.5, y: 0.67, w: 0.5, h: 0.33 }] },
   ],
   6: [
     { id: "6-grid", panels: [{ x: 0, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0.5, y: 0, w: 0.5, h: 0.33, rotated: true }, { x: 0, y: 0.33, w: 0.5, h: 0.34 }, { x: 0.5, y: 0.33, w: 0.5, h: 0.34 }, { x: 0, y: 0.67, w: 0.5, h: 0.33 }, { x: 0.5, y: 0.67, w: 0.5, h: 0.33 }] },
-    { id: "6-3col", panels: [{ x: 0, y: 0, w: 0.33, h: 0.5, rotated: true }, { x: 0.33, y: 0, w: 0.34, h: 0.5, rotated: true }, { x: 0.67, y: 0, w: 0.33, h: 0.5, rotated: true }, { x: 0, y: 0.5, w: 0.33, h: 0.5 }, { x: 0.33, y: 0.5, w: 0.34, h: 0.5 }, { x: 0.67, y: 0.5, w: 0.33, h: 0.5 }] },
   ],
 };
 
@@ -125,7 +120,7 @@ export default function PlayerSetup({
       turnTimer,
       gameTimer,
       gameTimerMinutes,
-      layout: LAYOUTS[playerCount]?.[0]?.id ?? "2-stack",
+      layout: LAYOUTS[playerCount]?.[0]?.id ?? "2-side",
     });
   }
 
