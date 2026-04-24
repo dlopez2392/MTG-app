@@ -35,7 +35,6 @@ export default function LifePage() {
   const { settings, mounted } = useSettings();
   const { matches, loading: matchesLoading, error: matchesError, saveMatch } = useMatchHistory();
   const { addEntry: addGameLogEntry } = useGameLog();
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMatchHistory, setShowMatchHistory] = useState(false);
@@ -99,29 +98,6 @@ export default function LifePage() {
       .map((c) => c.i);
   }, []);
 
-  const supportsNativeFullscreen =
-    typeof document !== "undefined" &&
-    "requestFullscreen" in document.documentElement;
-
-  useEffect(() => {
-    if (!supportsNativeFullscreen) return;
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, [supportsNativeFullscreen]);
-
-  // Enter fullscreen when game starts
-  useEffect(() => {
-    if (gameStarted) {
-      if (supportsNativeFullscreen && !document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
-      setIsFullscreen(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (screen.orientation as any)?.lock?.("landscape")?.catch?.(() => {});
-    }
-  }, [gameStarted, supportsNativeFullscreen]);
-
   // Show "choose starting player" when game first starts
   useEffect(() => {
     if (gameStarted && players.length > 1 && playerCount > 1) {
@@ -129,32 +105,6 @@ export default function LifePage() {
       setStartingPlayer(null);
     }
   }, [gameStarted, players.length]);
-
-  const exitFullscreen = useCallback(() => {
-    if (supportsNativeFullscreen && document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    }
-    setIsFullscreen(false);
-    screen.orientation?.unlock?.();
-  }, [supportsNativeFullscreen]);
-
-  const toggleFullscreen = useCallback(async () => {
-    if (supportsNativeFullscreen) {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        await document.exitFullscreen().catch(() => {});
-      }
-    } else {
-      setIsFullscreen((prev) => !prev);
-    }
-    if (!isFullscreen) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (screen.orientation as any)?.lock?.("landscape")?.catch?.(() => {});
-    } else {
-      screen.orientation?.unlock?.();
-    }
-  }, [supportsNativeFullscreen, isFullscreen]);
 
   // Game timer tick
   useEffect(() => {
@@ -355,13 +305,7 @@ export default function LifePage() {
 
   return (
     <div
-      className={cn(
-        "flex flex-col bg-black overflow-hidden touch-none",
-        isFullscreen && !supportsNativeFullscreen
-          ? "fixed inset-0 z-[100]"
-          : "fixed inset-0 z-[100]",
-        !isFullscreen && "pb-16"
-      )}
+      className="flex flex-col bg-black overflow-hidden touch-none fixed inset-0 z-[100]"
       style={{ height: "100dvh" }}
     >
       <div className="flex-1 flex flex-col p-1 relative">
@@ -472,16 +416,6 @@ export default function LifePage() {
                   </svg>
                   History
                 </button>
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  className="text-left px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                  </svg>
-                  {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                </button>
                 <div className="border-t border-border my-1" />
                 <button
                   type="button"
@@ -523,7 +457,6 @@ export default function LifePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    exitFullscreen();
                     newGame();
                     setShowMenu(false);
                     setGameTimerRunning(false);
@@ -586,7 +519,6 @@ export default function LifePage() {
 
           setSavingMatch(false);
           setShowEndGame(false);
-          exitFullscreen();
           newGame();
           setGameTimerRunning(false);
           setTurnTimerRunning(false);
