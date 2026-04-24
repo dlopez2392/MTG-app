@@ -77,18 +77,13 @@ function NavTab({
       href={href}
       suppressHydrationWarning
       className={cn(
-        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset",
-        isActive ? "text-accent" : "text-text-muted hover:text-text-secondary"
+        "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset mx-1 rounded-xl",
+        isActive ? "text-black" : "text-accent/50 hover:text-accent/75"
       )}
+      style={isActive ? {
+        background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
+      } : undefined}
     >
-      {/* Active pill background */}
-      <span
-        className={cn(
-          "absolute inset-x-2 inset-y-1.5 rounded-xl transition-all duration-300 ease-out",
-          isActive ? "bg-accent/10 opacity-100" : "opacity-0"
-        )}
-      />
-
       <span
         className={cn(
           "relative transition-transform duration-200 ease-out",
@@ -101,7 +96,7 @@ function NavTab({
       <span
         className={cn(
           "relative text-[11px] tracking-wide transition-all duration-200",
-          isActive ? "font-semibold" : "font-medium"
+          isActive ? "font-bold" : "font-medium"
         )}
       >
         {label}
