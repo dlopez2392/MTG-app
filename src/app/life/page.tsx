@@ -354,12 +354,13 @@ export default function LifePage() {
   return (
     <div
       className={cn(
-        "flex flex-col bg-black",
+        "flex flex-col bg-black overflow-hidden touch-none",
         isFullscreen && !supportsNativeFullscreen
           ? "fixed inset-0 z-[100]"
-          : "h-screen",
+          : "fixed inset-0 z-[100]",
         !isFullscreen && "pb-16"
       )}
+      style={{ height: "100dvh" }}
     >
       <div className="flex-1 flex flex-col p-1 relative">
         {renderPlayers()}
