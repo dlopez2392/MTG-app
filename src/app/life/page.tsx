@@ -13,6 +13,7 @@ import EndGameModal from "@/components/life/EndGameModal";
 import MatchHistory from "@/components/life/MatchHistory";
 import Modal from "@/components/ui/Modal";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
+import { useGameLog } from "@/hooks/useGameLog";
 import type { CreateMatchPayload } from "@/types/match";
 
 export default function LifePage() {
@@ -33,6 +34,7 @@ export default function LifePage() {
 
   const { settings, mounted } = useSettings();
   const { matches, loading: matchesLoading, error: matchesError, saveMatch } = useMatchHistory();
+  const { addEntry: addGameLogEntry } = useGameLog();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -560,6 +562,28 @@ export default function LifePage() {
         onSave={async (payload: CreateMatchPayload) => {
           setSavingMatch(true);
           await saveMatch(payload);
+
+          const winner = payload.players.find((p) => p.isWinner);
+          const player1 = payload.players[0];
+          const isPlayer1Winner = player1?.isWinner;
+          const hasDraw = !winner;
+          const result = hasDraw ? "draw" as const : isPlayer1Winner ? "win" as const : "loss" as const;
+          const format = payload.startingLife === 40 ? "Commander"
+            : payload.startingLife === 25 ? "Brawl"
+            : payload.startingLife === 30 ? "Two-Headed Giant"
+            : "Standard";
+          const opponents = payload.players.slice(1).map((p) => p.playerName).join(", ");
+
+          await addGameLogEntry({
+            date: payload.endedAt,
+            deckName: player1?.playerName ?? "Player 1",
+            result,
+            format,
+            playerCount: payload.playerCount,
+            notes: payload.notes,
+            opponentNames: opponents || undefined,
+          });
+
           setSavingMatch(false);
           setShowEndGame(false);
           exitFullscreen();

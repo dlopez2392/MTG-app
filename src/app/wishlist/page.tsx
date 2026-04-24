@@ -168,6 +168,23 @@ export default function WishlistPage() {
     return sum + (isNaN(p) ? 0 : p);
   }, 0);
 
+  const handleShare = useCallback(async () => {
+    if (items.length === 0) return;
+    const lines = items.map((item) => {
+      const price = item.priceUsd ? ` - ${formatPrice(item.priceUsd)}` : "";
+      const target = item.targetPrice ? ` (target: ≤${formatPrice(item.targetPrice.toString())})` : "";
+      return `• ${item.name}${price}${target}`;
+    });
+    const text = `MTG Wishlist (${items.length} card${items.length !== 1 ? "s" : ""}, est. ${formatPrice(totalValue.toFixed(2))})\n\n${lines.join("\n")}`;
+
+    if (navigator.share) {
+      await navigator.share({ title: "My MTG Wishlist", text }).catch(() => {});
+    } else {
+      const smsBody = encodeURIComponent(text);
+      window.open(`sms:?body=${smsBody}`, "_blank");
+    }
+  }, [items, totalValue]);
+
   const HEART_ICON = (
     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
@@ -213,10 +230,21 @@ export default function WishlistPage() {
               </div>
             )}
 
-            {/* Sort hint */}
-            <p className="text-[11px] text-text-muted mb-3">
-              Tap a card name to view details · Tap "set target" to add a price alert
-            </p>
+            {/* Actions bar */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[11px] text-text-muted">
+                Tap a card to view · Tap "set target" for price alerts
+              </p>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 text-accent text-xs font-semibold hover:bg-accent/20 active:scale-95 transition-all flex-shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+                Share
+              </button>
+            </div>
 
             <div className="flex flex-col gap-2">
               {items.map((item) => (

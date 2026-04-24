@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -118,13 +118,27 @@ export default function SettingsPageClient() {
     reader.readAsText(file);
   }
 
+  const handleShare = useCallback(async () => {
+    const shareData = {
+      title: "MTG Houdini",
+      text: "Check out MTG Houdini — the ultimate Magic: The Gathering companion app!",
+      url: window.location.origin,
+    };
+    if (navigator.share) {
+      await navigator.share(shareData).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+      alert("Link copied to clipboard!");
+    }
+  }, []);
+
   if (!mounted) return null;
 
   return (
     <div className="flex flex-col min-h-screen pb-20">
       <HeroBanner
         title="More"
-        subtitle="Settings & account — MTG Houdini v0.1.0"
+        subtitle="Settings & account — MTG Houdini v0.2.0"
         accent="#A855F7"
         icon={MORE_ICON}
       />
@@ -308,6 +322,22 @@ export default function SettingsPageClient() {
           </div>
         </section>
 
+        {/* Notifications */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Notifications</h2>
+          <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
+            <SettingRow
+              label="Price Drop Alerts"
+              description="Get notified when wishlist cards hit your target price"
+            >
+              <Toggle
+                value={settings.priceDropAlerts}
+                onChange={(v) => updateSetting("priceDropAlerts", v)}
+              />
+            </SettingRow>
+          </div>
+        </section>
+
         {/* Data */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Data</h2>
@@ -346,6 +376,66 @@ export default function SettingsPageClient() {
           </div>
         </section>
 
+        {/* Share */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Spread the Word</h2>
+          <div className="glass-card rounded-2xl border border-border overflow-hidden">
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-white/5 active:bg-white/10 transition-colors text-left"
+            >
+              <div className="w-9 h-9 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-text-primary">Share with Friends</p>
+                <p className="text-xs text-text-muted">Invite others to use MTG Houdini</p>
+              </div>
+              <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        {/* What's New */}
+        <section>
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">What&apos;s New</h2>
+          <div className="glass-card rounded-2xl border border-border p-4 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-text-primary">v0.2.0</p>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Latest</span>
+                </div>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Glass UI redesign with dynamic background art. EDHREC & MTGTop8 deck explorer. Improved life counter with turn timer, commander damage positioning, and manual starter picker. Revamped trading section for mobile. Price drop alert settings.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 opacity-60">
+              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg className="w-4 h-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text-primary">v0.1.0</p>
+                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                  Initial release. Life counter, deck builder, collection manager, card search, wishlist, game log, and trading.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* About */}
         <section className="pb-8">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">About</h2>
@@ -365,7 +455,7 @@ export default function SettingsPageClient() {
               MTG Houdini is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
             </p>
             <p className="text-xs text-text-muted pt-1 border-t border-border">
-              <span className="font-semibold text-text-secondary">v0.1.0</span> — Initial release. Life counter, deck builder, collection manager, card scanner.
+              <span className="font-semibold text-text-secondary">v0.2.0</span> — Glass UI, deck explorer, improved life counter & trading.
             </p>
           </div>
         </section>

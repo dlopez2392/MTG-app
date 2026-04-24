@@ -15,6 +15,8 @@ export interface UserSettings {
   // Collection
   defaultCondition: CardCondition;
   defaultFoil: boolean;
+  // Notifications
+  priceDropAlerts: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -28,4 +30,5 @@ export const DEFAULT_SETTINGS: UserSettings = {
   perCommanderTracking: false,
   defaultCondition: "near_mint",
   defaultFoil: false,
+  priceDropAlerts: true,
 };
