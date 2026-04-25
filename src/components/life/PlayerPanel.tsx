@@ -120,27 +120,6 @@ export default function PlayerPanel({
   const isSideways = rotation === 90 || rotation === -90;
 
   // Position buttons on the panel's outward edge (away from screen center / menu button)
-  const pos = (() => {
-    switch (rotation) {
-      case 180: return {
-        poison:    "top-3 right-3",
-        commander: "top-3 left-3",
-      };
-      case 90: return {
-        poison:    "top-3 left-3",
-        commander: "bottom-3 left-3",
-      };
-      case -90: return {
-        poison:    "bottom-3 right-3",
-        commander: "top-3 right-3",
-      };
-      default: return {
-        poison:    "bottom-3 left-3",
-        commander: "bottom-3 right-3",
-      };
-    }
-  })();
-
   return (
     <div
       className={cn(
@@ -332,11 +311,8 @@ export default function PlayerPanel({
         </div>
       )}
 
-      </div>{/* end rotation wrapper */}
-
-      {/* ── Bottom corners: poison (left) + commander damage (right) ── */}
-      {/* These sit outside the rotation wrapper so they stay in consistent positions */}
-      <div className={cn("absolute z-20 flex items-center gap-1", pos.poison)}>
+      {/* ── Poison counter ── */}
+      <div className="absolute z-20 flex items-center gap-1 bottom-3 left-3">
         {showPoisonCounters && onPoisonChange && (
           <button
             type="button"
@@ -357,7 +333,8 @@ export default function PlayerPanel({
         )}
       </div>
 
-      <div className={cn("absolute z-20 flex items-center gap-1", pos.commander)}>
+      {/* ── Commander damage button ── */}
+      <div className="absolute z-20 flex items-center gap-1 bottom-3 right-3">
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
@@ -415,6 +392,8 @@ export default function PlayerPanel({
           </button>
         </div>
       )}
+
+      </div>{/* end rotation wrapper */}
     </div>
   );
 }
