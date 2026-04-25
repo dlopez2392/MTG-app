@@ -231,17 +231,18 @@ export default function PlayerPanel({
               className="pointer-events-auto absolute flex items-center gap-1 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
               style={{ opacity: cmdrTotal > 0 ? 1 : 0.6, right: "calc(100% + 16px)" }}
             >
-              <svg className={cn(compact ? "w-6 h-6" : "w-7 h-7")} viewBox="0 0 120 110">
+              <svg className={cn(compact ? "w-6 h-6" : "w-7 h-7")} viewBox="0 0 24 24" fill="none">
                 <defs>
                   <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#E8D078"/>
-                    <stop offset="40%" stopColor="#C8A040"/>
-                    <stop offset="100%" stopColor="#987020"/>
+                    <stop offset="0%" stopColor="#F5E6A3"/>
+                    <stop offset="50%" stopColor="#D4A843"/>
+                    <stop offset="100%" stopColor="#A07828"/>
                   </linearGradient>
                 </defs>
-                <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-                <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-                <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+                <path d="M3 18h18v2H3zM4 16l2-8 4 4 2-6 2 6 4-4 2 8z" fill={`url(#cg-${player.id})`} stroke="#7A5C1E" strokeWidth="0.8" strokeLinejoin="round"/>
+                <circle cx="5" cy="7" r="1.2" fill={`url(#cg-${player.id})`} stroke="#7A5C1E" strokeWidth="0.5"/>
+                <circle cx="12" cy="5" r="1.4" fill={`url(#cg-${player.id})`} stroke="#7A5C1E" strokeWidth="0.5"/>
+                <circle cx="19" cy="7" r="1.2" fill={`url(#cg-${player.id})`} stroke="#7A5C1E" strokeWidth="0.5"/>
               </svg>
               {cmdrTotal > 0 && (
                 <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
