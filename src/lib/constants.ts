@@ -70,6 +70,7 @@ export const MTG_PLAYER_COLORS = [
   { key: "B", label: "Black", color: "#8B5CF6", mtgQuery: "b" },
   { key: "R", label: "Red",   color: "#EF4444", mtgQuery: "r" },
   { key: "G", label: "Green", color: "#22C55E", mtgQuery: "g" },
+  { key: "C", label: "Colorless", color: "#9CA3AF", mtgQuery: "c" },
 ] as const;
 
 export type MtgPlayerColorKey = (typeof MTG_PLAYER_COLORS)[number]["key"];
