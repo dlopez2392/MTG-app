@@ -88,10 +88,26 @@ function CoachSection({ title, grade, analysis, suggestions, children }: {
   );
 }
 
+const FORMATS = [
+  { value: "commander", label: "Commander / EDH" },
+  { value: "modern", label: "Modern" },
+  { value: "standard", label: "Standard" },
+  { value: "pioneer", label: "Pioneer" },
+  { value: "pauper", label: "Pauper" },
+  { value: "legacy", label: "Legacy" },
+  { value: "vintage", label: "Vintage" },
+  { value: "historic", label: "Historic" },
+  { value: "explorer", label: "Explorer" },
+  { value: "brawl", label: "Brawl" },
+  { value: "oathbreaker", label: "Oathbreaker" },
+  { value: "casual", label: "Casual / Kitchen Table" },
+];
+
 export default function DeckCoach({ cards, deckName, format }: Props) {
   const [result, setResult] = useState<CoachingResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState(format || "commander");
 
   async function analyze() {
     setLoading(true);
@@ -103,7 +119,7 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           deckName,
-          format: format || "commander",
+          format: selectedFormat,
           cards: cards.map((c) => ({
             name: c.name,
             quantity: c.quantity,
@@ -163,22 +179,41 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
             <p className="text-xs text-white/40 mb-4 max-w-xs mx-auto leading-relaxed">
               Get AI-powered analysis of your deck — mana base, curve, card upgrades, synergy gaps, and priority fixes.
             </p>
-            <button
-              onClick={analyze}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
-              style={{
-                background: "linear-gradient(135deg, #7C5CFC, #6347E0)",
-                color: "white",
-                boxShadow: "0 4px 20px rgba(124,92,252,0.4)",
-              }}
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-                Analyze My Deck
-              </span>
-            </button>
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-full max-w-xs">
+                <label className="text-[10px] text-white/30 uppercase tracking-wider font-medium mb-1 block text-left">Format</label>
+                <select
+                  value={selectedFormat}
+                  onChange={(e) => setSelectedFormat(e.target.value)}
+                  className="w-full rounded-xl px-3 py-2 text-sm text-white/80 appearance-none cursor-pointer [&>option]:text-black [&>option]:bg-white"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+                  }}
+                >
+                  {FORMATS.map((f) => (
+                    <option key={f.value} value={f.value}>{f.label}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={analyze}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg, #7C5CFC, #6347E0)",
+                  color: "white",
+                  boxShadow: "0 4px 20px rgba(124,92,252,0.4)",
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                  Analyze My Deck
+                </span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -312,14 +347,29 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
               suggestions={result.interaction?.suggestions}
             />
 
-            {/* Re-analyze button */}
-            <button
-              onClick={analyze}
-              disabled={loading}
-              className="text-xs text-white/30 hover:text-white/50 transition-colors py-2 disabled:opacity-50"
-            >
-              Re-analyze deck
-            </button>
+            {/* Re-analyze */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <select
+                value={selectedFormat}
+                onChange={(e) => setSelectedFormat(e.target.value)}
+                className="rounded-lg px-2 py-1.5 text-xs text-white/50 appearance-none cursor-pointer [&>option]:text-black [&>option]:bg-white"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+              >
+                {FORMATS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={analyze}
+                disabled={loading}
+                className="text-xs text-white/30 hover:text-white/50 transition-colors disabled:opacity-50"
+              >
+                Re-analyze deck
+              </button>
+            </div>
           </div>
         )}
       </div>
