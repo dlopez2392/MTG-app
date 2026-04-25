@@ -125,22 +125,18 @@ export default function PlayerPanel({
       case 180: return {
         poison:    "top-3 right-3",
         commander: "top-3 left-3",
-        badge:     "top-12 left-3",
       };
       case 90: return {
         poison:    "top-3 left-3",
         commander: "bottom-3 left-3",
-        badge:     "bottom-12 left-3",
       };
       case -90: return {
         poison:    "bottom-3 right-3",
         commander: "top-3 right-3",
-        badge:     "top-12 right-3",
       };
       default: return {
         poison:    "bottom-3 left-3",
         commander: "bottom-3 right-3",
-        badge:     "bottom-12 right-3",
       };
     }
   })();
@@ -377,18 +373,6 @@ export default function PlayerPanel({
           )}
         </button>
       </div>
-
-      {/* Commander damage count badge — near commander button */}
-      {cmdrTotal > 0 && (
-        <div className={cn("absolute z-20 flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm pointer-events-none", pos.badge)}>
-          <svg className="w-4 h-4 text-white/60" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 3.18l1.87 3.78L18 8.8l-3 2.93.71 4.12L12 13.77l-3.71 2.08.71-4.12-3-2.93 4.13-.84L12 4.18z" />
-          </svg>
-          <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
-            {cmdrTotal}
-          </span>
-        </div>
-      )}
 
       {/* ── Commander damage overlay ── */}
       {showCmdr && (
