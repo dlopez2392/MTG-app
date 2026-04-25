@@ -147,10 +147,26 @@ export default function PlayerPanel({
     return () => clearTimeout(timer);
   }, [player.life]);
 
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didLongPress = useRef(false);
+
   const handleTapZone = useCallback((isTop: boolean) => {
     if (disabled) { onTapPanel?.(); return; }
+    if (didLongPress.current) { didLongPress.current = false; return; }
     onLifeChange(isTop ? 1 : -1);
   }, [disabled, onTapPanel, onLifeChange]);
+
+  const handlePressStart = useCallback((isTop: boolean) => {
+    didLongPress.current = false;
+    longPressRef.current = setTimeout(() => {
+      didLongPress.current = true;
+      if (!disabled) onLifeChange(isTop ? 10 : -10);
+    }, 600);
+  }, [disabled, onLifeChange]);
+
+  const handlePressEnd = useCallback(() => {
+    if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; }
+  }, []);
 
   const cmdrTotal = Object.entries(player.commanderDamage)
     .reduce((sum, [, v]) => sum + v, 0);
@@ -210,14 +226,26 @@ export default function PlayerPanel({
       <button
         type="button"
         onClick={() => handleTapZone(true)}
+        onTouchStart={() => handlePressStart(true)}
+        onTouchEnd={handlePressEnd}
+        onTouchCancel={handlePressEnd}
+        onMouseDown={() => handlePressStart(true)}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
         className="absolute top-0 left-0 right-0 h-1/2 z-10 cursor-pointer active:bg-white/5 transition-colors"
-        aria-label="Increase life"
+        aria-label="Increase life — hold for +10"
       />
       <button
         type="button"
         onClick={() => handleTapZone(false)}
+        onTouchStart={() => handlePressStart(false)}
+        onTouchEnd={handlePressEnd}
+        onTouchCancel={handlePressEnd}
+        onMouseDown={() => handlePressStart(false)}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
         className="absolute bottom-0 left-0 right-0 h-1/2 z-10 cursor-pointer active:bg-white/5 transition-colors"
-        aria-label="Decrease life"
+        aria-label="Decrease life — hold for -10"
       />
 
       {/* ── Life total + player name — centered ── */}
