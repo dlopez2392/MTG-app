@@ -344,13 +344,7 @@ export default function LifePage() {
   return (
     <div
       className="flex flex-col bg-black overflow-hidden touch-none fixed inset-0 z-[100]"
-      style={{
-        height: "100dvh",
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-        paddingLeft: "env(safe-area-inset-left)",
-        paddingRight: "env(safe-area-inset-right)",
-      }}
+      style={{ height: "100dvh" }}
     >
       <div className="flex-1 flex flex-col p-0.5 relative">
         {renderPlayers()}
