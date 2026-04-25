@@ -43,8 +43,8 @@ export default function BinderDetailClient({ binderId }: Props) {
   return (
     <div className="flex flex-col min-h-screen pb-20">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-bg-secondary max-w-2xl mx-auto w-full">
-        <Link href="/collection" className="text-text-muted hover:text-text-primary transition-colors">
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <Link href="/collection" className="w-8 h-8 rounded-xl flex items-center justify-center text-white btn-gradient active:scale-90 transition-all flex-shrink-0">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
