@@ -201,7 +201,7 @@ export default function PlayerPanel({
       />
 
       {/* ── Life total + player name — centered ── */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">
+      <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[5]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
           <span
             className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
