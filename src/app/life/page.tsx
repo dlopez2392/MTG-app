@@ -35,6 +35,7 @@ export default function LifePage() {
   const { settings, mounted } = useSettings();
   const { matches, loading: matchesLoading, error: matchesError, saveMatch } = useMatchHistory();
   const { addEntry: addGameLogEntry } = useGameLog();
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showMatchHistory, setShowMatchHistory] = useState(false);
@@ -97,6 +98,29 @@ export default function LifePage() {
       .sort((a, b) => a.angle - b.angle)
       .map((c) => c.i);
   }, []);
+
+  const supportsNativeFullscreen =
+    typeof document !== "undefined" &&
+    "requestFullscreen" in document.documentElement;
+
+  useEffect(() => {
+    if (!supportsNativeFullscreen) return;
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, [supportsNativeFullscreen]);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (supportsNativeFullscreen) {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        await document.exitFullscreen().catch(() => {});
+      }
+    } else {
+      setIsFullscreen((prev) => !prev);
+    }
+  }, [supportsNativeFullscreen]);
 
   // Show "choose starting player" when game first starts
   useEffect(() => {
@@ -415,6 +439,16 @@ export default function LifePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   History
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { toggleFullscreen(); setShowMenu(false); }}
+                  className="text-left px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                  </svg>
+                  {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                 </button>
                 <div className="border-t border-border my-1" />
                 <button
