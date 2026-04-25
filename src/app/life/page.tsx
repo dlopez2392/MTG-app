@@ -122,6 +122,19 @@ export default function LifePage() {
     }
   }, [supportsNativeFullscreen]);
 
+  // Enter fullscreen when game starts
+  useEffect(() => {
+    if (gameStarted && supportsNativeFullscreen && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, [gameStarted, supportsNativeFullscreen]);
+
+  const exitFullscreen = useCallback(() => {
+    if (supportsNativeFullscreen && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, [supportsNativeFullscreen]);
+
   // Show "choose starting player" when game first starts
   useEffect(() => {
     if (gameStarted && players.length > 1 && playerCount > 1) {
@@ -498,6 +511,7 @@ export default function LifePage() {
                 <button
                   type="button"
                   onClick={() => {
+                    exitFullscreen();
                     newGame();
                     setShowMenu(false);
                     setGameTimerRunning(false);
@@ -560,6 +574,7 @@ export default function LifePage() {
 
           setSavingMatch(false);
           setShowEndGame(false);
+          exitFullscreen();
           newGame();
           setGameTimerRunning(false);
           setTurnTimerRunning(false);
