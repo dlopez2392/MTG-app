@@ -228,8 +228,8 @@ export default function PlayerPanel({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-              className="pointer-events-auto absolute flex items-center gap-1 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
-              style={{ opacity: cmdrTotal > 0 ? 1 : 0.6, right: "calc(100% + 16px)" }}
+              className="pointer-events-auto absolute flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm px-2.5 py-1.5 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
+              style={{ right: "calc(100% + 16px)" }}
             >
               <svg className={cn(compact ? "w-6 h-6" : "w-7 h-7")} viewBox="0 0 120 110">
                 <defs>
@@ -244,7 +244,7 @@ export default function PlayerPanel({
                 <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
               </svg>
               {cmdrTotal > 0 && (
-                <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
+                <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
                   {cmdrTotal}
                 </span>
               )}
