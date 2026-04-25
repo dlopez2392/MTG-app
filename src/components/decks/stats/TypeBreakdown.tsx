@@ -15,6 +15,28 @@ const TYPE_ICONS: Record<string, string> = {
   Battle: "M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15",
 };
 
+const TYPE_GRADIENTS: Record<string, string> = {
+  Creature: "linear-gradient(90deg, #22C55E, #16A34A)",
+  Instant: "linear-gradient(90deg, #3B82F6, #2563EB)",
+  Sorcery: "linear-gradient(90deg, #A855F7, #7C3AED)",
+  Enchantment: "linear-gradient(90deg, #F59E0B, #D97706)",
+  Artifact: "linear-gradient(90deg, #6B7280, #4B5563)",
+  Planeswalker: "linear-gradient(90deg, #EC4899, #DB2777)",
+  Land: "linear-gradient(90deg, #84CC16, #65A30D)",
+  Battle: "linear-gradient(90deg, #EF4444, #DC2626)",
+};
+
+const TYPE_GLOW: Record<string, string> = {
+  Creature: "rgba(34,197,94,0.3)",
+  Instant: "rgba(59,130,246,0.3)",
+  Sorcery: "rgba(168,85,247,0.3)",
+  Enchantment: "rgba(245,158,11,0.3)",
+  Artifact: "rgba(107,114,128,0.3)",
+  Planeswalker: "rgba(236,72,153,0.3)",
+  Land: "rgba(132,204,22,0.3)",
+  Battle: "rgba(239,68,68,0.3)",
+};
+
 export default function TypeBreakdown({ typeBreakdown }: TypeBreakdownProps) {
   const entries = Object.entries(typeBreakdown).sort(([, a], [, b]) => b - a);
 
@@ -25,28 +47,64 @@ export default function TypeBreakdown({ typeBreakdown }: TypeBreakdownProps) {
   }
 
   const maxCount = Math.max(...entries.map(([, v]) => v));
+  const total = entries.reduce((sum, [, v]) => sum + v, 0);
 
   return (
-    <div className="flex flex-col gap-2">
-      {entries.map(([type, count]) => (
-        <div key={type} className="flex items-center gap-3">
-          <div className="w-5 h-5 flex-shrink-0 text-text-secondary">
-            {TYPE_ICONS[type] && (
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d={TYPE_ICONS[type]} />
-              </svg>
-            )}
-          </div>
-          <span className="text-sm text-text-secondary w-24 flex-shrink-0">{type}</span>
-          <div className="flex-1 h-5 bg-bg-card rounded overflow-hidden">
+    <div className="flex flex-col gap-3">
+      {entries.map(([type, count]) => {
+        const pct = ((count / maxCount) * 100).toFixed(0);
+        const totalPct = ((count / total) * 100).toFixed(0);
+        const gradient = TYPE_GRADIENTS[type] ?? "linear-gradient(90deg, #6366F1, #4F46E5)";
+        const glow = TYPE_GLOW[type] ?? "rgba(99,102,241,0.3)";
+
+        return (
+          <div key={type} className="flex items-center gap-3">
             <div
-              className="h-full bg-accent/60 rounded transition-all"
-              style={{ width: `${(count / maxCount) * 100}%` }}
-            />
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background: `${gradient.replace("90deg", "135deg")}`.replace(/,\s*#\w+\)/, ", rgba(255,255,255,0.1))"),
+                boxShadow: `0 2px 8px ${glow}`,
+              }}
+            >
+              {TYPE_ICONS[type] && (
+                <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={TYPE_ICONS[type]} />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-white/70">{type}</span>
+                <span className="text-xs text-white/40">{totalPct}%</span>
+              </div>
+              <div
+                className="h-2.5 rounded-full overflow-hidden"
+                style={{ background: "rgba(255,255,255,0.05)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all relative"
+                  style={{
+                    width: `${pct}%`,
+                    background: gradient,
+                    boxShadow: `0 0 10px ${glow}`,
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 right-0 h-[1px] rounded-full"
+                    style={{ background: "rgba(255,255,255,0.4)" }}
+                  />
+                </div>
+              </div>
+            </div>
+            <span
+              className="text-sm font-bold w-8 text-right flex-shrink-0"
+              style={{ color: "rgba(255,255,255,0.8)" }}
+            >
+              {count}
+            </span>
           </div>
-          <span className="text-sm font-medium text-text-primary w-8 text-right">{count}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
