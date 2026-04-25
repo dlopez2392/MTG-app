@@ -8,6 +8,7 @@ import PageContainer from "@/components/layout/PageContainer";
 import ManaCurveChart from "@/components/decks/stats/ManaCurveChart";
 import ColorPieChart from "@/components/decks/stats/ColorPieChart";
 import TypeBreakdown from "@/components/decks/stats/TypeBreakdown";
+import DeckIntelligence from "@/components/decks/stats/DeckIntelligence";
 import type { Deck, DeckStats } from "@/types/deck";
 
 const RARITY_COLORS: Record<string, { bg: string; text: string; glow: string }> = {
@@ -299,6 +300,11 @@ export default function DeckStatsClient({ deckId }: Props) {
                 ))}
               </div>
             </GlassSection>
+          )}
+
+          {/* ── Deck Intelligence ── */}
+          {cards && cards.length > 0 && (
+            <DeckIntelligence cards={cards} />
           )}
         </div>
       </PageContainer>
