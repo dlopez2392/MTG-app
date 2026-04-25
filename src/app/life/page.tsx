@@ -317,7 +317,7 @@ export default function LifePage() {
     if (!layouts) return null;
     const layout = layouts.find((l) => l.id === gameOptions.layout) ?? layouts[0];
     return (
-      <div className="relative flex-1">
+      <div className="absolute inset-0">
         {layout.panels.map((p, i) => {
           if (i >= players.length) return null;
           const rotation = getOutwardRotation(p);
@@ -330,7 +330,7 @@ export default function LifePage() {
                 top: `${p.y * 100}%`,
                 width: `${p.w * 100}%`,
                 height: `${p.h * 100}%`,
-                padding: "2px",
+                padding: "1px",
               }}
             >
               {panel(i, rotation)}
@@ -343,10 +343,9 @@ export default function LifePage() {
 
   return (
     <div
-      className="flex flex-col bg-black overflow-hidden touch-none fixed inset-0 z-[100]"
-      style={{ height: "100dvh" }}
+      className="bg-black overflow-hidden touch-none fixed inset-0 z-[100]"
     >
-      <div className="flex-1 flex flex-col p-0.5 relative">
+      <div className="absolute inset-0">
         {renderPlayers()}
 
         {/* ── "Choose Starting Player" overlay ── */}
