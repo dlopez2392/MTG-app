@@ -105,10 +105,8 @@ export default function PlayerPanel({
         .then((card) => {
           if (cancelled) return;
           const url =
-            card?.image_uris?.large ??
-            card?.card_faces?.[0]?.image_uris?.large ??
-            card?.image_uris?.png ??
-            card?.card_faces?.[0]?.image_uris?.png ??
+            card?.image_uris?.art_crop ??
+            card?.card_faces?.[0]?.image_uris?.art_crop ??
             null;
           if (url) {
             setArtUrl(url);
