@@ -46,6 +46,12 @@ export interface DeckStats {
   manaCurve: Record<number, { total: number; byColor: Record<string, number> }>;
   colorDistribution: Record<string, number>;
   typeBreakdown: Record<string, number>;
+  rarityBreakdown: Record<string, number>;
+  categoryBreakdown: Record<string, number>;
+  landCount: number;
+  nonlandCount: number;
   totalValue: number;
   averageCmc: number;
+  topCards: { name: string; price: number; imageUri?: string }[];
+  uniqueCards: number;
 }
