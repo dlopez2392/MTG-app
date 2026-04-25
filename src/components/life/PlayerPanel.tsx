@@ -201,7 +201,7 @@ export default function PlayerPanel({
       />
 
       {/* ── Life total + player name — centered ── */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">
+      <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[5]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
           <span
             className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
@@ -270,6 +270,45 @@ export default function PlayerPanel({
             {player.name}
           </span>
 
+          {/* Turn timer — inline below name, rotates with panel */}
+          {turnTimer && (
+            <div
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg mt-2 px-2.5 py-1.5"
+              style={{ zIndex: 10, minHeight: "44px" }}
+            >
+              <span className="font-black uppercase tracking-wider text-accent/90 pl-1 text-[11px]">
+                T{turnTimer.turnNumber}
+              </span>
+              <span className="font-bold tabular-nums text-white text-base" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
+                className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all"
+              >
+                {turnTimer.running ? (
+                  <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
+                className="rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform px-4 text-[10px] h-10"
+              >
+                Next
+              </button>
+              {!turnTimer.running && (
+                <span className="font-bold uppercase tracking-widest text-amber-400/80 pr-1 text-[9px]">Paused</span>
+              )}
+            </div>
+          )}
 
         </div>
       </div>
@@ -298,50 +337,6 @@ export default function PlayerPanel({
       )}
 
       </div>{/* end rotation wrapper */}
-
-      {/* ── Turn timer — outside rotation wrapper, individually rotated ── */}
-      {turnTimer && (
-        <div className="absolute z-20 pointer-events-auto" style={{
-          transform: `translateX(-50%) rotate(${rotation}deg)`,
-          ...(isSideways
-            ? { top: "50%", left: "50%", marginTop: "-20px" }
-            : { top: "12px", left: "50%" }),
-        }}>
-          <div className="flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg px-2.5 py-1.5" style={{ minHeight: "44px" }}>
-            <span className="font-black uppercase tracking-wider text-accent/90 pl-1 text-[11px]">
-              T{turnTimer.turnNumber}
-            </span>
-            <span className="font-bold tabular-nums text-white text-base" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-              {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
-              className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all"
-            >
-              {turnTimer.running ? (
-                <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
-              className="rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform px-4 text-[10px] h-10"
-            >
-              Next
-            </button>
-            {!turnTimer.running && (
-              <span className="font-bold uppercase tracking-widest text-amber-400/80 pr-1 text-[9px]">Paused</span>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* ── Counter badges — positioned on panel, rotated to face player ── */}
       <div className="absolute z-20 flex flex-col gap-2" style={{
