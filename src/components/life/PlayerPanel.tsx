@@ -247,27 +247,27 @@ export default function PlayerPanel({
 
           {/* Turn timer — inline below name, rotates with panel */}
           {turnTimer && (
-            <div className={cn(
-              "pointer-events-auto flex items-center rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg mt-2",
-              compact ? "gap-1 px-1 py-0.5" : "gap-1.5 px-1.5 py-1",
-            )} style={{ zIndex: 10 }}>
-              <span className={cn("font-black uppercase tracking-wider text-accent/90 pl-1.5", compact ? "text-[9px]" : "text-[11px]")}>
+            <div
+              className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg mt-2 px-2 py-1"
+              style={{ zIndex: 10, minHeight: "36px" }}
+            >
+              <span className="font-black uppercase tracking-wider text-accent/90 pl-1 text-[11px]">
                 T{turnTimer.turnNumber}
               </span>
-              <span className={cn("font-bold tabular-nums text-white", compact ? "text-xs" : "text-base")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+              <span className="font-bold tabular-nums text-white text-base" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
                 {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
               </span>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
-                className={cn("rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30", compact ? "w-5 h-5" : "w-7 h-7")}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30"
               >
                 {turnTimer.running ? (
-                  <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-accent" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
                   </svg>
                 ) : (
-                  <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-accent" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 )}
@@ -275,12 +275,12 @@ export default function PlayerPanel({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
-                className={cn("rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform z-30", compact ? "px-2 py-0.5 text-[8px]" : "px-3 py-1 text-[10px]")}
+                className="rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform z-30 px-3 py-1.5 text-[10px]"
               >
                 Next
               </button>
               {!turnTimer.running && (
-                <span className={cn("font-bold uppercase tracking-widest text-amber-400/80 pr-1", compact ? "text-[7px]" : "text-[8px]")}>Paused</span>
+                <span className="font-bold uppercase tracking-widest text-amber-400/80 pr-1 text-[8px]">Paused</span>
               )}
             </div>
           )}
@@ -340,8 +340,20 @@ export default function PlayerPanel({
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
           className={cn("flex items-center rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform", compact ? "gap-1 px-1.5 py-1" : "gap-1.5 px-2.5 py-1.5")}
         >
-          <svg className={cn(compact ? "w-4 h-4" : "w-6 h-6", "text-white/70 flex-shrink-0")} fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 3.18l1.87 3.78L18 8.8l-3 2.93.71 4.12L12 13.77l-3.71 2.08.71-4.12-3-2.93 4.13-.84L12 4.18z" />
+          <svg className={cn(compact ? "w-5 h-5" : "w-7 h-7", "flex-shrink-0")} viewBox="0 0 120 110">
+            <defs>
+              <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#E8D078"/>
+                <stop offset="40%" stopColor="#C8A040"/>
+                <stop offset="100%" stopColor="#987020"/>
+              </linearGradient>
+            </defs>
+            {/* Center facet */}
+            <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+            {/* Left facet */}
+            <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+            {/* Right facet */}
+            <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
           </svg>
           {cmdrTotal > 0 && (
             <span className={cn("font-bold tabular-nums", compact ? "text-xs" : "text-sm", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
