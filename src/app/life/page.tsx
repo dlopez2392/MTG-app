@@ -424,10 +424,12 @@ export default function LifePage() {
         {/* ── Center menu button + game countdown timer (horizontal, on dividing line) ── */}
         {!choosingStarter && (
           <div className={cn(
-            "absolute z-20 flex items-center gap-2",
+            "absolute z-20 flex items-center gap-2 left-1/2 -translate-x-1/2 -translate-y-1/2",
             playerCount === 1
-              ? "top-4 left-4"
-              : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              ? "top-4 left-4 translate-x-0 translate-y-0"
+              : playerCount >= 5
+                ? "top-[33.3%]"
+                : "top-1/2"
           )}>
             <button
               type="button"
