@@ -110,6 +110,42 @@ export default function LifePage() {
       .map((c) => c.i);
   }, []);
 
+  // Screen Wake Lock — keep screen on during game
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const requestWakeLock = useCallback(async () => {
+    if ("wakeLock" in navigator) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+      } catch {}
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release().catch(() => {});
+      wakeLockRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gameStarted) {
+      requestWakeLock();
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === "visible" && gameStarted) {
+          requestWakeLock();
+        }
+      };
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+        releaseWakeLock();
+      };
+    } else {
+      releaseWakeLock();
+    }
+  }, [gameStarted, requestWakeLock, releaseWakeLock]);
+
   const supportsNativeFullscreen =
     typeof document !== "undefined" &&
     "requestFullscreen" in document.documentElement;
