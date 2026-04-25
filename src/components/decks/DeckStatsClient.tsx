@@ -9,6 +9,7 @@ import ManaCurveChart from "@/components/decks/stats/ManaCurveChart";
 import ColorPieChart from "@/components/decks/stats/ColorPieChart";
 import TypeBreakdown from "@/components/decks/stats/TypeBreakdown";
 import DeckIntelligence from "@/components/decks/stats/DeckIntelligence";
+import DeckCoach from "@/components/decks/stats/DeckCoach";
 import type { Deck, DeckStats } from "@/types/deck";
 
 const RARITY_COLORS: Record<string, { bg: string; text: string; glow: string }> = {
@@ -300,6 +301,11 @@ export default function DeckStatsClient({ deckId }: Props) {
                 ))}
               </div>
             </GlassSection>
+          )}
+
+          {/* ── AI Deck Coach ── */}
+          {cards && cards.length > 0 && (
+            <DeckCoach cards={cards} deckName={deck?.name ?? "Untitled"} format={deck?.format ?? "commander"} />
           )}
 
           {/* ── Deck Intelligence ── */}
