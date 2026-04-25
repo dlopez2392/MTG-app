@@ -150,13 +150,15 @@ export default function PlayerPanel({
           }),
         }}
       >
-      {/* Art background */}
+      {/* Art background — oversized to guarantee full coverage */}
       {artUrl && (
-        <img
-          src={artUrl} alt="" aria-hidden
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
-        />
+        <div className="absolute inset-[-20%] pointer-events-none" style={{ opacity: 0.55 }}>
+          <img
+            src={artUrl} alt="" aria-hidden
+            className="w-full h-full object-cover"
+            style={{ filter: "saturate(1.3) brightness(0.7)" }}
+          />
+        </div>
       )}
 
       {/* Edge vignette */}
