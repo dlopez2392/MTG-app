@@ -223,20 +223,46 @@ export default function PlayerPanel({
       {/* ── Life total + player name — centered ── */}
       <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[5]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
-          <span
-            className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
-            style={{
-              fontFamily: "'Arial', 'Helvetica', sans-serif",
-              fontWeight: 400,
-              letterSpacing: "0.02em",
-              color: "#fff",
-              textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)",
-              position: "relative",
-              zIndex: 2,
-            }}
-          >
-            {player.life}
-          </span>
+          <div className="flex items-center gap-1" style={{ position: "relative", zIndex: 2 }}>
+            {/* Commander icon — left of life total */}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
+              className="pointer-events-auto flex items-center gap-0.5 active:scale-90 transition-transform"
+              style={{ opacity: cmdrTotal > 0 ? 0.9 : 0.45 }}
+            >
+              <svg className={cn(compact ? "w-4 h-4" : "w-5 h-5")} viewBox="0 0 120 110">
+                <defs>
+                  <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#E8D078"/>
+                    <stop offset="40%" stopColor="#C8A040"/>
+                    <stop offset="100%" stopColor="#987020"/>
+                  </linearGradient>
+                </defs>
+                <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+                <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+                <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
+              </svg>
+              {cmdrTotal > 0 && (
+                <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
+                  {cmdrTotal}
+                </span>
+              )}
+            </button>
+
+            <span
+              className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
+              style={{
+                fontFamily: "'Arial', 'Helvetica', sans-serif",
+                fontWeight: 400,
+                letterSpacing: "0.02em",
+                color: "#fff",
+                textShadow: "0 2px 4px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.6), 0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)",
+              }}
+            >
+              {player.life}
+            </span>
+          </div>
 
           {/* Delta indicator */}
           {delta !== null && (
@@ -443,39 +469,6 @@ export default function PlayerPanel({
             <span className="text-sm font-bold tabular-nums text-white/80">{player.dungeonLevel}</span>
           </button>
         )}
-      </div>
-
-      {/* ── Commander damage button — small, tucked into corner ── */}
-      <div className="absolute z-20" style={{
-        transform: `rotate(${rotation}deg)`,
-        ...(isSideways
-          ? { bottom: "50%", right: "4px", transformOrigin: "right center", marginBottom: "-14px" }
-          : { bottom: "6px", right: "6px" }),
-      }}>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-          className="flex items-center gap-1 rounded-full bg-black/40 backdrop-blur-sm active:scale-90 transition-transform px-2 py-1.5"
-          style={{ opacity: cmdrTotal > 0 ? 0.9 : 0.5 }}
-        >
-          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 120 110">
-            <defs>
-              <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#E8D078"/>
-                <stop offset="40%" stopColor="#C8A040"/>
-                <stop offset="100%" stopColor="#987020"/>
-              </linearGradient>
-            </defs>
-            <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-            <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-            <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-          </svg>
-          {cmdrTotal > 0 && (
-            <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
-              {cmdrTotal}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* ── Commander damage overlay ── */}
