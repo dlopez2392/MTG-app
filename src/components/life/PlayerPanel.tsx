@@ -223,7 +223,7 @@ export default function PlayerPanel({
       {/* ── Life total + player name — centered ── */}
       <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[5]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
-          <div className="flex items-center gap-4" style={{ position: "relative", zIndex: 2 }}>
+          <div className="flex items-center gap-8" style={{ position: "relative", zIndex: 2 }}>
             {/* Commander icon — left of life total */}
             <button
               type="button"
