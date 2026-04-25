@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { formatBanListForPrompt } from "@/lib/data/bannedCards";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
@@ -48,6 +49,7 @@ You receive a decklist with local analysis signals already computed. Your job is
 2. Identify specific win conditions and how fast they can close
 3. Flag any "spicy" inclusions worth mentioning in a Rule 0 conversation
 4. Generate upgrade suggestions that show bracket-shift boundaries
+5. CRITICAL: You will be given the format's banned and restricted list. NEVER suggest banned cards in upgrade paths. If the deck already contains banned cards, flag them in spicyInclusions. Only suggest cards that are LEGAL in the specified format.
 
 Respond ONLY with valid JSON matching this structure:
 {
@@ -103,6 +105,8 @@ function buildDeckSummary(req: BracketRequest): string {
   summary += `  Avg CMC: ${req.localSignals.avgCmc.toFixed(2)}\n`;
   summary += `  Lands: ${req.localSignals.landCount}/${req.localSignals.totalCards}\n`;
   summary += `  Interaction Count: ${req.localSignals.interactionCount}\n`;
+
+  summary += `\n${formatBanListForPrompt("commander")}\n`;
 
   summary += `\nFull Decklist:\n`;
   for (const c of mainCards) {

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { formatBanListForPrompt } from "@/lib/data/bannedCards";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 
@@ -121,6 +122,8 @@ Respond ONLY with valid JSON matching this exact structure:
   "topPriority": ["most important change 1", "most important change 2", "most important change 3"]
 }
 
+CRITICAL: You will be given the format's banned and restricted card list. NEVER suggest banned cards as upgrades or additions. Only suggest cards that are LEGAL in the specified format. If the deck already contains banned cards, mention this in your analysis.
+
 Be specific with card names. Reference actual MTG cards that exist and are legal in the given format. Keep suggestions practical and actionable. Do NOT wrap the JSON in markdown code fences.`;
 
 export async function POST(req: Request) {
@@ -139,11 +142,12 @@ export async function POST(req: Request) {
 
   try {
     const deckSummary = buildDeckSummary(body);
+    const banList = formatBanListForPrompt(body.format || "commander");
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent({
       contents: [
-        { role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\nAnalyze this decklist:\n\n${deckSummary}` }] },
+        { role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\n${banList}\n\nAnalyze this decklist:\n\n${deckSummary}` }] },
       ],
       generationConfig: {
         temperature: 0.7,
