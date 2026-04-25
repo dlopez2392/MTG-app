@@ -144,14 +144,28 @@ export default function PlayerPanel({
   return (
     <div
       className={cn(
-        "relative select-none overflow-hidden rounded-2xl transition-transform duration-300",
+        "relative select-none overflow-hidden rounded-lg transition-transform duration-300",
         className
       )}
       style={{
         backgroundColor: `${player.color}B3`,
       }}
     >
-      {/* Rotated content wrapper — rotates everything so content faces outward */}
+      {/* Art background — outside rotation wrapper so it fills the actual panel */}
+      {artUrl && (
+        <img
+          src={artUrl} alt="" aria-hidden
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
+        />
+      )}
+
+      {/* Edge vignette */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)`,
+      }} />
+
+      {/* Rotated content wrapper — rotates text/buttons so content faces outward */}
       <div
         className="absolute inset-0"
         style={
@@ -167,20 +181,6 @@ export default function PlayerPanel({
               : undefined
         }
       >
-      {/* Art background */}
-      {artUrl && (
-        <img
-          src={artUrl} alt="" aria-hidden
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
-        />
-      )}
-
-      {/* Edge vignette */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: `linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.4) 100%),
-                     linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.25) 100%)`,
-      }} />
 
       {/* ── Tap zones (no visible buttons) ── */}
       <button

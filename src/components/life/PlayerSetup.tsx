@@ -40,10 +40,7 @@ export function getOutwardRotation(panel: { x: number; y: number; w: number; h: 
   const cy = panel.y + panel.h / 2;
   if (panel.w >= 0.9) return cy < 0.5 ? 180 : 0;
   if (panel.h >= 0.9) return cx < 0.5 ? 90 : -90;
-  const dx = Math.abs(cx - 0.5);
-  const dy = Math.abs(cy - 0.5);
-  if (dx > dy) return cx < 0.5 ? 90 : -90;
-  return cy < 0.5 ? 180 : 0;
+  return cx < 0.5 ? 90 : -90;
 }
 
 export interface GameOptions {
