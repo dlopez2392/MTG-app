@@ -58,7 +58,10 @@ async function fetchArchidekt(format: string, page: number, query: string): Prom
   if (query) params.set("name", query);
 
   const res = await fetch(`${ARCHIDEKT_API}?${params}`, {
-    headers: { Accept: "application/json", "User-Agent": "MTGHoudini/1.0" },
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
+    },
     next: { revalidate: 600 },
   });
 
@@ -103,7 +106,7 @@ interface EdhrecCommander {
 async function fetchEdhrec(page: number, query: string): Promise<ExploreResult> {
   const res = await fetch("https://json.edhrec.com/pages/commanders/year.json", {
     headers: {
-      "User-Agent": "MTGHoudini/1.0",
+      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
       "Referer": "https://edhrec.com/",
     },
     next: { revalidate: 600 },
@@ -179,7 +182,7 @@ async function fetchMtgTop8(format: string, page: number, query: string): Promis
 
   const url = `https://mtgtop8.com/format?f=${fmt}${pageParam}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "MTGHoudini/1.0" },
+    headers: { "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)" },
     next: { revalidate: 600 },
   });
 
@@ -272,35 +275,31 @@ async function fetchMoxfield(format: string, page: number, query: string): Promi
   if (query) params.set("q", query);
 
   const res = await fetch(`https://api2.moxfield.com/v2/decks/search?${params}`, {
-    headers: { Accept: "application/json", "User-Agent": "MTGHoudini/1.0" },
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
+      "Referer": "https://www.moxfield.com/",
+      "Origin": "https://www.moxfield.com",
+    },
     next: { revalidate: 600 },
   });
 
   if (!res.ok) throw new Error(`Moxfield ${res.status}`);
   const data = await res.json();
 
-  const decks: ExploreDeck[] = (data.data ?? []).map((d: MoxfieldDeckSummary) => {
-    const colors = (d.colors ?? []).map((c: string) => c.toUpperCase());
-
-    let featuredArt: string | null = null;
-    if (d.mainCardId) {
-      featuredArt = `https://api.scryfall.com/cards/${d.mainCardId}?format=image&version=art_crop`;
-    }
-
-    return {
-      id: `moxfield-${d.publicId}`,
-      name: d.name,
-      format,
-      colors,
-      viewCount: d.viewCount ?? 0,
-      cardCount: d.mainboardCount ?? 0,
-      owner: d.createdByUser?.userName ?? "Unknown",
-      featuredArt,
-      source: "moxfield",
-      sourceUrl: `https://www.moxfield.com/decks/${d.publicId}`,
-      updatedAt: d.lastUpdatedAtUtc ?? new Date().toISOString(),
-    };
-  });
+  const decks: ExploreDeck[] = (data.data ?? []).map((d: MoxfieldDeckSummary) => ({
+    id: `moxfield-${d.publicId}`,
+    name: d.name,
+    format,
+    colors: (d.colors ?? []).map((c: string) => c.toUpperCase()),
+    viewCount: d.viewCount ?? 0,
+    cardCount: d.mainboardCount ?? 0,
+    owner: d.createdByUser?.userName ?? "Unknown",
+    featuredArt: null,
+    source: "moxfield",
+    sourceUrl: `https://www.moxfield.com/decks/${d.publicId}`,
+    updatedAt: d.lastUpdatedAtUtc ?? new Date().toISOString(),
+  }));
 
   const totalPages = data.totalPages ?? 1;
 
@@ -347,9 +346,10 @@ export async function GET(req: Request) {
 
     cache.set(cacheKey, { data: result, expiry: Date.now() + CACHE_TTL });
     return NextResponse.json(result);
-  } catch {
+  } catch (err) {
+    console.error(`[explore-decks] ${source} error:`, err);
     return NextResponse.json(
-      { error: "Failed to fetch explore decks" },
+      { error: `Failed to fetch from ${source}` },
       { status: 502 }
     );
   }
