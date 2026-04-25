@@ -400,10 +400,10 @@ export default function LifePage() {
           </div>
         )}
 
-        {/* ── Center menu + game timer ── */}
+        {/* ── Center menu button ── */}
         {!choosingStarter && (
           <div className={cn(
-            "absolute z-20 flex items-center gap-2",
+            "absolute z-20",
             playerCount === 1
               ? "top-4 left-4"
               : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -418,11 +418,14 @@ export default function LifePage() {
               </svg>
             </button>
 
-            {/* Game countdown timer — gradient border pill */}
+            {/* Game countdown timer — rotated 90° so it doesn't block players */}
             {gameOptions.gameTimer && !showMenu && (
               <div
-                className="rounded-full p-[2px] shadow-lg flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}
+                className="absolute left-1/2 -translate-x-1/2 mt-2 rounded-full p-[2px] shadow-lg flex-shrink-0"
+                style={{
+                  background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
+                  transform: playerCount >= 2 ? "translateX(-50%) rotate(90deg)" : "translateX(-50%)",
+                }}
               >
                 <div className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
