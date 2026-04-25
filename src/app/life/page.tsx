@@ -408,38 +408,40 @@ export default function LifePage() {
               ? "top-4 left-4"
               : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
           )}>
-            <button
-              type="button"
-              onClick={() => setShowMenu(!showMenu)}
-              className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg flex-shrink-0"
-            >
-              <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-              </svg>
-            </button>
-
-            {/* Game countdown timer — rotated 90° so it doesn't block players */}
-            {gameOptions.gameTimer && !showMenu && (
-              <div
-                className="absolute left-1/2 -translate-x-1/2 mt-2 rounded-full p-[2px] shadow-lg flex-shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
-                  transform: playerCount >= 2 ? "translateX(-50%) rotate(90deg)" : "translateX(-50%)",
-                }}
+            <div className="flex flex-col items-center gap-8">
+              <button
+                type="button"
+                onClick={() => setShowMenu(!showMenu)}
+                className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg flex-shrink-0"
               >
-                <div className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
-                  gameSecondsLeft <= 300 && "bg-red-950/90"
-                )}>
-                  <svg className={cn("w-3.5 h-3.5 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className={cn("text-xs font-bold tabular-nums", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/80")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-                    {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
-                  </span>
+                <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                </svg>
+              </button>
+
+              {/* Game countdown timer — directly below the menu button */}
+              {gameOptions.gameTimer && !showMenu && (
+                <div
+                  className="rounded-full p-[2px] shadow-lg flex-shrink-0"
+                  style={{
+                    background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
+                    transform: "rotate(90deg)",
+                  }}
+                >
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
+                    gameSecondsLeft <= 300 && "bg-red-950/90"
+                  )}>
+                    <svg className={cn("w-3.5 h-3.5 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className={cn("text-xs font-bold tabular-nums", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/80")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                      {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {showMenu && (
               <div className={cn(
