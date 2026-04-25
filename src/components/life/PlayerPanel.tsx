@@ -105,10 +105,10 @@ export default function PlayerPanel({
         .then((card) => {
           if (cancelled) return;
           const url =
-            card?.image_uris?.art_crop ??
-            card?.card_faces?.[0]?.image_uris?.art_crop ??
             card?.image_uris?.large ??
             card?.card_faces?.[0]?.image_uris?.large ??
+            card?.image_uris?.png ??
+            card?.card_faces?.[0]?.image_uris?.png ??
             null;
           if (url) {
             setArtUrl(url);
@@ -206,13 +206,13 @@ export default function PlayerPanel({
           }),
         }}
       >
-      {/* Art background — oversized to guarantee full coverage on all panel shapes */}
+      {/* Art background — scaled to fill entire panel */}
       {artUrl && (
-        <div className="absolute pointer-events-none" style={{ inset: "-40%", opacity: 0.55 }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.55 }}>
           <img
             src={artUrl} alt="" aria-hidden
-            className="w-full h-full object-cover"
-            style={{ filter: "saturate(1.3) brightness(0.7)" }}
+            className="absolute w-full h-full object-cover"
+            style={{ filter: "saturate(1.3) brightness(0.7)", top: "50%", left: "50%", transform: "translate(-50%, -50%)", minWidth: "100%", minHeight: "100%" }}
           />
         </div>
       )}
