@@ -51,7 +51,7 @@ export default function LifePage() {
     turnTimer: false,
     gameTimer: false,
     gameTimerMinutes: 90,
-    layout: "2-side",
+    layout: "2-stack",
   });
 
   // Game timer (counts down)
