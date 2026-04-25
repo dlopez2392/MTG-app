@@ -226,11 +226,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
       <div className="px-4 pt-12 pb-20">
         <button
           onClick={() => router.back()}
-          className="mb-4 w-8 h-8 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all"
-          style={{
-            background: "linear-gradient(135deg, rgba(124,92,252,0.3), rgba(124,92,252,0.1))",
-            boxShadow: "0 2px 8px rgba(124,92,252,0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
-          }}
+          className="mb-4 w-8 h-8 rounded-xl flex items-center justify-center text-white btn-gradient active:scale-90 transition-all"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -275,12 +271,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
         {/* Back button overlay */}
         <button
           onClick={() => router.back()}
-          className="absolute top-4 left-4 w-9 h-9 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all z-10"
-          style={{
-            background: "linear-gradient(135deg, rgba(124,92,252,0.5), rgba(124,92,252,0.2))",
-            boxShadow: "0 2px 10px rgba(124,92,252,0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
-            backdropFilter: "blur(8px)",
-          }}
+          className="absolute top-4 left-4 w-9 h-9 rounded-xl flex items-center justify-center text-white btn-gradient active:scale-90 transition-all z-10"
         >
           <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
