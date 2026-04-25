@@ -223,13 +223,13 @@ export default function PlayerPanel({
       {/* ── Life total + player name — centered ── */}
       <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[5]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
-          <div className="flex items-center gap-8" style={{ position: "relative", zIndex: 2 }}>
-            {/* Commander icon — left of life total */}
+          <div style={{ position: "relative", zIndex: 2 }}>
+            {/* Commander icon — absolutely positioned to the left of life total */}
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-              className="pointer-events-auto flex items-center gap-1 active:scale-90 transition-transform"
-              style={{ opacity: cmdrTotal > 0 ? 1 : 0.6 }}
+              className="pointer-events-auto absolute flex items-center gap-1 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
+              style={{ opacity: cmdrTotal > 0 ? 1 : 0.6, right: "calc(100% + 16px)" }}
             >
               <svg className={cn(compact ? "w-6 h-6" : "w-7 h-7")} viewBox="0 0 120 110">
                 <defs>
