@@ -233,6 +233,85 @@ async function fetchMtgTop8(format: string, page: number, query: string): Promis
   };
 }
 
+// ── Moxfield ──
+
+const MOXFIELD_FORMAT_MAP: Record<string, string> = {
+  commander: "commander",
+  standard: "standard",
+  modern: "modern",
+  pioneer: "pioneer",
+  pauper: "pauper",
+  legacy: "legacy",
+  vintage: "vintage",
+};
+
+interface MoxfieldDeckSummary {
+  publicId: string;
+  name: string;
+  format: string;
+  colors: string[];
+  viewCount: number;
+  mainboardCount: number;
+  createdByUser: { userName: string };
+  mainCardId?: string;
+  publicUrl: string;
+  lastUpdatedAtUtc: string;
+}
+
+async function fetchMoxfield(format: string, page: number, query: string): Promise<ExploreResult> {
+  const fmt = MOXFIELD_FORMAT_MAP[format] ?? "commander";
+  const pageSize = 20;
+
+  const params = new URLSearchParams({
+    pageNumber: String(page),
+    pageSize: String(pageSize),
+    sortType: "views",
+    sortDirection: "descending",
+    fmt,
+  });
+  if (query) params.set("q", query);
+
+  const res = await fetch(`https://api2.moxfield.com/v2/decks/search?${params}`, {
+    headers: { Accept: "application/json", "User-Agent": "MTGHoudini/1.0" },
+    next: { revalidate: 600 },
+  });
+
+  if (!res.ok) throw new Error(`Moxfield ${res.status}`);
+  const data = await res.json();
+
+  const decks: ExploreDeck[] = (data.data ?? []).map((d: MoxfieldDeckSummary) => {
+    const colors = (d.colors ?? []).map((c: string) => c.toUpperCase());
+
+    let featuredArt: string | null = null;
+    if (d.mainCardId) {
+      featuredArt = `https://api.scryfall.com/cards/${d.mainCardId}?format=image&version=art_crop`;
+    }
+
+    return {
+      id: `moxfield-${d.publicId}`,
+      name: d.name,
+      format,
+      colors,
+      viewCount: d.viewCount ?? 0,
+      cardCount: d.mainboardCount ?? 0,
+      owner: d.createdByUser?.userName ?? "Unknown",
+      featuredArt,
+      source: "moxfield",
+      sourceUrl: `https://www.moxfield.com/decks/${d.publicId}`,
+      updatedAt: d.lastUpdatedAtUtc ?? new Date().toISOString(),
+    };
+  });
+
+  const totalPages = data.totalPages ?? 1;
+
+  return {
+    decks,
+    totalCount: data.totalResults ?? decks.length,
+    hasMore: page < totalPages,
+    page,
+  };
+}
+
 // ── Cache ──
 
 const cache = new Map<string, { data: unknown; expiry: number }>();
@@ -260,6 +339,8 @@ export async function GET(req: Request) {
       result = await fetchEdhrec(page, query);
     } else if (source === "mtgtop8") {
       result = await fetchMtgTop8(format, page, query);
+    } else if (source === "moxfield") {
+      result = await fetchMoxfield(format, page, query);
     } else {
       result = await fetchArchidekt(format, page, query);
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import ManaSymbol from "@/components/cards/ManaSymbol";
 import { cn } from "@/lib/utils/cn";
 
@@ -26,9 +27,10 @@ interface ExploreResult {
 }
 
 const SOURCES = [
-  { key: "archidekt", label: "Archidekt", color: "#8B5CF6" },
-  { key: "edhrec", label: "EDHREC", color: "#22C55E" },
-  { key: "mtgtop8", label: "MTGTop8", color: "#F59E0B" },
+  { key: "archidekt", label: "Archidekt", color: "#8B5CF6", importable: true },
+  { key: "moxfield", label: "Moxfield", color: "#3B82F6", importable: true },
+  { key: "edhrec", label: "EDHREC", color: "#22C55E", importable: false },
+  { key: "mtgtop8", label: "MTGTop8", color: "#F59E0B", importable: false },
 ];
 
 const FORMATS = [
@@ -54,29 +56,35 @@ function sourceColor(source: string) {
   return SOURCES.find((s) => s.key === source)?.color ?? "#888";
 }
 
-function ExploreCard({ deck }: { deck: ExploreDeck }) {
+function ExploreCard({ deck, onImport, importing }: { deck: ExploreDeck; onImport?: (deck: ExploreDeck) => void; importing?: boolean }) {
+  const canImport = SOURCES.find((s) => s.key === deck.source)?.importable ?? false;
+
   return (
-    <a
-      href={deck.sourceUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-bg-card group block transition-transform duration-150 hover:scale-[1.03] active:scale-100"
+    <div
+      className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-bg-card group transition-transform duration-150 hover:scale-[1.03] active:scale-100"
       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
     >
-      {deck.featuredArt ? (
-        <img src={deck.featuredArt} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-bg-card to-bg-hover flex items-center justify-center">
-          <svg className="w-10 h-10 text-text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-        </div>
-      )}
+      <a
+        href={deck.sourceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute inset-0"
+      >
+        {deck.featuredArt ? (
+          <img src={deck.featuredArt} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-bg-card to-bg-hover flex items-center justify-center">
+            <svg className="w-10 h-10 text-text-muted/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+        )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+      </a>
 
       {/* Source + views badge */}
-      <div className="absolute top-2 left-2 right-2 flex items-center gap-1.5">
+      <div className="absolute top-2 left-2 right-2 flex items-center gap-1.5 pointer-events-none">
         <span
           className="px-1.5 py-0.5 rounded-md text-[9px] text-white font-medium uppercase tracking-wider"
           style={{ background: sourceColor(deck.source) + "CC" }}
@@ -94,7 +102,26 @@ function ExploreCard({ deck }: { deck: ExploreDeck }) {
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2">
+      {/* Import button */}
+      {canImport && onImport && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onImport(deck); }}
+          disabled={importing}
+          className="absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center text-white hover:bg-accent transition-colors active:scale-90 disabled:opacity-50"
+          title="Import to My Decks"
+        >
+          {importing ? (
+            <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+          ) : (
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m0 0l6.75-6.75M12 19.5l-6.75-6.75" />
+            </svg>
+          )}
+        </button>
+      )}
+
+      <div className="absolute bottom-0 left-0 right-0 p-3 flex items-end justify-between gap-2 pointer-events-none">
         <div className="min-w-0">
           <p className="font-display text-white font-bold text-xs uppercase tracking-wide truncate leading-tight">
             {deck.name}
@@ -112,11 +139,24 @@ function ExploreCard({ deck }: { deck: ExploreDeck }) {
           </div>
         )}
       </div>
-    </a>
+    </div>
   );
 }
 
+function extractDeckId(deck: ExploreDeck): string | null {
+  if (deck.source === "archidekt") {
+    const match = deck.id.match(/archidekt-(\d+)/);
+    return match?.[1] ?? null;
+  }
+  if (deck.source === "moxfield") {
+    const match = deck.id.match(/moxfield-(.+)/);
+    return match?.[1] ?? null;
+  }
+  return null;
+}
+
 export default function ExploreDecks() {
+  const router = useRouter();
   const [source, setSource] = useState("archidekt");
   const [format, setFormat] = useState("commander");
   const [search, setSearch] = useState("");
@@ -126,6 +166,8 @@ export default function ExploreDecks() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [importingId, setImportingId] = useState<string | null>(null);
+  const [importStatus, setImportStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -155,6 +197,42 @@ export default function ExploreDecks() {
   useEffect(() => {
     fetchDecks(1);
   }, [fetchDecks]);
+
+  const handleImport = useCallback(async (deck: ExploreDeck) => {
+    const externalId = extractDeckId(deck);
+    if (!externalId) return;
+
+    setImportingId(deck.id);
+    setImportStatus(null);
+
+    try {
+      const res = await fetch("/api/import-deck", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: deck.source, deckId: externalId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setImportStatus({ type: "error", message: data.error ?? "Import failed" });
+        return;
+      }
+
+      setImportStatus({
+        type: "success",
+        message: `Imported "${data.name}" — ${data.importedCards} cards${data.skippedCards > 0 ? ` (${data.skippedCards} skipped)` : ""}`,
+      });
+
+      setTimeout(() => {
+        router.push(`/decks/${data.deckId}`);
+      }, 1500);
+    } catch {
+      setImportStatus({ type: "error", message: "Network error. Try again." });
+    } finally {
+      setImportingId(null);
+    }
+  }, [router]);
 
   const isEdhrec = source === "edhrec";
 
@@ -212,6 +290,34 @@ export default function ExploreDecks() {
         />
       </div>
 
+      {/* Import status toast */}
+      {importStatus && (
+        <div
+          className={cn(
+            "rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2",
+            importStatus.type === "success"
+              ? "bg-green-500/10 border border-green-500/20 text-green-400"
+              : "bg-red-500/10 border border-red-500/20 text-red-400"
+          )}
+        >
+          {importStatus.type === "success" ? (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+          )}
+          {importStatus.message}
+          <button onClick={() => setImportStatus(null)} className="ml-auto text-white/40 hover:text-white/70">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Results */}
       {error ? (
         <div className="text-center py-8">
@@ -235,7 +341,7 @@ export default function ExploreDecks() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {decks.map((deck) => (
-              <ExploreCard key={deck.id} deck={deck} />
+              <ExploreCard key={deck.id} deck={deck} onImport={handleImport} importing={importingId === deck.id} />
             ))}
           </div>
 
