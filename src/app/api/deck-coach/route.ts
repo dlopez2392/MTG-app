@@ -139,7 +139,7 @@ export async function POST(req: Request) {
 
   try {
     const deckSummary = buildDeckSummary(body);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-05-20" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const result = await model.generateContent({
       contents: [
