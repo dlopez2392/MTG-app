@@ -130,22 +130,32 @@ export default function PlayerPanel({
         backgroundColor: `${player.color}B3`,
       }}
     >
-      {/* Art background — rotated to face same direction as content, scaled to cover */}
+      {/* Rotated content wrapper — rotates everything so content faces outward */}
+      <div
+        className="absolute overflow-hidden"
+        style={{
+          ...(isSideways ? {
+            width: "200%",
+            height: "200%",
+            top: "-50%",
+            left: "-50%",
+            transform: `rotate(${rotation}deg)`,
+            transformOrigin: "center center",
+          } : rotation === 180 ? {
+            inset: 0,
+            transform: "rotate(180deg)",
+            transformOrigin: "center center",
+          } : {
+            inset: 0,
+          }),
+        }}
+      >
+      {/* Art background */}
       {artUrl && (
         <img
           src={artUrl} alt="" aria-hidden
-          className="absolute pointer-events-none"
-          style={{
-            opacity: 0.55,
-            filter: "saturate(1.3) brightness(0.7)",
-            width: isSideways ? "150%" : "100%",
-            height: isSideways ? "150%" : "100%",
-            top: isSideways ? "-25%" : "0",
-            left: isSideways ? "-25%" : "0",
-            objectFit: "cover",
-            transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined,
-            transformOrigin: "center center",
-          }}
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
         />
       )}
 
@@ -153,23 +163,6 @@ export default function PlayerPanel({
       <div className="absolute inset-0 pointer-events-none" style={{
         background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)`,
       }} />
-
-      {/* Rotated content wrapper — rotates text/buttons so content faces outward */}
-      <div
-        className="absolute inset-0"
-        style={
-          isSideways
-            ? {
-                width: "100%",
-                height: "100%",
-                transform: `rotate(${rotation}deg)`,
-                transformOrigin: "center center",
-              }
-            : rotation === 180
-              ? { transform: "rotate(180deg)", transformOrigin: "center center" }
-              : undefined
-        }
-      >
 
       {/* ── Tap zones (no visible buttons) ── */}
       <button
@@ -321,20 +314,21 @@ export default function PlayerPanel({
         </div>
       )}
 
-      {/* ── Poison counter ── */}
-      <div className="absolute z-20 flex items-center gap-1 bottom-3 left-3">
+      </div>{/* end rotation wrapper */}
+
+      {/* ── Poison counter — positioned on panel, rotated to face player ── */}
+      <div className="absolute z-20 bottom-3 left-3" style={{ transform: `rotate(${rotation}deg)` }}>
         {showPoisonCounters && onPoisonChange && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPoisonChange(1); }}
-            className={cn("flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform", compact ? "px-1 py-0.5" : "px-1.5 py-1")}
+            className="flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform px-1.5 py-1"
           >
-            <svg className={cn(compact ? "w-3 h-3" : "w-4 h-4", "text-green-400 flex-shrink-0")} fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
             </svg>
             <span className={cn(
-              "font-bold tabular-nums",
-              compact ? "text-[10px]" : "text-xs",
+              "text-xs font-bold tabular-nums",
               player.poisonCounters >= 10 ? "text-red-400" : "text-white/80"
             )}>
               {player.poisonCounters}
@@ -343,14 +337,14 @@ export default function PlayerPanel({
         )}
       </div>
 
-      {/* ── Commander damage button ── */}
-      <div className="absolute z-20 flex items-center gap-1 bottom-3 right-3">
+      {/* ── Commander damage button — positioned on panel, rotated to face player ── */}
+      <div className="absolute z-20 bottom-3 right-3" style={{ transform: `rotate(${rotation}deg)` }}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-          className={cn("flex items-center rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform", compact ? "gap-1 px-1.5 py-1" : "gap-1.5 px-2.5 py-1.5")}
+          className="flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-1.5"
         >
-          <svg className={cn(compact ? "w-5 h-5" : "w-7 h-7", "flex-shrink-0")} viewBox="0 0 120 110">
+          <svg className="w-7 h-7 flex-shrink-0" viewBox="0 0 120 110">
             <defs>
               <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#E8D078"/>
@@ -358,15 +352,12 @@ export default function PlayerPanel({
                 <stop offset="100%" stopColor="#987020"/>
               </linearGradient>
             </defs>
-            {/* Center facet */}
             <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-            {/* Left facet */}
             <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-            {/* Right facet */}
             <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
           </svg>
           {cmdrTotal > 0 && (
-            <span className={cn("font-bold tabular-nums", compact ? "text-xs" : "text-sm", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
+            <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
               {cmdrTotal}
             </span>
           )}
@@ -375,7 +366,10 @@ export default function PlayerPanel({
 
       {/* ── Commander damage overlay ── */}
       {showCmdr && (
-        <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3">
+        <div
+          className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3"
+          style={{ transform: `rotate(${rotation}deg)` }}
+        >
           <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold mb-1">Commander Damage</p>
 
           {perCommanderTracking && opponents.length > 0 ? (
@@ -414,8 +408,6 @@ export default function PlayerPanel({
           </button>
         </div>
       )}
-
-      </div>{/* end rotation wrapper */}
     </div>
   );
 }
