@@ -42,7 +42,6 @@ interface PlayerPanelProps {
   opponents?: Player[];
   onTapPanel?: () => void;
   disabled?: boolean;
-  /** Turn timer state — only passed to the active player's panel */
   turnTimer?: {
     turnNumber: number;
     turnSeconds: number;
@@ -50,8 +49,8 @@ interface PlayerPanelProps {
     onToggle: () => void;
     onNext: () => void;
   };
-  /** Rotation in degrees so content faces outward toward nearest screen edge */
   rotation?: number;
+  compact?: boolean;
 }
 
 export default function PlayerPanel({
@@ -67,6 +66,7 @@ export default function PlayerPanel({
   disabled = false,
   turnTimer,
   rotation = 0,
+  compact = false,
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -208,7 +208,7 @@ export default function PlayerPanel({
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[5]">
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
           <span
-            className="text-[5rem] tabular-nums leading-none"
+            className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
             style={{
               fontFamily: "'Arial', 'Helvetica', sans-serif",
               fontWeight: 400,
@@ -262,7 +262,7 @@ export default function PlayerPanel({
 
           {/* Player name */}
           <span
-            className="text-sm tracking-wide uppercase mt-1"
+            className={cn("tracking-wide uppercase mt-1", compact ? "text-[10px]" : "text-sm")}
             style={{
               fontFamily: "'Arial', 'Helvetica', sans-serif",
               fontWeight: 400,
@@ -279,8 +279,8 @@ export default function PlayerPanel({
 
       {/* ── Life history — right edge ── */}
       {lifeHistory.length > 0 && (
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 z-[4] pointer-events-none flex flex-col items-end gap-0.5 max-h-[60%] overflow-hidden">
-          {lifeHistory.slice(0, 8).map((entry, i) => (
+        <div className={cn("absolute right-2 top-1/2 -translate-y-1/2 z-[4] pointer-events-none flex flex-col items-end gap-0.5 overflow-hidden", compact ? "max-h-[50%]" : "max-h-[60%]")}>
+          {lifeHistory.slice(0, compact ? 5 : 8).map((entry, i) => (
             <div
               key={entry.id}
               className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/40"
@@ -304,24 +304,28 @@ export default function PlayerPanel({
 
       {/* ── Turn timer bar — outside rotation wrapper so it stays upright ── */}
       {turnTimer && (
-        <div className={cn("absolute z-20 flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-1.5 py-1 shadow-lg", pos.turnTimer)}>
-          <span className="text-[11px] font-black uppercase tracking-wider text-accent/90 pl-2">
+        <div className={cn(
+          "absolute z-20 flex items-center rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg",
+          compact ? "gap-1 px-1 py-0.5" : "gap-1.5 px-1.5 py-1",
+          pos.turnTimer
+        )}>
+          <span className={cn("font-black uppercase tracking-wider text-accent/90 pl-1.5", compact ? "text-[9px]" : "text-[11px]")}>
             T{turnTimer.turnNumber}
           </span>
-          <span className="text-base font-bold tabular-nums text-white" style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+          <span className={cn("font-bold tabular-nums text-white", compact ? "text-xs" : "text-base")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
             {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
           </span>
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
-            className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30"
+            className={cn("rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30", compact ? "w-5 h-5" : "w-7 h-7")}
           >
             {turnTimer.running ? (
-              <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
+              <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
                 <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
               </svg>
             ) : (
-              <svg className="w-3 h-3 text-accent" fill="currentColor" viewBox="0 0 24 24">
+              <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             )}
@@ -329,12 +333,12 @@ export default function PlayerPanel({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
-            className="px-3 py-1 rounded-full btn-gradient text-[10px] font-black uppercase tracking-wide active:scale-95 transition-transform z-30"
+            className={cn("rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform z-30", compact ? "px-2 py-0.5 text-[8px]" : "px-3 py-1 text-[10px]")}
           >
             Next
           </button>
           {!turnTimer.running && (
-            <span className="text-[8px] font-bold uppercase tracking-widest text-amber-400/80 pr-1">Paused</span>
+            <span className={cn("font-bold uppercase tracking-widest text-amber-400/80 pr-1", compact ? "text-[7px]" : "text-[8px]")}>Paused</span>
           )}
         </div>
       )}
@@ -346,13 +350,14 @@ export default function PlayerPanel({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onPoisonChange(1); }}
-            className="flex items-center gap-1 px-1.5 py-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
+            className={cn("flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform", compact ? "px-1 py-0.5" : "px-1.5 py-1")}
           >
-            <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <svg className={cn(compact ? "w-3 h-3" : "w-4 h-4", "text-green-400 flex-shrink-0")} fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
             </svg>
             <span className={cn(
-              "text-xs font-bold tabular-nums",
+              "font-bold tabular-nums",
+              compact ? "text-[10px]" : "text-xs",
               player.poisonCounters >= 10 ? "text-red-400" : "text-white/80"
             )}>
               {player.poisonCounters}
@@ -365,13 +370,13 @@ export default function PlayerPanel({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform"
+          className={cn("flex items-center rounded-full bg-black/50 backdrop-blur-sm active:scale-90 transition-transform", compact ? "gap-1 px-1.5 py-1" : "gap-1.5 px-2.5 py-1.5")}
         >
-          <svg className="w-6 h-6 text-white/70 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg className={cn(compact ? "w-4 h-4" : "w-6 h-6", "text-white/70 flex-shrink-0")} fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 3.18l1.87 3.78L18 8.8l-3 2.93.71 4.12L12 13.77l-3.71 2.08.71-4.12-3-2.93 4.13-.84L12 4.18z" />
           </svg>
           {cmdrTotal > 0 && (
-            <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
+            <span className={cn("font-bold tabular-nums", compact ? "text-xs" : "text-sm", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
               {cmdrTotal}
             </span>
           )}

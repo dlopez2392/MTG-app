@@ -294,6 +294,7 @@ export default function LifePage() {
         perCommanderTracking={settings.perCommanderTracking}
         opponents={opponents}
         disabled={choosingStarter}
+        compact={playerCount >= 3}
       />
     );
   };
@@ -330,9 +331,15 @@ export default function LifePage() {
   return (
     <div
       className="flex flex-col bg-black overflow-hidden touch-none fixed inset-0 z-[100]"
-      style={{ height: "100dvh" }}
+      style={{
+        height: "100dvh",
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
     >
-      <div className="flex-1 flex flex-col p-1 relative">
+      <div className="flex-1 flex flex-col p-0.5 relative">
         {renderPlayers()}
 
         {/* ── "Choose Starting Player" overlay ── */}
@@ -354,9 +361,9 @@ export default function LifePage() {
                     Tap anywhere to randomize starting player
                   </p>
                 </div>
-                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+                <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-[90%] max-w-xs flex flex-col items-center gap-2 z-10">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-white/50">or choose</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
                     {players.map((p, i) => (
                       <button
                         key={p.id}
