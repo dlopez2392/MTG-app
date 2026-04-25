@@ -126,25 +126,21 @@ export default function PlayerPanel({
         poison:    "top-3 right-3",
         commander: "top-3 left-3",
         badge:     "top-12 left-3",
-        turnTimer: "top-3 left-1/2 -translate-x-1/2",
       };
       case 90: return {
         poison:    "top-3 left-3",
         commander: "bottom-3 left-3",
         badge:     "bottom-12 left-3",
-        turnTimer: "top-1/2 -translate-y-1/2 left-3",
       };
       case -90: return {
         poison:    "bottom-3 right-3",
         commander: "top-3 right-3",
         badge:     "top-12 right-3",
-        turnTimer: "top-1/2 -translate-y-1/2 right-3",
       };
       default: return {
         poison:    "bottom-3 left-3",
         commander: "bottom-3 right-3",
         badge:     "bottom-12 right-3",
-        turnTimer: "bottom-3 left-1/2 -translate-x-1/2",
       };
     }
   })();
@@ -274,6 +270,46 @@ export default function PlayerPanel({
             {player.name}
           </span>
 
+          {/* Turn timer — inline below name, rotates with panel */}
+          {turnTimer && (
+            <div className={cn(
+              "pointer-events-auto flex items-center rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg mt-2",
+              compact ? "gap-1 px-1 py-0.5" : "gap-1.5 px-1.5 py-1",
+            )} style={{ zIndex: 10 }}>
+              <span className={cn("font-black uppercase tracking-wider text-accent/90 pl-1.5", compact ? "text-[9px]" : "text-[11px]")}>
+                T{turnTimer.turnNumber}
+              </span>
+              <span className={cn("font-bold tabular-nums text-white", compact ? "text-xs" : "text-base")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
+                className={cn("rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30", compact ? "w-5 h-5" : "w-7 h-7")}
+              >
+                {turnTimer.running ? (
+                  <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                  </svg>
+                ) : (
+                  <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
+                className={cn("rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform z-30", compact ? "px-2 py-0.5 text-[8px]" : "px-3 py-1 text-[10px]")}
+              >
+                Next
+              </button>
+              {!turnTimer.running && (
+                <span className={cn("font-bold uppercase tracking-widest text-amber-400/80 pr-1", compact ? "text-[7px]" : "text-[8px]")}>Paused</span>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -301,47 +337,6 @@ export default function PlayerPanel({
       )}
 
       </div>{/* end rotation wrapper */}
-
-      {/* ── Turn timer bar — outside rotation wrapper so it stays upright ── */}
-      {turnTimer && (
-        <div className={cn(
-          "absolute z-20 flex items-center rounded-full bg-black/70 backdrop-blur-md border border-white/10 shadow-lg",
-          compact ? "gap-1 px-1 py-0.5" : "gap-1.5 px-1.5 py-1",
-          pos.turnTimer
-        )}>
-          <span className={cn("font-black uppercase tracking-wider text-accent/90 pl-1.5", compact ? "text-[9px]" : "text-[11px]")}>
-            T{turnTimer.turnNumber}
-          </span>
-          <span className={cn("font-bold tabular-nums text-white", compact ? "text-xs" : "text-base")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-            {Math.floor(turnTimer.turnSeconds / 60)}:{String(turnTimer.turnSeconds % 60).padStart(2, "0")}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); turnTimer.onToggle(); }}
-            className={cn("rounded-full bg-white/10 flex items-center justify-center active:scale-90 transition-all z-30", compact ? "w-5 h-5" : "w-7 h-7")}
-          >
-            {turnTimer.running ? (
-              <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-              </svg>
-            ) : (
-              <svg className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3", "text-accent")} fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); turnTimer.onNext(); }}
-            className={cn("rounded-full btn-gradient font-black uppercase tracking-wide active:scale-95 transition-transform z-30", compact ? "px-2 py-0.5 text-[8px]" : "px-3 py-1 text-[10px]")}
-          >
-            Next
-          </button>
-          {!turnTimer.running && (
-            <span className={cn("font-bold uppercase tracking-widest text-amber-400/80 pr-1", compact ? "text-[7px]" : "text-[8px]")}>Paused</span>
-          )}
-        </div>
-      )}
 
       {/* ── Bottom corners: poison (left) + commander damage (right) ── */}
       {/* These sit outside the rotation wrapper so they stay in consistent positions */}
