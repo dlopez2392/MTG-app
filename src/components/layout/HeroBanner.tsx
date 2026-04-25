@@ -27,9 +27,13 @@ export default function HeroBanner({ title, subtitle, accent, icon, children, on
             <button
               type="button"
               onClick={onBack}
-              className="w-9 h-9 rounded-full bg-bg-card/60 backdrop-blur border border-border/50 flex items-center justify-center text-text-muted hover:text-text-primary active:scale-90 transition-all cursor-pointer flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all cursor-pointer flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, rgba(124,92,252,0.4), rgba(124,92,252,0.15))",
+                boxShadow: "0 2px 10px rgba(124,92,252,0.2), inset 0 1px 0 rgba(255,255,255,0.08)",
+              }}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
               </svg>
             </button>
