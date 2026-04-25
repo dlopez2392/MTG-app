@@ -130,12 +130,22 @@ export default function PlayerPanel({
         backgroundColor: `${player.color}B3`,
       }}
     >
-      {/* Art background — outside rotation wrapper so it fills the actual panel */}
+      {/* Art background — rotated to face same direction as content, scaled to cover */}
       {artUrl && (
         <img
           src={artUrl} alt="" aria-hidden
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ opacity: 0.55, filter: "saturate(1.3) brightness(0.7)" }}
+          className="absolute pointer-events-none"
+          style={{
+            opacity: 0.55,
+            filter: "saturate(1.3) brightness(0.7)",
+            width: isSideways ? "150%" : "100%",
+            height: isSideways ? "150%" : "100%",
+            top: isSideways ? "-25%" : "0",
+            left: isSideways ? "-25%" : "0",
+            objectFit: "cover",
+            transform: rotation !== 0 ? `rotate(${rotation}deg)` : undefined,
+            transformOrigin: "center center",
+          }}
         />
       )}
 
