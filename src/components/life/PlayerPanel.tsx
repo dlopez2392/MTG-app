@@ -445,19 +445,20 @@ export default function PlayerPanel({
         )}
       </div>
 
-      {/* ── Commander damage button — positioned on panel, rotated to face player ── */}
+      {/* ── Commander damage button — small, tucked into corner ── */}
       <div className="absolute z-20" style={{
         transform: `rotate(${rotation}deg)`,
         ...(isSideways
-          ? { bottom: "50%", right: "8px", transformOrigin: "right center", marginBottom: "-20px" }
-          : { bottom: "12px", right: "12px" }),
+          ? { bottom: "50%", right: "4px", transformOrigin: "right center", marginBottom: "-14px" }
+          : { bottom: "6px", right: "6px" }),
       }}>
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-          className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]"
+          className="flex items-center gap-1 rounded-full bg-black/40 backdrop-blur-sm active:scale-90 transition-transform px-2 py-1.5"
+          style={{ opacity: cmdrTotal > 0 ? 0.9 : 0.5 }}
         >
-          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 120 110">
+          <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 120 110">
             <defs>
               <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#E8D078"/>
@@ -470,7 +471,7 @@ export default function PlayerPanel({
             <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
           </svg>
           {cmdrTotal > 0 && (
-            <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
+            <span className={cn("text-xs font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/70")}>
               {cmdrTotal}
             </span>
           )}
