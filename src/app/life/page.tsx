@@ -28,6 +28,11 @@ export default function LifePage() {
     adjustLife,
     adjustPoison,
     adjustCommanderDamage,
+    adjustEnergy,
+    adjustExperience,
+    setMonarch,
+    setInitiative,
+    adjustDungeon,
     resetGame,
     newGame,
   } = useLifeCounter();
@@ -53,6 +58,12 @@ export default function LifePage() {
     gameTimerMinutes: 90,
     layout: "2-stack",
   });
+
+  const [showEnergy, setShowEnergy] = useState(false);
+  const [showExperience, setShowExperience] = useState(false);
+  const [showMonarch, setShowMonarch] = useState(false);
+  const [showInitiativeToggle, setShowInitiativeToggle] = useState(false);
+  const [showDungeon, setShowDungeon] = useState(false);
 
   // Game timer (counts down)
   const [gameSecondsLeft, setGameSecondsLeft] = useState(0);
@@ -290,6 +301,16 @@ export default function LifePage() {
         onLifeChange={(d) => { adjustLife(p.id, d); hideTurnTimerBriefly(); }}
         onCommanderDamage={(d, sourceId) => adjustCommanderDamage(p.id, d, sourceId)}
         onPoisonChange={(d) => adjustPoison(p.id, d)}
+        onEnergyChange={(d) => adjustEnergy(p.id, d)}
+        onExperienceChange={(d) => adjustExperience(p.id, d)}
+        onMonarchToggle={() => setMonarch(p.id)}
+        onInitiativeToggle={() => setInitiative(p.id)}
+        onDungeonChange={(d) => adjustDungeon(p.id, d)}
+        showEnergyCounters={showEnergy}
+        showExperienceCounters={showExperience}
+        showMonarch={showMonarch}
+        showInitiative={showInitiativeToggle}
+        showDungeon={showDungeon}
         turnTimer={isActive ? {
           turnNumber,
           turnSeconds,
@@ -408,131 +429,229 @@ export default function LifePage() {
               ? "top-4 left-4"
               : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
           )}>
-            <div className="flex flex-col items-center gap-8">
-              <button
-                type="button"
-                onClick={() => setShowMenu(!showMenu)}
-                className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg flex-shrink-0"
-              >
-                <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            <button
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              className="w-11 h-11 rounded-full btn-gradient flex items-center justify-center active:scale-90 transition-all shadow-lg"
+            >
+              <svg className="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* ── Game countdown timer — on the dividing line between players ── */}
+        {!choosingStarter && gameOptions.gameTimer && !showMenu && (
+          <div className="absolute z-20 top-1/2 left-1/2 -translate-x-1/2 pointer-events-none" style={{ marginTop: "28px" }}>
+            <div
+              className="rounded-full p-[2px] shadow-lg pointer-events-auto"
+              style={{
+                background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
+                transform: "rotate(90deg)",
+              }}
+            >
+              <div className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
+                gameSecondsLeft <= 300 && "bg-red-950/90"
+              )}>
+                <svg className={cn("w-3.5 h-3.5 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className={cn("text-xs font-bold tabular-nums", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/80")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
+                  {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Fullscreen game menu overlay ── */}
+      {showMenu && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, rgba(237,154,87,0.08) 0%, rgba(0,0,0,0.95) 70%)" }}>
+          <div className="absolute inset-0 backdrop-blur-xl" />
+          <div className="relative w-full h-full overflow-y-auto px-5 pt-6 pb-16 flex flex-col" style={{ maxWidth: "420px", margin: "0 auto" }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}>
+                  <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #F4C96B, #ED9A57)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                  Game Menu
+                </h2>
+              </div>
+              <button type="button" onClick={() => setShowMenu(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10"
+                style={{ background: "linear-gradient(135deg, rgba(244,201,107,0.15), rgba(212,96,42,0.15))" }}>
+                <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-
-              {/* Game countdown timer — directly below the menu button */}
-              {gameOptions.gameTimer && !showMenu && (
-                <div
-                  className="rounded-full p-[2px] shadow-lg flex-shrink-0"
-                  style={{
-                    background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
-                    transform: "rotate(90deg)",
-                  }}
-                >
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
-                    gameSecondsLeft <= 300 && "bg-red-950/90"
-                  )}>
-                    <svg className={cn("w-3.5 h-3.5 flex-shrink-0", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className={cn("text-xs font-bold tabular-nums", gameSecondsLeft <= 300 ? "text-red-400" : "text-white/80")} style={{ fontFamily: "'Arial', 'Helvetica', sans-serif" }}>
-                      {Math.floor(gameSecondsLeft / 3600)}:{String(Math.floor((gameSecondsLeft % 3600) / 60)).padStart(2, "0")}:{String(gameSecondsLeft % 60).padStart(2, "0")}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {showMenu && (
-              <div className={cn(
-                "absolute bg-bg-secondary border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] z-30",
-                playerCount === 1 ? "top-13 left-0" : "top-13 left-1/2 -translate-x-1/2"
-              )}>
-                <button
-                  type="button"
-                  onClick={() => { setShowHistory(true); setShowMenu(false); }}
-                  className="text-left px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  History
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { toggleFullscreen(); setShowMenu(false); }}
-                  className="text-left px-3 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                  </svg>
-                  {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-                </button>
-                <div className="border-t border-border my-1" />
-                <button
-                  type="button"
+            {/* Quick actions */}
+            <div className="flex gap-3 mb-5 flex-shrink-0">
+              <button type="button" onClick={() => { setShowHistory(true); setShowMenu(false); }}
+                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-white/5"
+                style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}>
+                <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                History
+              </button>
+              <button type="button" onClick={() => { toggleFullscreen(); setShowMenu(false); }}
+                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-white/5"
+                style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}>
+                <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                </svg>
+                {isFullscreen ? "Exit FS" : "Fullscreen"}
+              </button>
+            </div>
+
+            {/* Counters section */}
+            <div className="mb-5 flex-shrink-0">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                <span className="text-[10px] text-accent/70 uppercase tracking-[0.2em] font-bold">Counters</span>
+                <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { key: "poison", active: gameOptions.poisonCounters || settings.showPoisonCounters, toggle: () => { const v = !(gameOptions.poisonCounters || settings.showPoisonCounters); setGameOptions((o) => ({ ...o, poisonCounters: v })); }, icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>, label: "Poison", color: "#4ade80", bg: "rgba(74,222,128,0.12)" },
+                  { key: "energy", active: showEnergy, toggle: () => setShowEnergy((v) => !v), icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>, label: "Energy", color: "#facc15", bg: "rgba(250,204,21,0.12)" },
+                  { key: "experience", active: showExperience, toggle: () => setShowExperience((v) => !v), icon: <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>, label: "Experience", color: "#c084fc", bg: "rgba(192,132,252,0.12)" },
+                  { key: "monarch", active: showMonarch, toggle: () => setShowMonarch((v) => !v), icon: <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>, label: "Monarch", color: "#fbbf24", bg: "rgba(251,191,36,0.12)" },
+                  { key: "initiative", active: showInitiativeToggle, toggle: () => setShowInitiativeToggle((v) => !v), icon: <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>, label: "Initiative", color: "#93c5fd", bg: "rgba(147,197,253,0.12)" },
+                  { key: "dungeon", active: showDungeon, toggle: () => setShowDungeon((v) => !v), icon: <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>, label: "Dungeon", color: "#a8a29e", bg: "rgba(168,162,158,0.12)" },
+                ].map((c) => (
+                  <button key={c.key} type="button" onClick={c.toggle}
+                    className="relative py-4 text-[11px] font-bold rounded-2xl transition-all active:scale-95 flex flex-col items-center gap-2 border overflow-hidden"
+                    style={{
+                      background: c.active ? c.bg : "rgba(255,255,255,0.03)",
+                      borderColor: c.active ? `${c.color}40` : "rgba(255,255,255,0.05)",
+                      color: c.active ? c.color : "rgba(255,255,255,0.4)",
+                    }}>
+                    {c.active && <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at center, ${c.color}, transparent 70%)` }} />}
+                    <svg className="w-5 h-5 relative" fill="currentColor" viewBox="0 0 24 24">{c.icon}</svg>
+                    <span className="relative">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Per-player counters */}
+            {(showEnergy || showExperience || showMonarch || showInitiativeToggle || showDungeon) && (
+              <div className="mb-5 flex-shrink-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                  <span className="text-[10px] text-accent/70 uppercase tracking-[0.2em] font-bold">Players</span>
+                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                </div>
+                <div className="space-y-2">
+                  {players.map((p) => (
+                    <div key={p.id} className="rounded-2xl p-3 border border-white/5" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)" }}>
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 ring-2 ring-white/10" style={{ backgroundColor: p.color }} />
+                        <span className="text-sm font-bold text-white/90">{p.name}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {showEnergy && (
+                          <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-yellow-500/20" style={{ background: "rgba(250,204,21,0.06)" }}>
+                            <button type="button" onClick={() => adjustEnergy(p.id, -1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">−</button>
+                            <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            <span className="text-sm font-bold tabular-nums text-yellow-300 min-w-[20px] text-center">{p.energyCounters}</span>
+                            <button type="button" onClick={() => adjustEnergy(p.id, 1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">+</button>
+                          </div>
+                        )}
+                        {showExperience && (
+                          <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-purple-500/20" style={{ background: "rgba(192,132,252,0.06)" }}>
+                            <button type="button" onClick={() => adjustExperience(p.id, -1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">−</button>
+                            <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/></svg>
+                            <span className="text-sm font-bold tabular-nums text-purple-300 min-w-[20px] text-center">{p.experienceCounters}</span>
+                            <button type="button" onClick={() => adjustExperience(p.id, 1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">+</button>
+                          </div>
+                        )}
+                        {showMonarch && (
+                          <button type="button" onClick={() => setMonarch(p.id)}
+                            className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all active:scale-95 border",
+                              p.isMonarch ? "border-yellow-500/30 text-yellow-300" : "border-white/5 text-white/40")}
+                            style={{ background: p.isMonarch ? "rgba(251,191,36,0.12)" : "rgba(255,255,255,0.03)" }}>
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/></svg>
+                            {p.isMonarch ? "Monarch" : "Set Monarch"}
+                          </button>
+                        )}
+                        {showInitiativeToggle && (
+                          <button type="button" onClick={() => setInitiative(p.id)}
+                            className={cn("flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-all active:scale-95 border",
+                              p.hasInitiative ? "border-blue-500/30 text-blue-300" : "border-white/5 text-white/40")}
+                            style={{ background: p.hasInitiative ? "rgba(147,197,253,0.12)" : "rgba(255,255,255,0.03)" }}>
+                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/></svg>
+                            {p.hasInitiative ? "Has Initiative" : "Set Initiative"}
+                          </button>
+                        )}
+                        {showDungeon && (
+                          <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-stone-500/20" style={{ background: "rgba(168,162,158,0.06)" }}>
+                            <button type="button" onClick={() => adjustDungeon(p.id, -1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">−</button>
+                            <svg className="w-5 h-5 text-stone-400" fill="currentColor" viewBox="0 0 24 24"><path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/></svg>
+                            <span className="text-sm font-bold tabular-nums text-stone-300 min-w-[20px] text-center">{p.dungeonLevel}</span>
+                            <button type="button" onClick={() => adjustDungeon(p.id, 1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">+</button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Game actions */}
+            <div className="flex-shrink-0 space-y-2 pt-3 mb-2" style={{ borderTop: "1px solid rgba(237,154,87,0.15)" }}>
+              <button type="button"
+                onClick={() => { setShowEndGame(true); setShowMenu(false); setGameTimerRunning(false); setTurnTimerRunning(false); }}
+                className="w-full py-3.5 text-sm font-bold rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-black"
+                style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 3v2l4 4-2.5 3.5L3 11v2l4 2 1 6h2l1-6 1.5-2L14 19h2l1-6 4-2v-2l-3.5 1.5L15 7l4-4V1l-5 5-2-2-2 2-5-5z" />
+                </svg>
+                End &amp; Save
+              </button>
+              <div className="flex gap-2">
+                <button type="button"
                   onClick={() => {
-                    setShowEndGame(true);
-                    setShowMenu(false);
-                    setGameTimerRunning(false);
-                    setTurnTimerRunning(false);
+                    resetGame(); setShowMenu(false);
+                    if (gameOptions.gameTimer) { setGameSecondsLeft(gameOptions.gameTimerMinutes * 60); setGameTimerRunning(true); }
+                    setTurnSeconds(0); setTurnNumber(1); setTotalElapsed(0); setActivePlayerIndex(0); setPlayerTurnTimes({});
                   }}
-                  className="text-left px-3 py-2.5 text-sm text-accent hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M5 3v2l4 4-2.5 3.5L3 11v2l4 2 1 6h2l1-6 1.5-2L14 19h2l1-6 4-2v-2l-3.5 1.5L15 7l4-4V1l-5 5-2-2-2 2-5-5z" />
-                  </svg>
-                  End &amp; Save
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetGame();
-                    setShowMenu(false);
-                    if (gameOptions.gameTimer) {
-                      setGameSecondsLeft(gameOptions.gameTimerMinutes * 60);
-                      setGameTimerRunning(true);
-                    }
-                    setTurnSeconds(0);
-                    setTurnNumber(1);
-                    setTotalElapsed(0);
-                    setActivePlayerIndex(0);
-                    setPlayerTurnTimes({});
-                  }}
-                  className="text-left px-3 py-2.5 text-sm text-restricted hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
+                  className="flex-1 py-3 text-sm font-bold text-amber-400/80 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-amber-500/15"
+                  style={{ background: "rgba(251,191,36,0.06)" }}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
                   </svg>
-                  Reset Game
+                  Reset
                 </button>
-                <button
-                  type="button"
+                <button type="button"
                   onClick={() => {
-                    exitFullscreen();
-                    newGame();
-                    setShowMenu(false);
-                    setGameTimerRunning(false);
-                    setTurnTimerRunning(false);
-                    setGameSecondsLeft(0);
-                    setTurnSeconds(0);
-                    setTurnNumber(1);
-                    setTotalElapsed(0);
-                    setActivePlayerIndex(0);
-                    setPlayerTurnTimes({});
+                    exitFullscreen(); newGame(); setShowMenu(false); setGameTimerRunning(false); setTurnTimerRunning(false);
+                    setGameSecondsLeft(0); setTurnSeconds(0); setTurnNumber(1); setTotalElapsed(0); setActivePlayerIndex(0); setPlayerTurnTimes({});
                   }}
-                  className="text-left px-3 py-2.5 text-sm text-banned hover:bg-bg-hover rounded-lg transition-colors flex items-center gap-2"
-                >
+                  className="flex-1 py-3 text-sm font-bold text-red-400/80 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-red-500/15"
+                  style={{ background: "rgba(239,68,68,0.06)" }}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                   New Game
                 </button>
               </div>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <Modal open={showHistory} onClose={() => setShowHistory(false)} title="Game History">
         <GameHistory events={events} players={players} />

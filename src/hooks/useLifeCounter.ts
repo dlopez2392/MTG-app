@@ -21,6 +21,11 @@ interface UseLifeCounterReturn {
   adjustLife: (playerId: string, delta: number) => void;
   adjustPoison: (playerId: string, delta: number) => void;
   adjustCommanderDamage: (playerId: string, delta: number, sourcePlayerId?: string) => void;
+  adjustEnergy: (playerId: string, delta: number) => void;
+  adjustExperience: (playerId: string, delta: number) => void;
+  setMonarch: (playerId: string) => void;
+  setInitiative: (playerId: string) => void;
+  adjustDungeon: (playerId: string, delta: number) => void;
   resetGame: () => void;
   newGame: () => void;
 }
@@ -68,6 +73,11 @@ export function useLifeCounter(): UseLifeCounterReturn {
         color: playerColors?.[i] ?? PLAYER_COLORS[i % PLAYER_COLORS.length],
         life,
         poisonCounters: 0,
+        energyCounters: 0,
+        experienceCounters: 0,
+        isMonarch: false,
+        hasInitiative: false,
+        dungeonLevel: 0,
         commanderDamage: { [CMDR_KEY]: 0 },
       }));
 
@@ -130,12 +140,91 @@ export function useLifeCounter(): UseLifeCounterReturn {
     [pushEvent]
   );
 
+  const adjustEnergy = useCallback(
+    (playerId: string, delta: number) => {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          if (p.id !== playerId) return p;
+          const newVal = Math.max(0, p.energyCounters + delta);
+          pushEvent(playerId, "energy", delta, newVal);
+          return { ...p, energyCounters: newVal };
+        })
+      );
+    },
+    [pushEvent]
+  );
+
+  const adjustExperience = useCallback(
+    (playerId: string, delta: number) => {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          if (p.id !== playerId) return p;
+          const newVal = Math.max(0, p.experienceCounters + delta);
+          pushEvent(playerId, "experience", delta, newVal);
+          return { ...p, experienceCounters: newVal };
+        })
+      );
+    },
+    [pushEvent]
+  );
+
+  const setMonarch = useCallback(
+    (playerId: string) => {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          const becoming = p.id === playerId && !p.isMonarch;
+          if (p.id === playerId) {
+            if (becoming) pushEvent(playerId, "monarch", 1, 1);
+            return { ...p, isMonarch: !p.isMonarch ? true : false };
+          }
+          return { ...p, isMonarch: false };
+        })
+      );
+    },
+    [pushEvent]
+  );
+
+  const setInitiative = useCallback(
+    (playerId: string) => {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          const becoming = p.id === playerId && !p.hasInitiative;
+          if (p.id === playerId) {
+            if (becoming) pushEvent(playerId, "initiative", 1, 1);
+            return { ...p, hasInitiative: !p.hasInitiative ? true : false };
+          }
+          return { ...p, hasInitiative: false };
+        })
+      );
+    },
+    [pushEvent]
+  );
+
+  const adjustDungeon = useCallback(
+    (playerId: string, delta: number) => {
+      setPlayers((prev) =>
+        prev.map((p) => {
+          if (p.id !== playerId) return p;
+          const newVal = Math.max(0, p.dungeonLevel + delta);
+          pushEvent(playerId, "dungeon", delta, newVal);
+          return { ...p, dungeonLevel: newVal };
+        })
+      );
+    },
+    [pushEvent]
+  );
+
   const resetGame = useCallback(() => {
     setPlayers((prev) =>
       prev.map((p) => ({
         ...p,
         life: startingLife,
         poisonCounters: 0,
+        energyCounters: 0,
+        experienceCounters: 0,
+        isMonarch: false,
+        hasInitiative: false,
+        dungeonLevel: 0,
         commanderDamage: Object.fromEntries(Object.keys(p.commanderDamage).map((k) => [k, 0])),
       }))
     );
@@ -159,6 +248,11 @@ export function useLifeCounter(): UseLifeCounterReturn {
     adjustLife,
     adjustPoison,
     adjustCommanderDamage,
+    adjustEnergy,
+    adjustExperience,
+    setMonarch,
+    setInitiative,
+    adjustDungeon,
     resetGame,
     newGame,
   };
