@@ -171,7 +171,7 @@ function MonteCarloSimulator({ cards }: Props) {
         <select
           value={iterations}
           onChange={(e) => setIterations(Number(e.target.value))}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 outline-none focus:border-accent/50"
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white/70 outline-none focus:border-accent/50 [&>option]:text-black [&>option]:bg-white"
         >
           <option value={1000}>1,000 hands</option>
           <option value={10000}>10,000 hands</option>
@@ -334,7 +334,7 @@ function GoalTurnCalculator({ cards }: Props) {
           <select
             value={selectedCard}
             onChange={(e) => { setSelectedCard(e.target.value); setResult(null); }}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-accent/50"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/80 outline-none focus:border-accent/50 [&>option]:text-black [&>option]:bg-white"
           >
             <option value="">Choose a card...</option>
             {uniqueCards.map((c) => (
