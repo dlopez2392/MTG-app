@@ -98,12 +98,32 @@ export default function PlayerPanel({
 
   useEffect(() => {
     const mtgColor = hexToMtgQuery(player.color);
-    fetch(`https://api.scryfall.com/cards/random?q=type%3Alegendary+color%3A${mtgColor}`)
-      .then((r) => r.json())
-      .then((card) => {
-        setArtUrl(card?.image_uris?.art_crop ?? card?.card_faces?.[0]?.image_uris?.art_crop ?? null);
-      })
-      .catch(() => {});
+    let cancelled = false;
+    const fetchArt = (attempt: number) => {
+      fetch(`https://api.scryfall.com/cards/random?q=type%3Alegendary+color%3A${mtgColor}`)
+        .then((r) => r.json())
+        .then((card) => {
+          if (cancelled) return;
+          const url =
+            card?.image_uris?.art_crop ??
+            card?.card_faces?.[0]?.image_uris?.art_crop ??
+            card?.image_uris?.large ??
+            card?.card_faces?.[0]?.image_uris?.large ??
+            null;
+          if (url) {
+            setArtUrl(url);
+          } else if (attempt < 3) {
+            setTimeout(() => fetchArt(attempt + 1), 500);
+          }
+        })
+        .catch(() => {
+          if (!cancelled && attempt < 3) {
+            setTimeout(() => fetchArt(attempt + 1), 1000 * attempt);
+          }
+        });
+    };
+    fetchArt(1);
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player.id]);
 
@@ -170,9 +190,9 @@ export default function PlayerPanel({
           }),
         }}
       >
-      {/* Art background — oversized to guarantee full coverage */}
+      {/* Art background — oversized to guarantee full coverage on all panel shapes */}
       {artUrl && (
-        <div className="absolute inset-[-20%] pointer-events-none" style={{ opacity: 0.55 }}>
+        <div className="absolute pointer-events-none" style={{ inset: "-40%", opacity: 0.55 }}>
           <img
             src={artUrl} alt="" aria-hidden
             className="w-full h-full object-cover"
