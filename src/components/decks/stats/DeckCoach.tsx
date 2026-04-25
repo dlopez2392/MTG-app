@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
+import { useCollection } from "@/hooks/useCollection";
 import type { DeckCard } from "@/types/deck";
 
 interface Props {
@@ -107,6 +108,9 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
   const [result, setResult] = useState<CoachingResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { allCards: collectionCards } = useCollection();
+
+  const ownedCardNames = new Set(collectionCards.map((c) => c.name.toLowerCase()));
   const [selectedFormat, setSelectedFormat] = useState(format || "commander");
 
   async function analyze() {
@@ -310,6 +314,11 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                         </svg>
                         <span className="text-green-400/80 font-medium">{u.add}</span>
+                        {ownedCardNames.has(u.add.toLowerCase()) && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-legal/20 text-legal flex-shrink-0">
+                            OWNED
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-white/30">{u.reason}</p>
                     </div>
@@ -329,10 +338,13 @@ export default function DeckCoach({ cards, deckName, format }: Props) {
                     {result.synergy.missingPieces.map((card) => (
                       <span
                         key={card}
-                        className="px-2 py-1 rounded-md text-[11px] text-accent/80 font-medium"
-                        style={{ background: "rgba(124,92,252,0.1)" }}
+                        className="px-2 py-1 rounded-md text-[11px] font-medium inline-flex items-center gap-1"
+                        style={{ background: ownedCardNames.has(card.toLowerCase()) ? "rgba(34,197,94,0.15)" : "rgba(124,92,252,0.1)" }}
                       >
-                        {card}
+                        <span className={ownedCardNames.has(card.toLowerCase()) ? "text-green-400/80" : "text-accent/80"}>{card}</span>
+                        {ownedCardNames.has(card.toLowerCase()) && (
+                          <span className="text-[9px] font-bold text-legal">✓</span>
+                        )}
                       </span>
                     ))}
                   </div>

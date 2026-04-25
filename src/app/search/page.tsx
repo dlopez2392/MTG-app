@@ -25,6 +25,7 @@ type Tab = "cards" | "sets";
 export default function SearchPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("cards");
+  const [ownedOnly, setOwnedOnly] = useState(false);
   const [filters, setFilters] = useState<SearchFiltersType>(DEFAULT_FILTERS);
   const [view, setView] = useState<"grid" | "list">(() => loadSettings().defaultSearchView);
   const [initialized, setInitialized] = useState(false);
@@ -167,11 +168,26 @@ export default function SearchPage() {
             {/* Results */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-3">
-                {totalCards > 0 && (
-                  <span className="text-sm text-text-muted">
-                    {totalCards.toLocaleString()} cards found
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  {totalCards > 0 && (
+                    <span className="text-sm text-text-muted">
+                      {totalCards.toLocaleString()} cards found
+                    </span>
+                  )}
+                  {cards.length > 0 && (
+                    <button
+                      onClick={() => setOwnedOnly(!ownedOnly)}
+                      className={cn(
+                        "text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                        ownedOnly
+                          ? "bg-legal/20 text-legal"
+                          : "bg-bg-hover text-text-muted hover:text-text-secondary"
+                      )}
+                    >
+                      {ownedOnly ? "Owned ✓" : "Owned"}
+                    </button>
+                  )}
+                </div>
                 <ViewToggle view={view} onChange={setView} />
               </div>
 
@@ -203,21 +219,36 @@ export default function SearchPage() {
 
               {cards.length > 0 && (
                 <>
-                  {view === "grid" ? (
-                    <CardGrid
-                      cards={cards}
-                      onCardClick={handleCardClick}
-                      collectionMap={deckContext ? collectionMap : undefined}
-                      deckFormat={deckContext ? deckFormat ?? undefined : undefined}
-                    />
-                  ) : (
-                    <CardList
-                      cards={cards}
-                      onCardClick={handleCardClick}
-                      collectionMap={deckContext ? collectionMap : undefined}
-                      deckFormat={deckContext ? deckFormat ?? undefined : undefined}
-                    />
-                  )}
+                  {(() => {
+                    const displayCards = ownedOnly
+                      ? cards.filter((c) => (collectionMap.get(c.id) ?? 0) > 0)
+                      : cards;
+                    const sortedCards = deckContext
+                      ? [...displayCards].sort((a, b) => {
+                          const aOwned = collectionMap.get(a.id) ?? 0;
+                          const bOwned = collectionMap.get(b.id) ?? 0;
+                          if (aOwned > 0 && bOwned === 0) return -1;
+                          if (aOwned === 0 && bOwned > 0) return 1;
+                          return 0;
+                        })
+                      : displayCards;
+
+                    return view === "grid" ? (
+                      <CardGrid
+                        cards={sortedCards}
+                        onCardClick={handleCardClick}
+                        collectionMap={collectionMap}
+                        deckFormat={deckContext ? deckFormat ?? undefined : undefined}
+                      />
+                    ) : (
+                      <CardList
+                        cards={sortedCards}
+                        onCardClick={handleCardClick}
+                        collectionMap={collectionMap}
+                        deckFormat={deckContext ? deckFormat ?? undefined : undefined}
+                      />
+                    );
+                  })()}
 
                   {hasMore && (
                     <div className="flex justify-center mt-6">
