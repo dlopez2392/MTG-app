@@ -216,9 +216,9 @@ export default function CardAllocationClient() {
 
                   {/* Deck list */}
                   <div className="flex flex-wrap gap-1.5">
-                    {entry.decks.map((d) => (
+                    {entry.decks.map((d, i) => (
                       <span
-                        key={d.deckId}
+                        key={`${d.deckId}-${i}`}
                         className="text-[11px] px-2 py-1 rounded-md font-medium"
                         style={{
                           background: "rgba(124,92,252,0.1)",
