@@ -64,6 +64,7 @@ export default function LifePage() {
   const [showMonarch, setShowMonarch] = useState(false);
   const [showInitiativeToggle, setShowInitiativeToggle] = useState(false);
   const [showDungeon, setShowDungeon] = useState(false);
+  const [showCommanderDmg, setShowCommanderDmg] = useState(false);
 
   // Game timer (counts down)
   const [gameSecondsLeft, setGameSecondsLeft] = useState(0);
@@ -317,6 +318,7 @@ export default function LifePage() {
           if (options.turnTimer && count === 1) {
             setTurnTimerRunning(true);
           }
+          if (life === 40) setShowCommanderDmg(true);
           setupGame(count, life, names, colors);
         }}
       />
@@ -557,6 +559,7 @@ export default function LifePage() {
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
+                  { key: "commander", active: showCommanderDmg, toggle: () => setShowCommanderDmg((v) => !v), icon: <path d="M12 2l3 5h5l-1 6-3 4h-8l-3-4-1-6h5l3-5zm-4 12h8m-6 2h4"/>, label: "Cmdr Dmg", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
                   { key: "poison", active: gameOptions.poisonCounters || settings.showPoisonCounters, toggle: () => { const v = !(gameOptions.poisonCounters || settings.showPoisonCounters); setGameOptions((o) => ({ ...o, poisonCounters: v })); }, icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>, label: "Poison", color: "#4ade80", bg: "rgba(74,222,128,0.12)" },
                   { key: "energy", active: showEnergy, toggle: () => setShowEnergy((v) => !v), icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>, label: "Energy", color: "#facc15", bg: "rgba(250,204,21,0.12)" },
                   { key: "experience", active: showExperience, toggle: () => setShowExperience((v) => !v), icon: <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>, label: "Experience", color: "#c084fc", bg: "rgba(192,132,252,0.12)" },
@@ -580,7 +583,7 @@ export default function LifePage() {
             </div>
 
             {/* Per-player counters */}
-            {(showEnergy || showExperience || showMonarch || showInitiativeToggle || showDungeon) && (
+            {(showCommanderDmg || showEnergy || showExperience || showMonarch || showInitiativeToggle || showDungeon) && (
               <div className="mb-5 flex-shrink-0">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
@@ -595,6 +598,22 @@ export default function LifePage() {
                         <span className="text-sm font-bold text-white/90">{p.name}</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        {showCommanderDmg && (
+                          <div className="w-full flex flex-col gap-1.5">
+                            {players.filter((opp) => opp.id !== p.id).map((opp) => {
+                              const dmg = p.commanderDamage[opp.id] ?? 0;
+                              return (
+                                <div key={opp.id} className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-orange-500/20" style={{ background: "rgba(249,115,22,0.06)" }}>
+                                  <button type="button" onClick={() => adjustCommanderDamage(p.id, -1, opp.id)} disabled={dmg <= 0} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 disabled:opacity-30 text-base font-bold">−</button>
+                                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: opp.color }} />
+                                  <span className="text-[11px] text-white/50 truncate max-w-[60px]">{opp.name}</span>
+                                  <span className={cn("text-sm font-bold tabular-nums min-w-[20px] text-center", dmg >= 21 ? "text-red-400" : "text-orange-300")}>{dmg}</span>
+                                  <button type="button" onClick={() => adjustCommanderDamage(p.id, 1, opp.id)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">+</button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                         {showEnergy && (
                           <div className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border border-yellow-500/20" style={{ background: "rgba(250,204,21,0.06)" }}>
                             <button type="button" onClick={() => adjustEnergy(p.id, -1)} className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center text-white/60 active:bg-white/15 text-base font-bold">−</button>
