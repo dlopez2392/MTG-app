@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import HeroBanner from "@/components/layout/HeroBanner";
 import PageContainer from "@/components/layout/PageContainer";
@@ -10,7 +10,17 @@ import { usePlaygroup } from "@/hooks/usePlaygroup";
 import { useGameLog } from "@/hooks/useGameLog";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { cn } from "@/lib/utils/cn";
+import { computeDeckMatchups } from "@/lib/utils/matchupStats";
 import type { PlaygroupMember } from "@/types/playgroup";
+
+interface FriendDeck {
+  id: string;
+  name: string;
+  format: string | null;
+  coverImageUri: string | null;
+  cardCount: number;
+  updatedAt: string;
+}
 
 const AVATAR_COLORS = [
   "#607D8B", "#2E7D32", "#00838F", "#1565C0", "#6A1B9A",
@@ -278,6 +288,70 @@ function WinRateBar({ wins, losses }: { wins: number; losses: number }) {
   );
 }
 
+function FriendDecksList({ memberId, memberName }: { memberId: string; memberName: string }) {
+  const [decks, setDecks] = useState<FriendDeck[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/playgroup/${memberId}/decks`)
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setDecks(data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [memberId]);
+
+  if (loading) {
+    return (
+      <div className="space-y-2 py-2">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-16 bg-bg-hover rounded-lg skeleton-shimmer" />
+        ))}
+      </div>
+    );
+  }
+
+  if (decks.length === 0) {
+    return (
+      <p className="text-sm text-text-muted py-4 text-center">
+        {memberName} hasn&apos;t shared any public decks yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2 py-1">
+      {decks.map((deck) => (
+        <div key={deck.id} className="flex items-center gap-3 p-3 bg-bg-card rounded-xl border border-border">
+          {deck.coverImageUri ? (
+            <img
+              src={deck.coverImageUri}
+              alt=""
+              className="w-10 h-14 rounded object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-14 rounded bg-bg-hover flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-1.243 1.007-2.25 2.25-2.25h13.5z" />
+              </svg>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-text-primary truncate">{deck.name}</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              {deck.format && (
+                <span className="text-[10px] bg-accent/10 text-accent/80 px-1.5 py-0.5 rounded font-medium capitalize">
+                  {deck.format}
+                </span>
+              )}
+              <span className="text-xs text-text-muted">{deck.cardCount} cards</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PlaygroupPage() {
   const router = useRouter();
   const { members, loading, addMember, updateMember, deleteMember } = usePlaygroup();
@@ -286,6 +360,7 @@ export default function PlaygroupPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<PlaygroupMember | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [viewingDecks, setViewingDecks] = useState<PlaygroupMember | null>(null);
 
   const memberStats = useMemo(() => {
     const map = new Map<string, MemberStats>();
@@ -440,6 +515,31 @@ export default function PlaygroupPage() {
                               ))}
                             </div>
                           )}
+                          {/* Deck matchup breakdown */}
+                          {(() => {
+                            const matchups = computeDeckMatchups(entries, member.name);
+                            if (matchups.byDeck.length === 0) return null;
+                            return (
+                              <div className="pt-1">
+                                <p className="text-[10px] text-text-muted uppercase tracking-widest font-bold mb-1.5">Deck Matchups</p>
+                                <div className="space-y-1">
+                                  {matchups.byDeck.slice(0, 5).map((d) => (
+                                    <div key={d.deckName} className="flex items-center gap-2 text-xs">
+                                      <span className="flex-1 truncate text-text-secondary font-medium">{d.deckName}</span>
+                                      <span className="text-legal tabular-nums font-semibold">{d.wins}W</span>
+                                      <span className="text-banned tabular-nums font-semibold">{d.losses}L</span>
+                                      <span className={cn(
+                                        "tabular-nums font-bold text-[11px] w-10 text-right",
+                                        d.winRate >= 60 ? "text-legal" : d.winRate >= 40 ? "text-accent" : "text-banned"
+                                      )}>
+                                        {d.winRate}%
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       ) : (
                         <p className="text-xs text-text-muted pt-3">
@@ -452,6 +552,17 @@ export default function PlaygroupPage() {
                       )}
 
                       <div className="flex gap-2 mt-3">
+                        {member.friendUserId && (
+                          <button
+                            onClick={() => setViewingDecks(member)}
+                            className="flex-1 py-2 rounded-lg border border-accent/30 text-xs font-semibold text-accent hover:bg-accent/10 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-1.243 1.007-2.25 2.25-2.25h13.5z" />
+                            </svg>
+                            View Decks
+                          </button>
+                        )}
                         <button
                           onClick={() => setEditing(member)}
                           className="flex-1 py-2 rounded-lg border border-border text-xs font-semibold text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors"
@@ -495,6 +606,13 @@ export default function PlaygroupPage() {
             onCancel={() => setEditing(null)}
             saveLabel="Save"
           />
+        )}
+      </Modal>
+
+      {/* View friend's decks modal */}
+      <Modal open={!!viewingDecks} onClose={() => setViewingDecks(null)} title={`${viewingDecks?.name}'s Decks`}>
+        {viewingDecks && (
+          <FriendDecksList memberId={viewingDecks.id} memberName={viewingDecks.name} />
         )}
       </Modal>
     </>

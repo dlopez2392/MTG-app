@@ -93,6 +93,7 @@ export default function PlayerSetup({
   const [selectedColorKeys, setSelectedColorKeys] = useState<MtgPlayerColorKey[]>(
     [...DEFAULT_PLAYER_COLOR_KEYS]
   );
+  const [playgroupSearch, setPlaygroupSearch] = useState<string[]>(Array(6).fill(""));
   const [poisonCounters, setPoisonCounters] = useState(false);
   const [turnTimer, setTurnTimer] = useState(false);
   const [gameTimer, setGameTimer] = useState(false);
@@ -370,52 +371,6 @@ export default function PlayerSetup({
           </button>
         </div>
 
-        {/* ── Quick Pick from Playgroup ── */}
-        {playgroupMembers.length > 0 && (
-          <div>
-            <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
-              Playgroup
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {playgroupMembers.map((member) => {
-                const assignedIdx = playerNames.findIndex((n) => n === member.name);
-                const isAssigned = assignedIdx >= 0 && assignedIdx < playerCount;
-                return (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => {
-                      if (isAssigned) {
-                        handleNameChange(assignedIdx, `Player ${assignedIdx + 1}`);
-                        return;
-                      }
-                      const emptySlot = Array.from({ length: playerCount }, (_, i) => i)
-                        .find((i) => playerNames[i] === `Player ${i + 1}` || playerNames[i] === "");
-                      const slot = emptySlot ?? 0;
-                      handleNameChange(slot, member.name);
-                    }}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border",
-                      isAssigned
-                        ? "border-accent/50 bg-accent/15 text-accent"
-                        : "border-border bg-bg-card text-text-secondary hover:border-accent/30 hover:text-text-primary"
-                    )}
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: member.avatarColor }}
-                    />
-                    {member.name}
-                    {isAssigned && (
-                      <span className="text-[9px] text-accent/60">P{assignedIdx + 1}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* ── Customize Players ── */}
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
@@ -425,6 +380,10 @@ export default function PlayerSetup({
             {Array.from({ length: playerCount }, (_, i) => {
               const selectedKey = selectedColorKeys[i] ?? "R";
               const selectedMtgColor = MTG_PLAYER_COLORS.find((c) => c.key === selectedKey)!;
+              const usedNames = playerNames.slice(0, playerCount);
+              const availableMembers = playgroupMembers.filter(
+                (m) => m.name === playerNames[i] || !usedNames.includes(m.name)
+              );
               return (
                 <div
                   key={i}
@@ -450,6 +409,63 @@ export default function PlayerSetup({
                       className="flex-1"
                     />
                   </div>
+                  {/* Playgroup quick-pick for this slot */}
+                  {availableMembers.length > 0 && (() => {
+                    const query = playgroupSearch[i]?.toLowerCase() ?? "";
+                    const filtered = query
+                      ? availableMembers.filter((m) => m.name.toLowerCase().includes(query))
+                      : availableMembers;
+                    const showSearch = availableMembers.length > 4;
+                    return (
+                      <div className="space-y-1">
+                        {showSearch && (
+                          <div className="relative">
+                            <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                            <input
+                              type="text"
+                              value={playgroupSearch[i] ?? ""}
+                              onChange={(e) => setPlaygroupSearch((prev) => { const next = [...prev]; next[i] = e.target.value; return next; })}
+                              placeholder="Search playgroup..."
+                              className="w-full pl-6 pr-2 py-1 rounded-md bg-bg-hover/50 border border-border text-[11px] text-text-secondary placeholder:text-text-muted/50 focus:outline-none focus:border-accent/40"
+                            />
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-1">
+                          {filtered.map((member) => {
+                            const isSelected = playerNames[i] === member.name;
+                            return (
+                              <button
+                                key={member.id}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) handleNameChange(i, `Player ${i + 1}`);
+                                  else handleNameChange(i, member.name);
+                                  setPlaygroupSearch((prev) => { const next = [...prev]; next[i] = ""; return next; });
+                                }}
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all border",
+                                  isSelected
+                                    ? "border-accent/50 bg-accent/15 text-accent"
+                                    : "border-border bg-bg-hover/50 text-text-muted hover:text-text-secondary hover:border-accent/30"
+                                )}
+                              >
+                                <div
+                                  className="w-3 h-3 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: member.avatarColor }}
+                                />
+                                {member.name}
+                              </button>
+                            );
+                          })}
+                          {query && filtered.length === 0 && (
+                            <span className="text-[10px] text-text-muted italic px-1">No matches</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-text-muted uppercase tracking-wide mr-1">Color</span>
                     {MTG_PLAYER_COLORS.map((c) => (

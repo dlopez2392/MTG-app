@@ -95,6 +95,7 @@ function toDecK(row: Record<string, unknown>, dominantColor?: string, colors?: s
     coverImageUri: row.cover_image_uri,
     dominantColor: dominantColor ?? "colorless",
     colors: colors ?? [],
+    public: row.public ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

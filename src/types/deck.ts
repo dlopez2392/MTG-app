@@ -14,6 +14,7 @@ export interface Deck {
   coverImageUri?: string;
   dominantColor?: MTGColor;
   colors?: string[];
+  public?: boolean;
   createdAt: string;
   updatedAt: string;
 }

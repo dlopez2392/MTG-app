@@ -26,6 +26,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (body.format !== undefined) update.format = body.format;
   if (body.coverCardId !== undefined) update.cover_card_id = body.coverCardId;
   if (body.coverImageUri !== undefined) update.cover_image_uri = body.coverImageUri;
+  if (body.public !== undefined) update.public = body.public;
 
   const { error } = await sb.from("decks").update(update).eq("id", id).eq("user_id", userId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -51,6 +52,7 @@ function toDecK(row: Record<string, unknown>) {
     format: row.format,
     coverCardId: row.cover_card_id,
     coverImageUri: row.cover_image_uri,
+    public: row.public ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

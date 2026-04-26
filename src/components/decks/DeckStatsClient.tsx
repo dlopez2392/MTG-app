@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useDecks, useDeckCards } from "@/hooks/useDecks";
+import { useGameLog } from "@/hooks/useGameLog";
 import { calculateDeckStats } from "@/lib/utils/deckStats";
+import { computeMyDeckMatchups } from "@/lib/utils/matchupStats";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
 import ManaCurveChart from "@/components/decks/stats/ManaCurveChart";
@@ -86,6 +88,7 @@ function GlassSection({ title, icon, children }: { title: string; icon: string; 
 export default function DeckStatsClient({ deckId }: Props) {
   const { getDeck } = useDecks();
   const { cards } = useDeckCards(deckId);
+  const { entries } = useGameLog();
   const [deck, setDeck] = useState<Deck | undefined>();
 
   useEffect(() => {
@@ -93,6 +96,7 @@ export default function DeckStatsClient({ deckId }: Props) {
   }, [deckId]);
 
   const stats: DeckStats | null = cards ? calculateDeckStats(cards) : null;
+  const opponentMatchups = deck ? computeMyDeckMatchups(entries, deckId, deck.name) : [];
 
   if (!stats) {
     return (
@@ -299,6 +303,44 @@ export default function DeckStatsClient({ deckId }: Props) {
                     <span className="text-sm font-bold text-amber-400 flex-shrink-0">${card.price.toFixed(2)}</span>
                   </div>
                 ))}
+              </div>
+            </GlassSection>
+          )}
+
+          {/* ── Opponent Matchups ── */}
+          {opponentMatchups.length > 0 && (
+            <GlassSection
+              title="Opponent Matchups"
+              icon="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
+            >
+              <div className="flex flex-col gap-2">
+                {opponentMatchups.slice(0, 10).map((opp) => {
+                  const total = opp.wins + opp.losses + opp.draws;
+                  const wPct = total > 0 ? (opp.wins / total) * 100 : 0;
+                  return (
+                    <div key={opp.opponentName} className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)" }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-sm font-medium text-white/80">{opp.opponentName}</span>
+                        <span
+                          className="text-xs font-bold tabular-nums"
+                          style={{ color: opp.winRate >= 60 ? "#22C55E" : opp.winRate >= 40 ? "#7C5CFC" : "#EF4444" }}
+                        >
+                          {opp.winRate}% WR
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-white/40 mb-1.5">
+                        <span>{total} games</span>
+                        <span className="text-green-400/70">{opp.wins}W</span>
+                        <span className="text-red-400/70">{opp.losses}L</span>
+                        {opp.draws > 0 && <span>{opp.draws}D</span>}
+                      </div>
+                      <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
+                        {wPct > 0 && <div className="rounded-full" style={{ width: `${wPct}%`, background: "#22C55E" }} />}
+                        {100 - wPct > 0 && <div className="rounded-full" style={{ width: `${100 - wPct}%`, background: "#EF4444" }} />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </GlassSection>
           )}
