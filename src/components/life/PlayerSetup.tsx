@@ -64,12 +64,7 @@ interface PlayerSetupProps {
   onShowMatchHistory?: () => void;
 }
 
-const FORMATS = [
-  { label: "Commander", life: 40 },
-  { label: "Standard", life: 20 },
-  { label: "Modern", life: 20 },
-  { label: "Brawl", life: 25 },
-];
+const LIFE_TOTALS = [20, 25, 30, 40] as const;
 
 const PLAYER_COLORS = [
   { base: "#607D8B", light: "#90A4AE", dark: "#37474F" },
@@ -88,6 +83,7 @@ export default function PlayerSetup({
 }: PlayerSetupProps) {
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount);
   const [startingLife, setStartingLife] = useState(defaultStartingLife);
+  const [customLife, setCustomLife] = useState(!LIFE_TOTALS.includes(defaultStartingLife as typeof LIFE_TOTALS[number]));
   const [playerNames, setPlayerNames] = useState<string[]>(
     Array.from({ length: 6 }, (_, i) => `Player ${i + 1}`)
   );
@@ -178,29 +174,66 @@ export default function PlayerSetup({
           </div>
         </div>
 
-        {/* ── Format / Starting Life ── */}
+        {/* ── Starting Life ── */}
         <div>
           <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
-            Format
+            Starting Life
           </label>
-          <div className="grid grid-cols-4 gap-2">
-            {FORMATS.map((f) => (
+          <div className="flex gap-2">
+            {LIFE_TOTALS.map((life) => (
               <button
-                key={f.label}
+                key={life}
                 type="button"
-                onClick={() => setStartingLife(f.life)}
+                onClick={() => { setStartingLife(life); setCustomLife(false); }}
                 className={cn(
-                  "py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer",
-                  startingLife === f.life
+                  "flex-1 py-3 rounded-xl text-sm font-bold transition-all border cursor-pointer",
+                  !customLife && startingLife === life
                     ? "btn-gradient border-transparent"
                     : "bg-bg-card text-text-secondary border-border hover:border-accent/40"
                 )}
               >
-                <span className="block">{f.label}</span>
-                <span className="block text-[10px] font-normal opacity-70">{f.life} life</span>
+                {life}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setCustomLife(true)}
+              className={cn(
+                "flex-1 py-3 rounded-xl text-sm font-bold transition-all border cursor-pointer",
+                customLife
+                  ? "btn-gradient border-transparent"
+                  : "bg-bg-card text-text-secondary border-border hover:border-accent/40"
+              )}
+            >
+              Custom
+            </button>
           </div>
+          {customLife && (
+            <div className="flex items-center gap-3 mt-3">
+              <button
+                type="button"
+                onClick={() => setStartingLife((l) => Math.max(1, l - 1))}
+                className="w-10 h-10 rounded-xl bg-bg-card border border-border flex items-center justify-center text-text-secondary text-lg font-bold hover:border-accent/40 active:scale-90 transition-all cursor-pointer"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={999}
+                value={startingLife}
+                onChange={(e) => setStartingLife(Math.max(1, Math.min(999, Number(e.target.value) || 1)))}
+                className="flex-1 input-base px-3 py-2 text-center text-lg font-bold tabular-nums"
+              />
+              <button
+                type="button"
+                onClick={() => setStartingLife((l) => Math.min(999, l + 1))}
+                className="w-10 h-10 rounded-xl bg-bg-card border border-border flex items-center justify-center text-text-secondary text-lg font-bold hover:border-accent/40 active:scale-90 transition-all cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ── Game Options ── */}

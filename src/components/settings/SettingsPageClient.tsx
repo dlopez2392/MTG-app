@@ -232,10 +232,10 @@ export default function SettingsPageClient() {
                 value={String(settings.defaultStartingLife)}
                 onChange={(v) => updateSetting("defaultStartingLife", parseInt(v, 10))}
                 options={[
-                  { value: "20", label: "20 — Standard" },
-                  { value: "25", label: "25 — Brawl" },
-                  { value: "30", label: "30 — Two-Headed Giant" },
-                  { value: "40", label: "40 — Commander" },
+                  { value: "20", label: "20 Life" },
+                  { value: "25", label: "25 Life" },
+                  { value: "30", label: "30 Life" },
+                  { value: "40", label: "40 Life" },
                 ]}
               />
             </SettingRow>

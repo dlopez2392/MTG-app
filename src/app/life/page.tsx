@@ -717,17 +717,13 @@ export default function LifePage() {
           const isPlayer1Winner = player1?.isWinner;
           const hasDraw = !winner;
           const result = hasDraw ? "draw" as const : isPlayer1Winner ? "win" as const : "loss" as const;
-          const format = payload.startingLife === 40 ? "Commander"
-            : payload.startingLife === 25 ? "Brawl"
-            : payload.startingLife === 30 ? "Two-Headed Giant"
-            : "Standard";
           const opponents = payload.players.slice(1).map((p) => p.playerName).join(", ");
 
           await addGameLogEntry({
             date: payload.endedAt,
             deckName: player1?.playerName ?? "Player 1",
             result,
-            format,
+            format: payload.format,
             playerCount: payload.playerCount,
             notes: payload.notes,
             opponentNames: opponents || undefined,

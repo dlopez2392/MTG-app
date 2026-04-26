@@ -17,6 +17,8 @@ interface EndGameModalProps {
   saving?: boolean;
 }
 
+const FORMAT_OPTIONS = ["Commander", "Standard", "Modern", "Pioneer", "Legacy", "Vintage", "Pauper", "Brawl", "Draft", "Sealed"];
+
 export default function EndGameModal({
   open,
   onClose,
@@ -28,6 +30,7 @@ export default function EndGameModal({
   saving,
 }: EndGameModalProps) {
   const [winnerId, setWinnerId] = useState<string | null>(null);
+  const [format, setFormat] = useState("");
   const [notes, setNotes] = useState("");
 
   const handleSave = async () => {
@@ -38,6 +41,7 @@ export default function EndGameModal({
       durationSecs,
       startingLife,
       playerCount: players.length,
+      format: format || undefined,
       notes: notes.trim() || undefined,
       players: players.map((p, i) => ({
         playerName: p.name,
@@ -95,6 +99,29 @@ export default function EndGameModal({
           >
             Clear selection
           </button>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
+            Format <span className="normal-case tracking-normal font-normal">(optional)</span>
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {FORMAT_OPTIONS.map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFormat(format === f ? "" : f)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer",
+                  format === f
+                    ? "bg-accent/20 border-accent/50 text-accent"
+                    : "bg-bg-card border-border text-text-muted hover:text-text-secondary hover:border-accent/30"
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>
