@@ -60,7 +60,7 @@ async function fetchArchidekt(format: string, page: number, query: string): Prom
   const res = await fetch(`${ARCHIDEKT_API}?${params}`, {
     headers: {
       Accept: "application/json",
-      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     },
     next: { revalidate: 600 },
   });
@@ -106,7 +106,7 @@ interface EdhrecCommander {
 async function fetchEdhrec(page: number, query: string): Promise<ExploreResult> {
   const res = await fetch("https://json.edhrec.com/pages/commanders/year.json", {
     headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
       "Referer": "https://edhrec.com/",
     },
     next: { revalidate: 600 },
@@ -182,7 +182,7 @@ async function fetchMtgTop8(format: string, page: number, query: string): Promis
 
   const url = `https://mtgtop8.com/format?f=${fmt}${pageParam}`;
   const res = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)" },
+    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36" },
     next: { revalidate: 600 },
   });
 
@@ -276,12 +276,17 @@ async function fetchMoxfield(format: string, page: number, query: string): Promi
 
   const res = await fetch(`https://api2.moxfield.com/v2/decks/search?${params}`, {
     headers: {
-      Accept: "application/json",
-      "User-Agent": "Mozilla/5.0 (compatible; MTGHoudini/1.0)",
-      "Referer": "https://www.moxfield.com/",
-      "Origin": "https://www.moxfield.com",
+      "Accept": "application/json",
+      "Accept-Language": "en-US,en;q=0.9",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-site",
+      "Sec-Ch-Ua": '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+      "Sec-Ch-Ua-Mobile": "?0",
+      "Sec-Ch-Ua-Platform": '"Windows"',
     },
-    next: { revalidate: 600 },
+    cache: "no-store",
   });
 
   if (!res.ok) throw new Error(`Moxfield ${res.status}`);
@@ -348,6 +353,7 @@ export async function GET(req: Request) {
     return NextResponse.json(result);
   } catch (err) {
     console.error(`[explore-decks] ${source} error:`, err);
+    cache.delete(cacheKey);
     return NextResponse.json(
       { error: `Failed to fetch from ${source}` },
       { status: 502 }
