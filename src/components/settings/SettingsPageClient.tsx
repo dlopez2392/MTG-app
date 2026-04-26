@@ -123,7 +123,7 @@ export default function SettingsPageClient() {
     <div className="flex flex-col min-h-screen pb-20">
       <HeroBanner
         title="More"
-        subtitle="Settings & account — MTG Houdini v0.2.0"
+        subtitle="Settings & account — MTG Houdini v0.4.0"
         accent="#A855F7"
         icon={MORE_ICON}
       />
@@ -411,9 +411,22 @@ export default function SettingsPageClient() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold text-text-primary">v0.3.0</p>
+                    <p className="text-xs font-semibold text-text-primary">v0.4.0</p>
                     <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full leading-none">Latest</span>
                   </div>
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+                    Playgroup &amp; pod tracking with head-to-head stats. Friend discovery via email with account linking. Public deck sharing &amp; friend deck viewer. Deck matchup tracking per opponent. Moxfield-style deck editor with grouping &amp; sorting. Playgroup quick-pick in life counter.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 opacity-60">
+                <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">v0.3.0</p>
                   <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
                     AI Deck Coach with format selector & ban list awareness. Commander Bracket Calculator with hybrid AI analysis. Cross-deck card allocation. Long-press +/-10 life. Screen wake lock. Commander damage in game menu. Thematic home tile artwork.
                   </p>
@@ -468,7 +481,7 @@ export default function SettingsPageClient() {
               MTG Houdini is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
             </p>
             <p className="text-xs text-text-muted pt-1 border-t border-border">
-              <span className="font-semibold text-text-secondary">v0.3.0</span> — AI Deck Coach, Bracket Calculator, card allocation, enhanced life counter.
+              <span className="font-semibold text-text-secondary">v0.4.0</span> — Playgroup tracking, friend discovery, public decks, deck matchup stats.
             </p>
           </div>
         </section>
