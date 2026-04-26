@@ -286,7 +286,7 @@ export default function ExploreDecks() {
           placeholder={isEdhrec ? "Search commanders..." : "Search decks..."}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 rounded-xl bg-bg-primary border border-border text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+          className="w-full pl-9 pr-4 py-2 input-base"
         />
       </div>
 

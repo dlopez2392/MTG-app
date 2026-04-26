@@ -149,12 +149,12 @@ export default function SetCompletionTab({ allCards }: SetCompletionTabProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search sets…"
-          className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+          className="flex-1 input-base px-3 py-2"
         />
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="bg-bg-card border border-border rounded-lg px-2 py-2 text-xs text-text-secondary outline-none focus:border-accent/60 transition-colors"
+          className="input-base px-2 py-2 text-xs text-text-secondary"
         >
           <option value="completion">% Complete</option>
           <option value="owned">Most Owned</option>

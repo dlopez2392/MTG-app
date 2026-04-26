@@ -130,7 +130,7 @@ export default function EndGameModal({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="How the game went..."
             rows={2}
-            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2 text-sm text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent"
+            className="w-full input-base px-3 py-2 resize-none"
           />
         </div>
 

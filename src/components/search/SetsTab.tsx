@@ -64,7 +64,7 @@ export default function SetsTab({ onSetSelect }: SetsTabProps) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search for a set…"
-          className="w-full bg-bg-card border border-border rounded-xl pl-10 pr-4 py-3 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+          className="w-full input-base pl-10 pr-4 py-3"
         />
       </div>
 

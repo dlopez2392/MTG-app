@@ -84,7 +84,7 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-hero-from/60 via-transparent to-hero-to/60" />
-        <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 80% 60% at 50% 40%, rgba(237,154,87,0.08) 0%, transparent 70%)" }} />
+        <div className="absolute inset-0 glow-radial-accent" />
 
         <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-12 pb-4 text-center max-w-2xl mx-auto w-full">
           <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-1 drop-shadow-lg">

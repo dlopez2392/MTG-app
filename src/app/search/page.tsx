@@ -113,7 +113,7 @@ export default function SearchPage() {
       <HeroBanner
         title="Search"
         subtitle="Browse the full Scryfall database"
-        accent="#ED9A57"
+        accent="var(--color-accent)"
         icon={SEARCH_ICON}
         onBack={() => router.back()}
       >

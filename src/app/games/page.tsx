@@ -87,7 +87,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           <select
             value={deckId || deckName}
             onChange={handleDeckChange}
-            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full input-base px-3 py-2.5"
           >
             {decks.map((d) => (
               <option key={d.id ?? d.name} value={d.id ?? d.name}>{d.name}</option>
@@ -101,7 +101,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
             value={deckName}
             onChange={(e) => setDeckName(e.target.value)}
             placeholder="Deck name…"
-            className="w-full mt-1 bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+            className="w-full mt-1 input-base px-3 py-2.5"
             required
           />
         )}
@@ -138,7 +138,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           <select
             value={playerCount}
             onChange={(e) => setPlayers(Number(e.target.value))}
-            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full input-base px-3 py-2.5"
           >
             {[2, 3, 4, 5, 6, 7, 8].map((n) => (
               <option key={n} value={n}>{n} players</option>
@@ -150,7 +150,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
-            className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+            className="w-full input-base px-3 py-2.5"
           >
             <option value="">Any</option>
             {["commander", "standard", "modern", "legacy", "vintage", "pioneer", "pauper", "draft", "sealed"].map((f) => (
@@ -167,7 +167,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+          className="w-full input-base px-3 py-2.5"
         />
       </div>
 
@@ -179,7 +179,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           value={opponents}
           onChange={(e) => setOpponents(e.target.value)}
           placeholder="e.g. Yuriko, Atraxa, Sliver Queen"
-          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors"
+          className="w-full input-base px-3 py-2.5"
         />
       </div>
 
@@ -191,7 +191,7 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
           onChange={(e) => setNotes(e.target.value)}
           placeholder="How did it go? Key plays, combos, notes…"
           rows={3}
-          className="w-full bg-bg-card border border-border rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 transition-colors resize-none"
+          className="w-full input-base px-3 py-2.5 resize-none"
         />
       </div>
 

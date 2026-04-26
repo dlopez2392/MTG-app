@@ -1,3 +1,16 @@
+export const THEME = {
+  accent: "#ED9A57",
+  accentDark: "#D4823F",
+  accentLight: "#F4B87A",
+  bgPrimary: "#0B0E14",
+  bgSecondary: "#111520",
+  bgCard: "#161B27",
+  border: "#1E2433",
+  textPrimary: "#E8EAF0",
+  textSecondary: "#8B90A0",
+  textMuted: "#4E5364",
+} as const;
+
 export const MTG_COLORS = [
   { code: "W", name: "White", hex: "#F9FAF4", bg: "#F8F6D8" },
   { code: "U", name: "Blue", hex: "#0E68AB", bg: "#0E68AB" },

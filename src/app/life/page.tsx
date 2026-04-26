@@ -480,12 +480,7 @@ export default function LifePage() {
             </button>
 
             {gameOptions.gameTimer && !showMenu && (
-              <div
-                className="rounded-full p-[2px] shadow-lg flex-shrink-0"
-                style={{
-                  background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
-                }}
-              >
+              <div className="rounded-full p-[2px] shadow-lg flex-shrink-0 bg-accent-gradient">
                 <div className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-sm",
                   gameSecondsLeft <= 300 && "bg-red-950/90"
@@ -505,25 +500,24 @@ export default function LifePage() {
 
       {/* ── Fullscreen game menu overlay ── */}
       {showMenu && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, rgba(237,154,87,0.08) 0%, rgba(0,0,0,0.95) 70%)" }}>
+        <div className="absolute inset-0 z-50 flex items-center justify-center overlay-accent">
           <div className="absolute inset-0 backdrop-blur-xl" />
           <div className="relative w-full h-full overflow-y-auto px-5 pt-6 pb-16 flex flex-col" style={{ maxWidth: "420px", margin: "0 auto" }}>
 
             {/* Header */}
             <div className="flex items-center justify-between mb-5 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-accent-gradient">
                   <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-black tracking-tight" style={{ background: "linear-gradient(135deg, #F4C96B, #ED9A57)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                <h2 className="text-xl font-black tracking-tight text-accent-gradient">
                   Game Menu
                 </h2>
               </div>
               <button type="button" onClick={() => setShowMenu(false)}
-                className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10"
-                style={{ background: "linear-gradient(135deg, rgba(244,201,107,0.15), rgba(212,96,42,0.15))" }}>
+                className="w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all border border-white/10 btn-accent-subtle">
                 <svg className="w-5 h-5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -533,16 +527,14 @@ export default function LifePage() {
             {/* Quick actions */}
             <div className="flex gap-3 mb-5 flex-shrink-0">
               <button type="button" onClick={() => { setShowHistory(true); setShowMenu(false); }}
-                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-white/5"
-                style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}>
+                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 glass-panel">
                 <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 History
               </button>
               <button type="button" onClick={() => { toggleFullscreen(); setShowMenu(false); }}
-                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 border border-white/5"
-                style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}>
+                className="flex-1 py-4 text-sm font-bold text-white/90 rounded-2xl transition-all active:scale-95 flex items-center justify-center gap-2 glass-panel">
                 <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                 </svg>
@@ -553,9 +545,9 @@ export default function LifePage() {
             {/* Counters section */}
             <div className="mb-5 flex-shrink-0">
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                <div className="h-px flex-1 divider-accent" />
                 <span className="text-[10px] text-accent/70 uppercase tracking-[0.2em] font-bold">Counters</span>
-                <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                <div className="h-px flex-1 divider-accent" />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -586,13 +578,13 @@ export default function LifePage() {
             {(showCommanderDmg || showEnergy || showExperience || showMonarch || showInitiativeToggle || showDungeon) && (
               <div className="mb-5 flex-shrink-0">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                  <div className="h-px flex-1 divider-accent" />
                   <span className="text-[10px] text-accent/70 uppercase tracking-[0.2em] font-bold">Players</span>
-                  <div className="h-px flex-1" style={{ background: "linear-gradient(90deg, transparent, rgba(237,154,87,0.3), transparent)" }} />
+                  <div className="h-px flex-1 divider-accent" />
                 </div>
                 <div className="space-y-2">
                   {players.map((p) => (
-                    <div key={p.id} className="rounded-2xl p-3 border border-white/5" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)" }}>
+                    <div key={p.id} className="rounded-2xl p-3 glass-panel">
                       <div className="flex items-center gap-2 mb-2.5">
                         <div className="w-3.5 h-3.5 rounded-full flex-shrink-0 ring-2 ring-white/10" style={{ backgroundColor: p.color }} />
                         <span className="text-sm font-bold text-white/90">{p.name}</span>
@@ -664,11 +656,10 @@ export default function LifePage() {
             )}
 
             {/* Game actions */}
-            <div className="flex-shrink-0 space-y-2 pt-3 mb-2" style={{ borderTop: "1px solid rgba(237,154,87,0.15)" }}>
+            <div className="flex-shrink-0 space-y-2 pt-3 mb-2" style={{ borderTop: "1px solid color-mix(in srgb, var(--color-accent) 15%, transparent)" }}>
               <button type="button"
                 onClick={() => { setShowEndGame(true); setShowMenu(false); setGameTimerRunning(false); setTurnTimerRunning(false); }}
-                className="w-full py-3.5 text-sm font-bold rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-black"
-                style={{ background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)" }}>
+                className="w-full py-3.5 text-sm font-bold rounded-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 btn-gradient">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M5 3v2l4 4-2.5 3.5L3 11v2l4 2 1 6h2l1-6 1.5-2L14 19h2l1-6 4-2v-2l-3.5 1.5L15 7l4-4V1l-5 5-2-2-2 2-5-5z" />
                 </svg>

@@ -168,7 +168,7 @@ export default function DeckNotes({ deckId, initialValue = "", onSave }: DeckNot
                 onKeyDown={handleKeyDown}
                 placeholder={"Add strategy notes, sideboard guide, card explanations…\n\nSupports basic markdown:\n**bold**  *italic*\n# Heading\n- List item"}
                 rows={8}
-                className="w-full bg-bg-secondary border border-border rounded-lg px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent/60 resize-none transition-colors leading-relaxed"
+                className="w-full input-base px-3 py-2.5 resize-none leading-relaxed"
               />
               <div className="flex items-center justify-between mt-2">
                 <p className="text-[10px] text-text-muted">Esc or click away to save</p>

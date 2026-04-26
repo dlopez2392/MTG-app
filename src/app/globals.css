@@ -216,6 +216,47 @@ input[type="email"] {
     inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
+/* ── Reusable gradient utilities ───────────────────────────────────────────── */
+
+/* Same warm gradient as btn-gradient but without box-shadow/color — for borders, backgrounds */
+.bg-accent-gradient {
+  background: linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%);
+}
+
+/* Accent gradient text fill */
+.text-accent-gradient {
+  background: linear-gradient(135deg, #F4C96B, var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtle glass panel — used for menu items and cards on dark overlays */
+.glass-panel {
+  background: linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Accent-tinted divider */
+.divider-accent {
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 30%, transparent), transparent);
+}
+
+/* Dark overlay with subtle accent radial glow */
+.overlay-accent {
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, rgba(0,0,0,0.95) 70%);
+}
+
+/* Hero/home subtle radial accent glow */
+.glow-radial-accent {
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%);
+}
+
+/* Accent-tinted close/back button */
+.btn-accent-subtle {
+  background: linear-gradient(135deg, color-mix(in srgb, #F4C96B 15%, transparent), color-mix(in srgb, #D4602A 15%, transparent));
+}
+
 /* ── Form control base ─────────────────────────────────────────────────────── */
 .input-base {
   background: var(--color-input-bg);

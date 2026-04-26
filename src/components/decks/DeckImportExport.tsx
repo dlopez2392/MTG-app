@@ -114,7 +114,7 @@ export default function DeckImportExport({
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
             placeholder={"4 Lightning Bolt\n4 Monastery Swiftspear\n20 Mountain\n\nSideboard\n2 Roiling Vortex"}
-            className="w-full h-48 bg-bg-card border border-border rounded-xl p-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent resize-none font-mono"
+            className="w-full h-48 input-base p-3 resize-none font-mono"
           />
 
           {importResult && (

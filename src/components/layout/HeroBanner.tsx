@@ -3,13 +3,14 @@
 interface HeroBannerProps {
   title: string;
   subtitle?: string;
-  accent: string;
+  accent?: string;
   icon: React.ReactNode;
   children?: React.ReactNode;
   onBack?: () => void;
 }
 
 export default function HeroBanner({ title, subtitle, accent, icon, children, onBack }: HeroBannerProps) {
+  const accentColor = accent ?? "var(--color-accent)";
   return (
     <div className="relative" style={{ minHeight: children ? 180 : 130 }}>
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -17,7 +18,7 @@ export default function HeroBanner({ title, subtitle, accent, icon, children, on
 
         <div
           className="absolute -top-8 -right-8 w-40 h-40 rounded-full blur-3xl opacity-20"
-          style={{ background: accent }}
+          style={{ background: accentColor }}
         />
       </div>
 
@@ -36,7 +37,7 @@ export default function HeroBanner({ title, subtitle, accent, icon, children, on
           )}
           <div
             className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `${accent}18`, color: accent, boxShadow: `0 0 20px ${accent}30` }}
+            style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, boxShadow: `0 0 20px color-mix(in srgb, ${accentColor} 19%, transparent)` }}
           >
             {icon}
           </div>

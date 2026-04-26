@@ -78,11 +78,8 @@ function NavTab({
       suppressHydrationWarning
       className={cn(
         "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset mx-1 rounded-xl",
-        isActive ? "text-black" : "text-accent/50 hover:text-accent/75"
+        isActive ? "text-black bg-accent-gradient" : "text-accent/50 hover:text-accent/75"
       )}
-      style={isActive ? {
-        background: "linear-gradient(135deg, #F4C96B 0%, #ED9A57 40%, #D4602A 100%)",
-      } : undefined}
     >
       <span
         className={cn(

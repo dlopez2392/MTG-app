@@ -151,7 +151,7 @@ export default function FeedbackModal({ open, onClose }: FeedbackModalProps) {
                   ? "Describe the feature you'd like to see…"
                   : "Share your thoughts…"
               }
-              className="w-full bg-bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/50 resize-none transition-colors"
+              className="w-full input-base px-4 py-2.5 resize-none"
             />
           </div>
 

@@ -63,7 +63,7 @@ export default function DecksPageClient() {
       <HeroBanner
         title="Decks"
         subtitle="Build & manage your decks"
-        accent="#ED9A57"
+        accent="var(--color-accent)"
         icon={DECK_ICON}
       />
 
@@ -121,7 +121,7 @@ export default function DecksPageClient() {
                 <select
                   value={formatFilter}
                   onChange={(e) => setFormatFilter(e.target.value)}
-                  className="w-full bg-bg-primary border border-border rounded-xl px-3 py-2 text-sm text-text-primary outline-none focus:border-accent/60 transition-colors"
+                  className="w-full input-base px-3 py-2"
                 >
                   {FORMAT_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>

@@ -267,7 +267,7 @@ export default function RulesPageClient() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search rules and glossary…"
-            className="w-full bg-bg-card border border-border rounded-xl pl-10 pr-10 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent/60 transition-colors"
+            className="w-full input-base pl-10 pr-10 py-2"
           />
           {search && (
             <button
