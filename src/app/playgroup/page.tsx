@@ -61,63 +61,183 @@ function computeMemberStats(
   return stats;
 }
 
+interface FoundUser {
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
 function MemberForm({
   initial,
   onSave,
   onCancel,
   saveLabel = "Add",
+  isEditing = false,
 }: {
   initial?: Partial<PlaygroupMember>;
-  onSave: (name: string, color: string, notes?: string) => void;
+  onSave: (name: string, color: string, notes?: string, friendUserId?: string) => void;
   onCancel: () => void;
   saveLabel?: string;
+  isEditing?: boolean;
 }) {
+  const [tab, setTab] = useState<"search" | "manual">(isEditing ? "manual" : "search");
   const [name, setName] = useState(initial?.name ?? "");
   const [color, setColor] = useState(initial?.avatarColor ?? AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
+  const [email, setEmail] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResult, setSearchResult] = useState<{ found: boolean; user?: FoundUser } | null>(null);
+
+  async function handleSearch() {
+    if (!email.trim()) return;
+    setSearching(true);
+    setSearchResult(null);
+    try {
+      const res = await fetch(`/api/profile/search?email=${encodeURIComponent(email.trim())}`);
+      const data = await res.json();
+      setSearchResult(data);
+      if (data.found && data.user) {
+        setName(data.user.displayName);
+      }
+    } catch {
+      setSearchResult({ found: false });
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  const foundUser = searchResult?.found ? searchResult.user : null;
+
   return (
     <div className="space-y-4">
-      <div>
-        <label className="text-xs text-text-muted font-medium block mb-1">Name</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Player name..."
-          className="w-full input-base px-3 py-2.5"
-          autoFocus
-        />
-      </div>
-
-      <div>
-        <label className="text-xs text-text-muted font-medium block mb-1">Color</label>
-        <div className="flex gap-2 flex-wrap">
-          {AVATAR_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setColor(c)}
-              className={cn(
-                "w-8 h-8 rounded-full transition-all",
-                color === c ? "ring-2 ring-white ring-offset-2 ring-offset-bg-primary scale-110" : "opacity-60 hover:opacity-90"
-              )}
-              style={{ backgroundColor: c }}
-            />
-          ))}
+      {/* Tab toggle — only show for new members */}
+      {!isEditing && (
+        <div className="flex gap-1 bg-bg-card rounded-lg p-0.5">
+          <button
+            type="button"
+            onClick={() => { setTab("search"); setSearchResult(null); }}
+            className={cn(
+              "flex-1 px-3 py-1.5 text-xs font-semibold rounded transition-colors",
+              tab === "search" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
+            )}
+          >
+            Find by Email
+          </button>
+          <button
+            type="button"
+            onClick={() => { setTab("manual"); setSearchResult(null); }}
+            className={cn(
+              "flex-1 px-3 py-1.5 text-xs font-semibold rounded transition-colors",
+              tab === "manual" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
+            )}
+          >
+            Add Manually
+          </button>
         </div>
-      </div>
+      )}
 
-      <div>
-        <label className="text-xs text-text-muted font-medium block mb-1">Notes <span className="text-text-muted/60">(optional)</span></label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Favorite commanders, play style..."
-          rows={2}
-          className="w-full input-base px-3 py-2.5 resize-none"
-        />
-      </div>
+      {/* Search by email */}
+      {tab === "search" && !isEditing && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-text-muted font-medium block mb-1">Email Address</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); setSearchResult(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="friend@example.com"
+                className="flex-1 input-base px-3 py-2.5"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSearch}
+                disabled={!email.trim() || searching}
+                className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors disabled:opacity-40"
+              >
+                {searching ? "..." : "Search"}
+              </button>
+            </div>
+          </div>
+
+          {searchResult && !searchResult.found && (
+            <div className="rounded-xl px-4 py-3 bg-bg-card border border-border">
+              <p className="text-sm text-text-secondary">No discoverable account found for this email.</p>
+              <p className="text-xs text-text-muted mt-1">They may need to enable &quot;Discoverable&quot; in their settings, or you can add them manually.</p>
+            </div>
+          )}
+
+          {foundUser && (
+            <div className="rounded-xl px-4 py-3 bg-accent/10 border border-accent/30">
+              <div className="flex items-center gap-3">
+                {foundUser.avatarUrl ? (
+                  <img src={foundUser.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
+                    {foundUser.displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text-primary">{foundUser.displayName}</p>
+                  <p className="text-xs text-accent">Account linked</p>
+                </div>
+                <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual name — always show in manual tab or when editing, also show after successful search */}
+      {(tab === "manual" || isEditing || foundUser) && (
+        <>
+          <div>
+            <label className="text-xs text-text-muted font-medium block mb-1">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Player name..."
+              className="w-full input-base px-3 py-2.5"
+              autoFocus={tab === "manual" || isEditing}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-text-muted font-medium block mb-1">Color</label>
+            <div className="flex gap-2 flex-wrap">
+              {AVATAR_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={cn(
+                    "w-8 h-8 rounded-full transition-all",
+                    color === c ? "ring-2 ring-white ring-offset-2 ring-offset-bg-primary scale-110" : "opacity-60 hover:opacity-90"
+                  )}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-text-muted font-medium block mb-1">Notes <span className="text-text-muted/60">(optional)</span></label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Favorite commanders, play style..."
+              rows={2}
+              className="w-full input-base px-3 py-2.5 resize-none"
+            />
+          </div>
+        </>
+      )}
 
       <div className="flex gap-2 justify-end pt-1">
         <button type="button" onClick={onCancel}
@@ -126,7 +246,7 @@ function MemberForm({
         </button>
         <button
           type="button"
-          onClick={() => name.trim() && onSave(name.trim(), color, notes.trim() || undefined)}
+          onClick={() => name.trim() && onSave(name.trim(), color, notes.trim() || undefined, foundUser?.userId)}
           disabled={!name.trim()}
           className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors disabled:opacity-40"
         >
@@ -240,11 +360,24 @@ export default function PlaygroupPage() {
                     onClick={() => setExpanded(isExpanded ? null : member.id)}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left"
                   >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                      style={{ backgroundColor: member.avatarColor }}
-                    >
-                      {member.name.charAt(0).toUpperCase()}
+                    <div className="relative flex-shrink-0">
+                      {member.friendAvatarUrl ? (
+                        <img src={member.friendAvatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                          style={{ backgroundColor: member.avatarColor }}
+                        >
+                          {member.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {member.friendUserId && (
+                        <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-accent flex items-center justify-center">
+                          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-text-primary truncate">{member.name}</p>
@@ -344,7 +477,7 @@ export default function PlaygroupPage() {
       {/* Add member modal */}
       <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Member">
         <MemberForm
-          onSave={(name, color, notes) => { addMember(name, color, notes); setShowAdd(false); }}
+          onSave={(name, color, notes, friendUserId) => { addMember(name, color, notes, friendUserId); setShowAdd(false); }}
           onCancel={() => setShowAdd(false)}
         />
       </Modal>
@@ -354,6 +487,7 @@ export default function PlaygroupPage() {
         {editing && (
           <MemberForm
             initial={editing}
+            isEditing
             onSave={(name, color, notes) => {
               updateMember(editing.id, { name, avatarColor: color, notes });
               setEditing(null);

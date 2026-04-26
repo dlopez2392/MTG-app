@@ -41,13 +41,13 @@ export function usePlaygroup() {
     }
   }, [isSignedIn]);
 
-  const addMember = useCallback(async (name: string, avatarColor: string, notes?: string) => {
+  const addMember = useCallback(async (name: string, avatarColor: string, notes?: string, friendUserId?: string) => {
     if (isSignedIn) {
       try {
         const res = await fetch("/api/playgroup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, avatarColor, notes }),
+          body: JSON.stringify({ name, avatarColor, notes, friendUserId }),
         });
         const created = await res.json();
         if (created.id) setMembers((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));

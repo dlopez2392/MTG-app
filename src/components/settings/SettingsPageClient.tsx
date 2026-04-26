@@ -10,6 +10,7 @@ import Toggle from "@/components/ui/Toggle";
 import { Select } from "@/components/ui/Input";
 import HeroBanner from "@/components/layout/HeroBanner";
 import { useSettings } from "@/hooks/useSettings";
+import { useProfile } from "@/hooks/useProfile";
 import type { UserSettings } from "@/types/settings";
 import type { CardCondition } from "@/types/collection";
 
@@ -49,6 +50,7 @@ export default function SettingsPageClient() {
   const { signOut, openUserProfile } = useClerk();
   const router = useRouter();
   const { settings, updateSetting, mounted } = useSettings();
+  const { profile, updateProfile } = useProfile();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
@@ -131,6 +133,7 @@ export default function SettingsPageClient() {
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Account</h2>
           {isSignedIn && user ? (
+          <>
             <div className="glass-card rounded-2xl border border-border p-4 flex items-center gap-3">
               {user.imageUrl && (
                 <img src={user.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -154,6 +157,18 @@ export default function SettingsPageClient() {
                 </button>
               </div>
             </div>
+            <div className="glass-card rounded-2xl border border-border px-4 mt-3 divide-y divide-border">
+              <SettingRow
+                label="Discoverable"
+                description="Let other players find you by email to add you to their playgroup"
+              >
+                <Toggle
+                  value={profile?.discoverable ?? false}
+                  onChange={(v) => updateProfile({ discoverable: v })}
+                />
+              </SettingRow>
+            </div>
+          </>
           ) : (
             <div className="glass-card rounded-2xl border border-border p-4">
               <p className="text-sm text-text-secondary mb-1">You&apos;re using guest mode</p>

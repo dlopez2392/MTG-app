@@ -3,5 +3,7 @@ export interface PlaygroupMember {
   name: string;
   avatarColor: string;
   notes?: string;
+  friendUserId?: string;
+  friendAvatarUrl?: string;
   createdAt: string;
 }
