@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0B0E14"/>
+  <rect x="24" y="24" width="464" height="464" rx="80" fill="none" stroke="#7C5CFC" stroke-width="4" opacity="0.3"/>
+  <!-- Planeswalker-inspired symbol -->
+  <g transform="translate(256,256)">
+    <!-- Outer ring -->
+    <circle cx="0" cy="0" r="160" fill="none" stroke="#7C5CFC" stroke-width="6" opacity="0.4"/>
+    <!-- Inner glow -->
+    <circle cx="0" cy="0" r="120" fill="#7C5CFC" opacity="0.08"/>
+    <!-- Central H letterform -->
+    <text x="0" y="18" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="900" font-size="200" fill="#7C5CFC" letter-spacing="-10">H</text>
+    <!-- Accent dots (five colors of magic) -->
+    <circle cx="0" cy="-180" r="12" fill="#F8F8F0" opacity="0.9"/>
+    <circle cx="171" cy="-56" r="12" fill="#1565C0" opacity="0.9"/>
+    <circle cx="106" cy="146" r="12" fill="#1B1B1B" stroke="#555" stroke-width="2" opacity="0.9"/>
+    <circle cx="-106" cy="146" r="12" fill="#C62828" opacity="0.9"/>
+    <circle cx="-171" cy="-56" r="12" fill="#2E7D32" opacity="0.9"/>
+  </g>
+</svg>
