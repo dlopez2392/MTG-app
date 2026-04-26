@@ -1,7 +1,9 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import { type InputHTMLAttributes, forwardRef } from "react";
+import { type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, forwardRef } from "react";
+
+// ── Input ────────────────────────────────────────────────────────────────────
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
@@ -19,7 +21,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "w-full bg-bg-primary border border-border rounded-xl px-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent/50 focus-visible:ring-offset-0 transition-colors",
+            "input-base w-full px-4 py-2.5",
             icon && "pl-10",
             className
           )}
@@ -29,6 +31,45 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     );
   }
 );
-
 Input.displayName = "Input";
+
+// ── Select ───────────────────────────────────────────────────────────────────
+
+interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  options: { value: string; label: string }[];
+}
+
+const Select = forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, options, ...props }, ref) => {
+    return (
+      <select
+        ref={ref}
+        className={cn("input-base px-3 py-1.5", className)}
+        {...props}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    );
+  }
+);
+Select.displayName = "Select";
+
+// ── Textarea ─────────────────────────────────────────────────────────────────
+
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  ({ className, ...props }, ref) => {
+    return (
+      <textarea
+        ref={ref}
+        className={cn("input-base w-full px-3 py-2.5 resize-none", className)}
+        {...props}
+      />
+    );
+  }
+);
+Textarea.displayName = "Textarea";
+
 export default Input;
+export { Input, Select, Textarea };

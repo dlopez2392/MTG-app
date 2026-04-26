@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import FeedbackModal from "@/components/ui/FeedbackModal";
+import Toggle from "@/components/ui/Toggle";
+import { Select } from "@/components/ui/Input";
 import HeroBanner from "@/components/layout/HeroBanner";
 import { useSettings } from "@/hooks/useSettings";
 import type { UserSettings } from "@/types/settings";
@@ -25,32 +27,13 @@ function SettingRow({ label, description, children }: { label: string; descripti
   );
 }
 
-function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+function SettingsSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-bg-card border border-border rounded-xl px-3 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent transition-colors"
-    >
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
-  );
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      role="switch"
-      aria-checked={value}
-      onClick={() => onChange(!value)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${value ? "bg-accent" : "bg-border"}`}
-    >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${value ? "translate-x-6" : "translate-x-1"}`}
-      />
-    </button>
+      options={options}
+    />
   );
 }
 
@@ -198,21 +181,21 @@ export default function SettingsPageClient() {
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Display</h2>
           <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Search View">
-              <Select
+              <SettingsSelect
                 value={settings.defaultSearchView}
                 onChange={(v) => updateSetting("defaultSearchView", v as UserSettings["defaultSearchView"])}
                 options={[{ value: "grid", label: "Grid" }, { value: "list", label: "List" }]}
               />
             </SettingRow>
             <SettingRow label="Card Image Quality">
-              <Select
+              <SettingsSelect
                 value={settings.cardImageQuality}
                 onChange={(v) => updateSetting("cardImageQuality", v as UserSettings["cardImageQuality"])}
                 options={[{ value: "small", label: "Small" }, { value: "normal", label: "Normal" }, { value: "large", label: "Large" }]}
               />
             </SettingRow>
             <SettingRow label="Default Deck Sort">
-              <Select
+              <SettingsSelect
                 value={settings.defaultDeckSort}
                 onChange={(v) => updateSetting("defaultDeckSort", v as UserSettings["defaultDeckSort"])}
                 options={[
@@ -231,7 +214,7 @@ export default function SettingsPageClient() {
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Pricing</h2>
           <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Preferred Currency">
-              <Select
+              <SettingsSelect
                 value={settings.preferredCurrency}
                 onChange={(v) => updateSetting("preferredCurrency", v as UserSettings["preferredCurrency"])}
                 options={[{ value: "usd", label: "USD ($)" }, { value: "eur", label: "EUR (€)" }, { value: "tix", label: "TIX" }]}
@@ -245,7 +228,7 @@ export default function SettingsPageClient() {
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Life Counter</h2>
           <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Starting Life">
-              <Select
+              <SettingsSelect
                 value={String(settings.defaultStartingLife)}
                 onChange={(v) => updateSetting("defaultStartingLife", parseInt(v, 10))}
                 options={[
@@ -257,7 +240,7 @@ export default function SettingsPageClient() {
               />
             </SettingRow>
             <SettingRow label="Default Player Count">
-              <Select
+              <SettingsSelect
                 value={String(settings.defaultPlayerCount)}
                 onChange={(v) => updateSetting("defaultPlayerCount", parseInt(v, 10))}
                 options={[
@@ -301,7 +284,7 @@ export default function SettingsPageClient() {
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Collection</h2>
           <div className="glass-card rounded-2xl border border-border px-4 divide-y divide-border">
             <SettingRow label="Default Condition" description="Used when adding cards to your collection">
-              <Select
+              <SettingsSelect
                 value={settings.defaultCondition}
                 onChange={(v) => updateSetting("defaultCondition", v as CardCondition)}
                 options={[

@@ -44,6 +44,14 @@
   --color-banned: #EF4444;
   --color-not-legal: #6B7280;
 
+  /* Interactive states */
+  --color-focus-ring: var(--color-accent);
+  --color-input-border: var(--color-border);
+  --color-input-focus: var(--color-accent);
+  --color-input-bg: var(--color-bg-card);
+  --color-toggle-off: var(--color-border);
+  --color-toggle-on: var(--color-accent);
+
   --font-sans: var(--font-geist-sans);
   --font-display: "Big Shoulders Display", var(--font-geist-sans), Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
@@ -206,6 +214,26 @@ input[type="email"] {
   box-shadow:
     0 1px 4px rgba(212, 96, 42, 0.4),
     inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Form control base ─────────────────────────────────────────────────────── */
+.input-base {
+  background: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  border-radius: 0.75rem;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-base::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input-base:focus {
+  border-color: var(--color-input-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-input-focus) 25%, transparent);
 }
 
 /* ── Skeleton shimmer ──────────────────────────────────────────────────────── */

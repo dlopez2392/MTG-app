@@ -10,6 +10,7 @@ import ExploreDecks from "@/components/decks/ExploreDecks";
 import EmptyState from "@/components/ui/EmptyState";
 import Input from "@/components/ui/Input";
 import ConfirmModal from "@/components/ui/ConfirmModal";
+import Tabs from "@/components/ui/Tabs";
 import type { Deck } from "@/types/deck";
 
 const DECK_ICON = (
@@ -67,35 +68,15 @@ export default function DecksPageClient() {
       />
 
       <PageContainer>
-        {/* Tabs */}
-        <div className="flex items-center gap-1 glass-card rounded-xl p-1 mb-4">
-          <button
-            onClick={() => setTab("decks")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              tab === "decks"
-                ? "btn-gradient"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Decks
-          </button>
-          <button
-            onClick={() => setTab("explore")}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-              tab === "explore"
-                ? "btn-gradient"
-                : "text-text-secondary hover:text-text-primary"
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-            </svg>
-            Explore
-          </button>
-        </div>
+        <Tabs
+          tabs={[
+            { value: "decks", label: "Decks" },
+            { value: "explore", label: "Explore" },
+          ]}
+          active={tab}
+          onChange={(v) => setTab(v as "decks" | "explore")}
+          className="mb-4"
+        />
 
         {tab === "decks" ? (
           <>

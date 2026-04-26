@@ -7,6 +7,7 @@ import NewsItemRow from "@/components/news/NewsItem";
 import { FEEDS, DEFAULT_ENABLED } from "@/lib/news/feeds";
 import type { NewsItem } from "@/lib/news/rss";
 import { cn } from "@/lib/utils/cn";
+import Checkbox from "@/components/ui/Checkbox";
 
 const STORAGE_KEY = "mtg_news_enabled_feeds";
 
@@ -176,17 +177,7 @@ export default function NewsPage() {
                       {feed.initials.slice(0, 2)}
                     </div>
                     <span className="flex-1 text-sm font-medium text-text-primary">{feed.name}</span>
-                    {/* Checkbox */}
-                    <div className={cn(
-                      "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors shrink-0",
-                      on ? "bg-accent border-accent" : "border-border bg-bg-card"
-                    )}>
-                      {on && (
-                        <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      )}
-                    </div>
+                    <Checkbox checked={on} onChange={() => toggleFeed(feed.key)} />
                   </button>
                 );
               })}

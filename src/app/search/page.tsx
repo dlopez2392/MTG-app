@@ -14,6 +14,7 @@ import CardList from "@/components/cards/CardList";
 import Button from "@/components/ui/Button";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
+import Tabs from "@/components/ui/Tabs";
 import { useCardSearch } from "@/hooks/useCardSearch";
 import { useCollectionMap } from "@/hooks/useCollectionMap";
 import { useDecks } from "@/hooks/useDecks";
@@ -126,34 +127,32 @@ export default function SearchPage() {
       </HeroBanner>
 
       {/* ── Tab switcher ── */}
-      <div className="flex border-b border-border bg-bg-primary sticky top-0 z-10">
-        {(["cards", "sets"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "flex-1 flex flex-col items-center gap-1 pt-3 pb-2 text-xs font-bold uppercase tracking-widest transition-colors",
-              tab === t ? "text-accent" : "text-text-muted hover:text-text-secondary"
-            )}
-          >
-            {t === "cards" ? (
+      <Tabs
+        variant="underline"
+        tabs={[
+          {
+            value: "cards",
+            label: "cards",
+            icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-            ) : (
+            ),
+          },
+          {
+            value: "sets",
+            label: "sets",
+            icon: (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
               </svg>
-            )}
-            {t}
-            {/* Active indicator bar */}
-            <div className={cn(
-              "h-0.5 rounded-full transition-all duration-200",
-              tab === t ? "w-8 bg-accent" : "w-0 bg-transparent"
-            )} />
-          </button>
-        ))}
-      </div>
+            ),
+          },
+        ]}
+        active={tab}
+        onChange={(v) => setTab(v as Tab)}
+        className="bg-bg-primary sticky top-0 z-10"
+      />
 
       <PageContainer>
         {tab === "sets" ? (

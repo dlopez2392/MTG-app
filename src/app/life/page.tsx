@@ -359,8 +359,8 @@ export default function LifePage() {
         rotation={rotation}
         className={cn(
           "w-full h-full",
-          highlightedPlayer === p.id && "border-[6px] border-[#FF6600]",
-          !highlightedPlayer && isActive && "border-[4px] border-[#FF6600]",
+          highlightedPlayer === p.id && "border-[6px] border-accent",
+          !highlightedPlayer && isActive && "border-[4px] border-accent",
         )}
         showPoisonCounters={gameOptions.poisonCounters || settings.showPoisonCounters}
         perCommanderTracking={settings.perCommanderTracking}
