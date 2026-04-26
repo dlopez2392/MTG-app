@@ -1,5 +1,7 @@
+"use client";
+
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { formatPrice } from "@/lib/utils/prices";
 import type { ScryfallCard } from "@/types/card";
@@ -18,6 +20,8 @@ function getThumbnailUrl(card: ScryfallCard): string | null {
 }
 
 export default function PriceTable({ printings, className, deckId, category }: PriceTableProps) {
+  const router = useRouter();
+
   if (printings.length === 0) {
     return (
       <p className="text-sm text-text-secondary">No pricing data available.</p>
@@ -39,10 +43,15 @@ export default function PriceTable({ printings, className, deckId, category }: P
           {printings.map((card) => {
             const thumb = getThumbnailUrl(card);
             const deckQuery = deckId ? `?deckId=${deckId}&category=${category ?? "main"}` : "";
+            const href = `/search/${card.id}${deckQuery}`;
             return (
-              <tr key={card.id} className="transition-colors hover:bg-bg-card/50 cursor-pointer">
+              <tr
+                key={card.id}
+                onClick={() => router.push(href)}
+                className="transition-colors hover:bg-bg-card/50 cursor-pointer"
+              >
                 <td className="py-2 pr-3">
-                  <Link href={`/search/${card.id}${deckQuery}`} className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     {thumb && (
                       <Image
                         src={thumb}
@@ -52,23 +61,17 @@ export default function PriceTable({ printings, className, deckId, category }: P
                         className="rounded-sm"
                       />
                     )}
-                    <span className="text-text-primary hover:text-accent transition-colors">{card.set_name}</span>
-                  </Link>
+                    <span className="text-text-primary">{card.set_name}</span>
+                  </div>
                 </td>
                 <td className="py-2 pr-3 text-text-secondary">
-                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
-                    {card.collector_number}
-                  </Link>
+                  {card.collector_number}
                 </td>
                 <td className="py-2 pr-3 text-right text-text-primary">
-                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
-                    {formatPrice(card.prices.usd)}
-                  </Link>
+                  {formatPrice(card.prices.usd)}
                 </td>
                 <td className="py-2 text-right text-text-primary">
-                  <Link href={`/search/${card.id}${deckQuery}`} className="block">
-                    {formatPrice(card.prices.usd_foil)}
-                  </Link>
+                  {formatPrice(card.prices.usd_foil)}
                 </td>
               </tr>
             );

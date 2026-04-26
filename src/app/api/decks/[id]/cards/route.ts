@@ -25,6 +25,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const { id: deckId } = await params;
   const body = await req.json();
+
+  if (!body.scryfallId || !body.name) {
+    return NextResponse.json({ error: "scryfallId and name are required" }, { status: 400 });
+  }
+
   const sb = getSupabase();
 
   // Check for existing card in same category

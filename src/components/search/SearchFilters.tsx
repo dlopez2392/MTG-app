@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { SearchFilters, Color, StatComparison } from "@/types/card";
 import { cn } from "@/lib/utils/cn";
 import { MTG_COLORS, RARITIES } from "@/lib/constants";
@@ -111,7 +111,7 @@ export default function SearchFiltersPanel({ filters, onChange, className }: Sea
   const set = <K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) =>
     onChange({ ...filters, [key]: value });
 
-  const activeCount = countActiveFilters(filters);
+  const activeCount = useMemo(() => countActiveFilters(filters), [filters]);
 
   const toggleColor = (code: Color) =>
     set("colors", filters.colors.includes(code)
