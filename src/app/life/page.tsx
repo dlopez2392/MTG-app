@@ -318,7 +318,6 @@ export default function LifePage() {
           if (options.turnTimer && count === 1) {
             setTurnTimerRunning(true);
           }
-          if (life === 40) setShowCommanderDmg(true);
           setupGame(count, life, names, colors);
         }}
       />
@@ -363,6 +362,7 @@ export default function LifePage() {
           !highlightedPlayer && isActive && "border-[4px] border-accent",
         )}
         showPoisonCounters={gameOptions.poisonCounters || settings.showPoisonCounters}
+        showCommanderDamage={showCommanderDmg}
         perCommanderTracking={settings.perCommanderTracking}
         opponents={opponents}
         disabled={choosingStarter}
