@@ -169,40 +169,47 @@ export default function RulesPageClient() {
 
   const showGlossary = activeSubsec?.endsWith("-glossary") ?? false;
 
+  // Flat search index — built once when data loads
+  const searchIndex = useMemo(() => {
+    if (!data) return null;
+    const entries = data.sections.flatMap((section) =>
+      section.subsections.flatMap((subsec) =>
+        subsec.rules.map((rule) => ({
+          sectionNum: section.num,
+          sectionTitle: section.title,
+          subsecNum: subsec.num,
+          subsecTitle: subsec.title,
+          rule,
+          searchText: `${rule.id} ${rule.text}`.toLowerCase(),
+        }))
+      )
+    );
+    const glossary = data.glossary.map((g) => ({
+      ...g,
+      searchText: `${g.term} ${g.definition}`.toLowerCase(),
+    }));
+    return { entries, glossary };
+  }, [data]);
+
   // Search results
   const searchResults = useMemo(() => {
-    if (!data || !debouncedSearch.trim()) return null;
+    if (!searchIndex || !debouncedSearch.trim()) return null;
     const q = debouncedSearch.toLowerCase();
-    const results: Array<{ sectionNum: string; sectionTitle: string; subsecNum: string; subsecTitle: string; rule: Rule }> = [];
 
-    for (const section of data.sections) {
-      for (const subsec of section.subsections) {
-        for (const rule of subsec.rules) {
-          if (
-            rule.text.toLowerCase().includes(q) ||
-            rule.id.toLowerCase().includes(q)
-          ) {
-            results.push({
-              sectionNum: section.num,
-              sectionTitle: section.title,
-              subsecNum: subsec.num,
-              subsecTitle: subsec.title,
-              rule,
-            });
-          }
-        }
+    const rules: Array<{ sectionNum: string; sectionTitle: string; subsecNum: string; subsecTitle: string; rule: Rule }> = [];
+    for (const entry of searchIndex.entries) {
+      if (entry.searchText.includes(q)) {
+        rules.push(entry);
+        if (rules.length >= 60) break;
       }
     }
 
-    // Also search glossary
-    const glossaryResults = data.glossary.filter(
-      (g) =>
-        g.term.toLowerCase().includes(q) ||
-        g.definition.toLowerCase().includes(q)
-    );
+    const glossary = searchIndex.glossary
+      .filter((g) => g.searchText.includes(q))
+      .slice(0, 20);
 
-    return { rules: results.slice(0, 60), glossary: glossaryResults.slice(0, 20) };
-  }, [data, debouncedSearch]);
+    return { rules, glossary };
+  }, [searchIndex, debouncedSearch]);
 
   // ── Loading / Error ──────────────────────────────────────────────────────
 

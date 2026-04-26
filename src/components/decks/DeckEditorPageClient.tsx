@@ -15,12 +15,13 @@ interface Props {
 
 export default function DeckEditorPageClient({ deckId }: Props) {
   const router = useRouter();
-  const { getDeck, deleteDeck, updateDeck } = useDecks();
+  const { allDecks, deleteDeck, updateDeck } = useDecks();
   const [deck, setDeck] = useState<Deck | undefined>();
 
   useEffect(() => {
-    getDeck(deckId).then(setDeck);
-  }, [deckId]);
+    const found = allDecks.find((d) => d.id === deckId);
+    if (found) setDeck(found);
+  }, [deckId, allDecks]);
 
   async function handleDelete() {
     if (!confirm("Delete this deck? This cannot be undone.")) return;

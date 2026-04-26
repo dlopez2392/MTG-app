@@ -50,6 +50,10 @@ export async function POST(req: Request) {
 type ColorKey = "W" | "U" | "B" | "R" | "G";
 type ColorCounts = Record<ColorKey, number>;
 
+const COLOR_REGEXES: Record<ColorKey, RegExp> = {
+  W: /\{W\}/g, U: /\{U\}/g, B: /\{B\}/g, R: /\{R\}/g, G: /\{G\}/g,
+};
+
 function computeDeckColors(
   cards: { deck_id: string; mana_cost: string | null; quantity: number }[]
 ): Record<string, { dominant: string; colors: string[] }> {
@@ -61,7 +65,8 @@ function computeDeckColors(
     if (!counts[card.deck_id]) counts[card.deck_id] = { W: 0, U: 0, B: 0, R: 0, G: 0 };
     const qty = card.quantity ?? 1;
     for (const c of colors) {
-      counts[card.deck_id][c] += (card.mana_cost.match(new RegExp(`\\{${c}\\}`, "g")) ?? []).length * qty;
+      COLOR_REGEXES[c].lastIndex = 0;
+      counts[card.deck_id][c] += (card.mana_cost.match(COLOR_REGEXES[c]) ?? []).length * qty;
     }
   }
 

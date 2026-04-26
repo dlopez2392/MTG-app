@@ -560,7 +560,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
             tabs={[
               { value: "versions", label: "Versions" },
               { value: "rulings", label: "Ruling" },
-              { value: "combos", label: `Combos${comboState.loaded && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
+              { value: "combos", label: `Combos${comboState.status === "done" && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
             ]}
             active={activeTab}
             onChange={handleTabChange}
@@ -588,9 +588,8 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
               cardName={card.name}
               combos={comboState.combos}
               count={comboState.count}
-              loading={comboState.loading}
+              status={comboState.status}
               error={comboState.error}
-              loaded={comboState.loaded}
             />
           )}
         </div>

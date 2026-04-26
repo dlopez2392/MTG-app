@@ -144,24 +144,24 @@ function ComboRow({ combo, focusCardName }: { combo: EnrichedCombo; focusCardNam
 
 // ── Main panel ───────────────────────────────────────────────────────────────
 
+type ComboStatus = "idle" | "loading" | "error" | "done";
+
 interface CombosPanelProps {
   cardName: string;
   combos: EnrichedCombo[];
   count: number;
-  loading: boolean;
+  status: ComboStatus;
   error: string | null;
-  loaded: boolean;
 }
 
 export default function CombosPanel({
   cardName,
   combos,
   count,
-  loading,
+  status,
   error,
-  loaded,
 }: CombosPanelProps) {
-  if (!loaded && !loading && !error) {
+  if (status === "idle") {
     // Idle — waiting for tab click to trigger load (parent calls load())
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-2">
@@ -171,7 +171,7 @@ export default function CombosPanel({
     );
   }
 
-  if (loading) {
+  if (status === "loading") {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-3">
         <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -188,7 +188,7 @@ export default function CombosPanel({
     );
   }
 
-  if (loaded && combos.length === 0) {
+  if (status === "done" && combos.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 gap-2 text-center">
         <svg className="w-12 h-12 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -204,7 +204,7 @@ export default function CombosPanel({
 
   return (
     <div className="space-y-3">
-      {loaded && (
+      {status === "done" && (
         <div className="flex items-center justify-between">
           <p className="text-caption">
             {count} combo{count !== 1 ? "s" : ""} found via{" "}

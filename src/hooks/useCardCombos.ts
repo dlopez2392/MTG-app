@@ -3,25 +3,25 @@
 import { useState, useCallback } from "react";
 import type { EnrichedCombo } from "@/types/combo";
 
+export type ComboStatus = "idle" | "loading" | "error" | "done";
+
 interface UseCardCombosReturn {
   combos: EnrichedCombo[];
   count: number;
-  loading: boolean;
+  status: ComboStatus;
   error: string | null;
-  loaded: boolean;
   load: () => void;
 }
 
 export function useCardCombos(cardName: string): UseCardCombosReturn {
   const [combos, setCombos] = useState<EnrichedCombo[]>([]);
   const [count, setCount] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<ComboStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
   const load = useCallback(async () => {
-    if (loaded || loading) return;
-    setLoading(true);
+    if (status === "done" || status === "loading") return;
+    setStatus("loading");
     setError(null);
     try {
       const res = await fetch(`/api/combos?name=${encodeURIComponent(cardName)}`);
@@ -29,13 +29,12 @@ export function useCardCombos(cardName: string): UseCardCombosReturn {
       const data = await res.json();
       setCombos(data.combos ?? []);
       setCount(data.count ?? 0);
-      setLoaded(true);
+      setStatus("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load combos");
-    } finally {
-      setLoading(false);
+      setStatus("error");
     }
-  }, [cardName, loaded, loading]);
+  }, [cardName, status]);
 
-  return { combos, count, loading, error, loaded, load };
+  return { combos, count, status, error, load };
 }
