@@ -14,6 +14,7 @@ import MatchHistory from "@/components/life/MatchHistory";
 import Modal from "@/components/ui/Modal";
 import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { useGameLog } from "@/hooks/useGameLog";
+import { usePlaygroup } from "@/hooks/usePlaygroup";
 import type { CreateMatchPayload } from "@/types/match";
 
 export default function LifePage() {
@@ -40,6 +41,7 @@ export default function LifePage() {
   const { settings, mounted } = useSettings();
   const { matches, loading: matchesLoading, error: matchesError, saveMatch } = useMatchHistory();
   const { addEntry: addGameLogEntry } = useGameLog();
+  const { members: playgroupMembers } = usePlaygroup();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -308,6 +310,7 @@ export default function LifePage() {
         defaultStartingLife={settings.defaultStartingLife}
         defaultPlayerCount={settings.defaultPlayerCount}
         onShowMatchHistory={() => setShowMatchHistory(true)}
+        playgroupMembers={playgroupMembers}
         onStart={(count, life, names, colors, options) => {
           setGameOptions(options);
           setTurnOrder(computeClockwiseOrder(options.layout, count));

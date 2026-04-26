@@ -9,8 +9,10 @@ import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import { useGameLog, computeStats } from "@/hooks/useGameLog";
 import { useDecks } from "@/hooks/useDecks";
+import { usePlaygroup } from "@/hooks/usePlaygroup";
 import { cn } from "@/lib/utils/cn";
 import type { GameResult, GameEntry } from "@/types/game";
+import type { PlaygroupMember } from "@/types/playgroup";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(iso: string): string {
@@ -41,9 +43,10 @@ interface LogFormProps {
   onSave: (entry: Omit<GameEntry, "id">) => void;
   onCancel: () => void;
   saveLabel?: string;
+  playgroupMembers?: PlaygroupMember[];
 }
 
-function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFormProps) {
+function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save", playgroupMembers = [] }: LogFormProps) {
   const [deckName, setDeckName]     = useState(initial?.deckName ?? decks[0]?.name ?? "");
   const [deckId, setDeckId]         = useState(initial?.deckId ?? decks[0]?.id ?? "");
   const [result, setResult]         = useState<GameResult>(initial?.result ?? "win");
@@ -174,6 +177,37 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save" }: LogFo
       {/* Opponents (optional) */}
       <div>
         <label className="text-xs text-text-muted font-medium block mb-1">Opponents <span className="text-text-muted/60">(optional)</span></label>
+        {playgroupMembers.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {playgroupMembers.map((m) => {
+              const currentNames = opponents.split(",").map((n) => n.trim().toLowerCase()).filter(Boolean);
+              const isSelected = currentNames.includes(m.name.toLowerCase());
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => {
+                    if (isSelected) {
+                      const updated = opponents.split(",").map((n) => n.trim()).filter((n) => n.toLowerCase() !== m.name.toLowerCase()).join(", ");
+                      setOpponents(updated);
+                    } else {
+                      setOpponents(opponents ? `${opponents.replace(/,\s*$/, "")}, ${m.name}` : m.name);
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all border",
+                    isSelected
+                      ? "border-accent/50 bg-accent/15 text-accent"
+                      : "border-border bg-bg-card text-text-muted hover:text-text-secondary hover:border-accent/30"
+                  )}
+                >
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: m.avatarColor }} />
+                  {m.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <input
           type="text"
           value={opponents}
@@ -231,6 +265,7 @@ function GamesPageInner() {
   const searchParams = useSearchParams();
   const { entries, loading: entriesLoading, addEntry, deleteEntry, updateEntry } = useGameLog();
   const { allDecks } = useDecks();
+  const { members: playgroupMembers } = usePlaygroup();
   const [showLog, setShowLog]       = useState(false);
   const [editingEntry, setEditingEntry] = useState<GameEntry | null>(null);
   const [filterDeck, setFilterDeck] = useState<string>("all");
@@ -497,6 +532,7 @@ function GamesPageInner() {
           initial={preselectedDeck ? { deckName: preselectedDeck.name, deckId: preselectedDeck.id } : undefined}
           onSave={(entry) => { addEntry(entry); setShowLog(false); }}
           onCancel={() => setShowLog(false)}
+          playgroupMembers={playgroupMembers}
         />
       </Modal>
 
@@ -509,6 +545,7 @@ function GamesPageInner() {
             onSave={handleEditSave}
             onCancel={() => setEditingEntry(null)}
             saveLabel="Update"
+            playgroupMembers={playgroupMembers}
           />
         )}
       </Modal>

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { MTG_PLAYER_COLORS, DEFAULT_PLAYER_COLOR_KEYS, type MtgPlayerColorKey } from "@/lib/constants";
 import Input from "@/components/ui/Input";
 import ManaSymbol from "@/components/cards/ManaSymbol";
+import type { PlaygroupMember } from "@/types/playgroup";
 
 export type LayoutId = string;
 
@@ -62,6 +63,7 @@ interface PlayerSetupProps {
     options: GameOptions
   ) => void;
   onShowMatchHistory?: () => void;
+  playgroupMembers?: PlaygroupMember[];
 }
 
 const LIFE_TOTALS = [20, 25, 30, 40] as const;
@@ -80,6 +82,7 @@ export default function PlayerSetup({
   defaultStartingLife = 20,
   onStart,
   onShowMatchHistory,
+  playgroupMembers = [],
 }: PlayerSetupProps) {
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount);
   const [startingLife, setStartingLife] = useState(defaultStartingLife);
@@ -366,6 +369,52 @@ export default function PlayerSetup({
             </div>
           </button>
         </div>
+
+        {/* ── Quick Pick from Playgroup ── */}
+        {playgroupMembers.length > 0 && (
+          <div>
+            <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
+              Playgroup
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {playgroupMembers.map((member) => {
+                const assignedIdx = playerNames.findIndex((n) => n === member.name);
+                const isAssigned = assignedIdx >= 0 && assignedIdx < playerCount;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => {
+                      if (isAssigned) {
+                        handleNameChange(assignedIdx, `Player ${assignedIdx + 1}`);
+                        return;
+                      }
+                      const emptySlot = Array.from({ length: playerCount }, (_, i) => i)
+                        .find((i) => playerNames[i] === `Player ${i + 1}` || playerNames[i] === "");
+                      const slot = emptySlot ?? 0;
+                      handleNameChange(slot, member.name);
+                    }}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border",
+                      isAssigned
+                        ? "border-accent/50 bg-accent/15 text-accent"
+                        : "border-border bg-bg-card text-text-secondary hover:border-accent/30 hover:text-text-primary"
+                    )}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: member.avatarColor }}
+                    />
+                    {member.name}
+                    {isAssigned && (
+                      <span className="text-[9px] text-accent/60">P{assignedIdx + 1}</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Customize Players ── */}
         <div>
