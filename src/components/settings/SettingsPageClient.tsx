@@ -403,34 +403,49 @@ export default function SettingsPageClient() {
         {/* What's New */}
         <section>
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">What&apos;s New</h2>
-          <div className="glass-card rounded-2xl border border-border p-4 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-                </svg>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-text-primary">v0.2.0</p>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Latest</span>
+          <div className="glass-card rounded-2xl border border-border overflow-hidden">
+            <div className="max-h-52 overflow-y-auto p-3 space-y-2.5 scrollbar-hide">
+              <div className="flex items-start gap-2.5">
+                <div className="w-6 h-6 rounded-md bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
                 </div>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Glass UI redesign with dynamic background art. EDHREC & MTGTop8 deck explorer. Improved life counter with turn timer, commander damage positioning, and manual starter picker. Revamped trading section for mobile. Price drop alert settings.
-                </p>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-semibold text-text-primary">v0.3.0</p>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full leading-none">Latest</span>
+                  </div>
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+                    AI Deck Coach with format selector & ban list awareness. Commander Bracket Calculator with hybrid AI analysis. Cross-deck card allocation. Long-press +/-10 life. Screen wake lock. Commander damage in game menu. Thematic home tile artwork.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-3 opacity-60">
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg className="w-4 h-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="flex items-start gap-2.5 opacity-60">
+                <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">v0.2.0</p>
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+                    Glass UI redesign. EDHREC & MTGTop8 deck explorer. Turn timer, commander damage, manual starter picker. Revamped trading. Price drop alerts.
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-text-primary">v0.1.0</p>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Initial release. Life counter, deck builder, collection manager, card search, wishlist, game log, and trading.
-                </p>
+              <div className="flex items-start gap-2.5 opacity-40">
+                <div className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-3 h-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">v0.1.0</p>
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
+                    Initial release. Life counter, deck builder, collection manager, card search, wishlist, game log, and trading.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -455,7 +470,7 @@ export default function SettingsPageClient() {
               MTG Houdini is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC.
             </p>
             <p className="text-xs text-text-muted pt-1 border-t border-border">
-              <span className="font-semibold text-text-secondary">v0.2.0</span> — Glass UI, deck explorer, improved life counter & trading.
+              <span className="font-semibold text-text-secondary">v0.3.0</span> — AI Deck Coach, Bracket Calculator, card allocation, enhanced life counter.
             </p>
           </div>
         </section>
