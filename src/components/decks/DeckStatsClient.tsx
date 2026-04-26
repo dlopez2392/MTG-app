@@ -268,7 +268,7 @@ export default function DeckStatsClient({ deckId }: Props) {
               <div className="flex flex-col gap-2">
                 {stats.topCards.map((card, i) => (
                   <div
-                    key={card.name}
+                    key={`${card.name}-${i}`}
                     className="flex items-center gap-3 rounded-xl px-3 py-2"
                     style={{
                       background: i === 0

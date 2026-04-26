@@ -47,7 +47,7 @@ export function useDecks() {
         body: JSON.stringify({ name, format }),
       });
       const deck = await res.json();
-      await refresh();
+      setAllDecks((prev) => [deck, ...prev]);
       return deck.id;
     } else {
       const deck: Deck = {
@@ -57,34 +57,32 @@ export function useDecks() {
       };
       const decks = lsGet<Deck[]>("mtg_guest_decks", []);
       lsSet("mtg_guest_decks", [deck, ...decks]);
-      await refresh();
+      setAllDecks([deck, ...decks]);
       return deck.id!;
     }
   }
 
   async function updateDeck(id: string, updates: Partial<Deck>) {
+    setAllDecks((prev) => prev.map((d) => d.id === id ? { ...d, ...updates } : d));
     if (isSignedIn) {
       await fetch(`/api/decks/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      await refresh();
     } else {
       const decks = lsGet<Deck[]>("mtg_guest_decks", []);
       lsSet("mtg_guest_decks", decks.map((d) => d.id === id ? { ...d, ...updates } : d));
-      await refresh();
     }
   }
 
   async function deleteDeck(id: string) {
+    setAllDecks((prev) => prev.filter((d) => d.id !== id));
     if (isSignedIn) {
       await fetch(`/api/decks/${id}`, { method: "DELETE" });
-      await refresh();
     } else {
       lsSet("mtg_guest_decks", lsGet<Deck[]>("mtg_guest_decks", []).filter((d) => d.id !== id));
       lsSet(`mtg_guest_deck_cards_${id}`, []);
-      await refresh();
     }
   }
 

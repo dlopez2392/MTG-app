@@ -15,37 +15,28 @@ export function useCardDetail(id: string) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/scryfall/cards/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
+    (async () => {
+      try {
+        const cardRes = await fetch(`/api/scryfall/cards/${id}`);
+        const data = await cardRes.json();
         if (cancelled) return;
-        if (data.error) {
-          setError(data.error);
-          setLoading(false);
-          return;
-        }
+        if (data.error) { setError(data.error); setLoading(false); return; }
         setCard(data);
-
-        // Fetch rulings
-        fetch(`/api/scryfall/rulings/${id}`)
-          .then((res) => res.json())
-          .then((r) => { if (!cancelled) setRulings(r.data || []); });
-
-        // Fetch printings
-        if (data.oracle_id) {
-          fetch(`/api/scryfall/search?q=${encodeURIComponent(`oracleid:${data.oracle_id}`)}&unique=prints&order=released`)
-            .then((res) => res.json())
-            .then((p) => { if (!cancelled) setPrintings(p.data || []); });
-        }
-
         setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError("Failed to load card");
-          setLoading(false);
-        }
-      });
+
+        const [rulingsRes, printingsRes] = await Promise.all([
+          fetch(`/api/scryfall/rulings/${id}`).then((r) => r.json()),
+          data.oracle_id
+            ? fetch(`/api/scryfall/search?q=${encodeURIComponent(`oracleid:${data.oracle_id}`)}&unique=prints&order=released`).then((r) => r.json())
+            : Promise.resolve({ data: [] }),
+        ]);
+        if (cancelled) return;
+        setRulings(rulingsRes.data || []);
+        setPrintings(printingsRes.data || []);
+      } catch {
+        if (!cancelled) { setError("Failed to load card"); setLoading(false); }
+      }
+    })();
 
     return () => { cancelled = true; };
   }, [id]);

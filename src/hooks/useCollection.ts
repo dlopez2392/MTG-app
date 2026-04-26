@@ -84,7 +84,7 @@ export function useCollection(binderId?: string) {
         body: JSON.stringify({ name }),
       });
       const binder = await res.json();
-      await refreshBinders();
+      setAllBinders((prev) => [binder, ...prev]);
       return binder.id;
     } else {
       const binder: Binder = {
@@ -92,20 +92,20 @@ export function useCollection(binderId?: string) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      lsSet("mtg_guest_binders", [binder, ...lsGet<Binder[]>("mtg_guest_binders", [])]);
-      await refreshBinders();
+      const binders = lsGet<Binder[]>("mtg_guest_binders", []);
+      lsSet("mtg_guest_binders", [binder, ...binders]);
+      setAllBinders([binder, ...binders]);
       return binder.id!;
     }
   }
 
   async function deleteBinder(id: string) {
+    setAllBinders((prev) => prev.filter((b) => b.id !== id));
     if (isSignedIn) {
       await fetch(`/api/binders/${id}`, { method: "DELETE" });
-      await refreshBinders();
     } else {
       lsSet("mtg_guest_binders", lsGet<Binder[]>("mtg_guest_binders", []).filter((b) => b.id !== id));
       lsSet(`mtg_guest_binder_cards_${id}`, []);
-      await refreshBinders();
     }
   }
 
@@ -158,35 +158,37 @@ export function useCollection(binderId?: string) {
   }
 
   async function removeFromCollection(id: string) {
+    setBinderCards((prev) => prev.filter((c) => c.id !== id));
     if (isSignedIn) {
       await fetch(`/api/collection-cards/${id}`, { method: "DELETE" });
-      await refreshCards();
     } else if (binderId) {
       const key = `mtg_guest_binder_cards_${binderId}`;
-      const updated = lsGet<CollectionCard[]>(key, []).filter((c) => c.id !== id);
-      lsSet(key, updated);
-      setBinderCards(updated);
+      lsSet(key, lsGet<CollectionCard[]>(key, []).filter((c) => c.id !== id));
     }
   }
 
   async function updateQuantity(id: string, qty: number) {
+    if (qty <= 0) {
+      setBinderCards((prev) => prev.filter((c) => c.id !== id));
+    } else {
+      setBinderCards((prev) => prev.map((c) => c.id === id ? { ...c, quantity: qty } : c));
+    }
     if (isSignedIn) {
-      await fetch(`/api/collection-cards/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: qty }),
-      });
-      await refreshCards();
+      if (qty <= 0) {
+        await fetch(`/api/collection-cards/${id}`, { method: "DELETE" });
+      } else {
+        await fetch(`/api/collection-cards/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quantity: qty }),
+        });
+      }
     } else if (binderId) {
       const key = `mtg_guest_binder_cards_${binderId}`;
       if (qty <= 0) {
-        const updated = lsGet<CollectionCard[]>(key, []).filter((c) => c.id !== id);
-        lsSet(key, updated);
-        setBinderCards(updated);
+        lsSet(key, lsGet<CollectionCard[]>(key, []).filter((c) => c.id !== id));
       } else {
-        const updated = lsGet<CollectionCard[]>(key, []).map((c) => c.id === id ? { ...c, quantity: qty } : c);
-        lsSet(key, updated);
-        setBinderCards(updated);
+        lsSet(key, lsGet<CollectionCard[]>(key, []).map((c) => c.id === id ? { ...c, quantity: qty } : c));
       }
     }
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { ScryfallCard, SearchFilters } from "@/types/card";
 import { buildScryfallQuery } from "@/lib/utils/mana";
 
@@ -22,6 +22,9 @@ export function useCardSearch() {
     totalCards: 0,
     page: 1,
   });
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const search = useCallback(async (filters: SearchFilters, page = 1) => {
     const query = buildScryfallQuery(filters);
@@ -57,11 +60,12 @@ export function useCardSearch() {
 
   const loadMore = useCallback(
     (filters: SearchFilters) => {
-      if (state.hasMore && !state.loading) {
-        search(filters, state.page + 1);
+      const { hasMore, loading, page } = stateRef.current;
+      if (hasMore && !loading) {
+        search(filters, page + 1);
       }
     },
-    [state.hasMore, state.loading, state.page, search]
+    [search]
   );
 
   const reset = useCallback(() => {
