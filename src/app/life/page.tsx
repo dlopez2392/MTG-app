@@ -179,6 +179,23 @@ export default function LifePage() {
     }
   }, [gameStarted, supportsNativeFullscreen]);
 
+  // Lock orientation when game starts
+  useEffect(() => {
+    if (!gameStarted) return;
+    const lockOrientation = async () => {
+      try {
+        const so = screen.orientation as ScreenOrientation & { lock?: (type: string) => Promise<void> };
+        if (so?.lock) {
+          await so.lock(so.type);
+        }
+      } catch {}
+    };
+    lockOrientation();
+    return () => {
+      try { screen.orientation?.unlock?.(); } catch {}
+    };
+  }, [gameStarted]);
+
   const exitFullscreen = useCallback(() => {
     if (supportsNativeFullscreen && document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
