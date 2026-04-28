@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
@@ -53,7 +53,28 @@ export default function SettingsPageClient() {
   const { profile, updateProfile } = useProfile();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const deferredPromptRef = useRef<{ prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> } | null>(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+      ("standalone" in navigator && (navigator as unknown as { standalone: boolean }).standalone === true)
+    );
+    setIsIOS(/iPad|iPhone|iPod/.test(navigator.userAgent));
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPromptRef.current = e as unknown as typeof deferredPromptRef.current;
+      setCanInstall(true);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   function handleClearGuestData() {
     Object.keys(localStorage)
@@ -190,6 +211,74 @@ export default function SettingsPageClient() {
             </div>
           )}
         </section>
+
+        {/* Install App */}
+        {!isStandalone && (
+          <section>
+            <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">Install App</h2>
+            <div className="glass-card rounded-2xl border border-border p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text-primary">Get the full app experience</p>
+                  <p className="text-xs text-text-muted mt-0.5">Install MTG Houdini on your device for instant access, offline support, and a fullscreen experience.</p>
+                </div>
+              </div>
+              {canInstall ? (
+                <button
+                  onClick={async () => {
+                    if (deferredPromptRef.current) {
+                      await deferredPromptRef.current.prompt();
+                      const { outcome } = await deferredPromptRef.current.userChoice;
+                      if (outcome === "accepted") setCanInstall(false);
+                      deferredPromptRef.current = null;
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-xl btn-gradient text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  Install App
+                </button>
+              ) : isIOS ? (
+                <>
+                  <button
+                    onClick={() => setShowInstallGuide(!showInstallGuide)}
+                    className="w-full py-2.5 rounded-xl btn-gradient text-sm font-bold flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    How to Install
+                  </button>
+                  {showInstallGuide && (
+                    <div className="mt-3 space-y-2.5 text-xs text-text-secondary">
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                        <p>Tap the <span className="font-semibold text-text-primary">Share</span> button <svg className="inline w-3.5 h-3.5 text-accent -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" /></svg> in Safari&apos;s toolbar</p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                        <p>Scroll down and tap <span className="font-semibold text-text-primary">&quot;Add to Home Screen&quot;</span></p>
+                      </div>
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-5 h-5 rounded-full bg-accent/15 text-accent font-bold text-[10px] flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                        <p>Tap <span className="font-semibold text-text-primary">&quot;Add&quot;</span> to install</p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-text-muted text-center">Open in Chrome or Edge and look for the install option in the browser menu.</p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Display */}
         <section>

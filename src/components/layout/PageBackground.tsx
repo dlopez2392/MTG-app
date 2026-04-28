@@ -49,7 +49,7 @@ export default function PageBackground() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden>
       <img
-        key={art}
+        key={`current-${art}`}
         src={art}
         alt=""
         className="absolute inset-0 w-full h-full object-cover"
@@ -61,7 +61,7 @@ export default function PageBackground() {
       />
       {nextArt && (
         <img
-          key={nextArt}
+          key={`next-${nextArt}`}
           src={nextArt}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
