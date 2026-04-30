@@ -389,6 +389,50 @@ export default function PlaygroupPage() {
       />
 
       <PageContainer>
+        {/* Quick actions row */}
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          <button
+            onClick={() => router.push("/playgroup/stores")}
+            className="rounded-2xl border border-accent/30 p-3 flex items-center gap-2.5 transition-all active:scale-[0.98] hover:border-accent/50"
+            style={{ background: "linear-gradient(135deg, rgba(124,92,252,0.12), rgba(124,92,252,0.04))" }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(124,92,252,0.2)" }}
+            >
+              <svg className="w-4.5 h-4.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-text-primary">Find a Store</p>
+              <p className="text-[10px] text-text-muted">LGS &amp; events nearby</p>
+            </div>
+          </button>
+          <button
+            onClick={() => router.push("/playgroup/pods")}
+            className="rounded-2xl border p-3 flex items-center gap-2.5 transition-all active:scale-[0.98]"
+            style={{
+              background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.04))",
+              borderColor: "rgba(245,158,11,0.3)",
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(245,158,11,0.2)" }}
+            >
+              <svg className="w-4.5 h-4.5" style={{ color: "#F59E0B" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-text-primary">Pod Organizer</p>
+              <p className="text-[10px] text-text-muted">Balance by bracket</p>
+            </div>
+          </button>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <p className="text-xs text-text-muted">{members.length} {members.length === 1 ? "member" : "members"}</p>
           <button

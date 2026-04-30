@@ -113,6 +113,14 @@ function TocSection({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+interface QAResponse {
+  answer: string;
+  citations: { ruleId: string; text: string }[];
+  relatedTerms?: string[];
+  confidence?: "high" | "medium" | "low";
+  followUp?: string;
+}
+
 export default function RulesPageClient() {
   const [data, setData] = useState<RulesData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,6 +132,35 @@ export default function RulesPageClient() {
   const [showToc, setShowToc] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Q&A state
+  const [showQA, setShowQA] = useState(false);
+  const [qaQuestion, setQaQuestion] = useState("");
+  const [qaLoading, setQaLoading] = useState(false);
+  const [qaResponse, setQaResponse] = useState<QAResponse | null>(null);
+  const [qaError, setQaError] = useState("");
+  const qaInputRef = useRef<HTMLInputElement>(null);
+
+  const askQuestion = useCallback(async () => {
+    if (!qaQuestion.trim() || qaLoading) return;
+    setQaLoading(true);
+    setQaError("");
+    setQaResponse(null);
+    try {
+      const res = await fetch("/api/rules-qa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: qaQuestion.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to get answer");
+      setQaResponse(json);
+    } catch (err) {
+      setQaError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setQaLoading(false);
+    }
+  }, [qaQuestion, qaLoading]);
 
   // Load rules JSON
   useEffect(() => {
@@ -244,15 +281,27 @@ export default function RulesPageClient() {
         title="Comprehensive Rules"
         showBack
         rightContent={
-          <button
-            onClick={() => setShowToc(!showToc)}
-            className="md:hidden p-1.5 text-text-secondary hover:text-text-primary transition-colors"
-            aria-label="Table of contents"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setShowQA(!showQA); if (!showQA) setTimeout(() => qaInputRef.current?.focus(), 100); }}
+              className={`p-1.5 transition-colors ${showQA ? "text-accent" : "text-text-secondary hover:text-text-primary"}`}
+              aria-label="Ask AI"
+              title="Ask a rules question"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setShowToc(!showToc)}
+              className="md:hidden p-1.5 text-text-secondary hover:text-text-primary transition-colors"
+              aria-label="Table of contents"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+            </button>
+          </div>
         }
       />
 
@@ -281,6 +330,158 @@ export default function RulesPageClient() {
           )}
         </div>
       </div>
+
+      {/* ── AI Rules Q&A Panel ── */}
+      {showQA && (
+        <div
+          className="border-b border-accent/20 px-4 py-3"
+          style={{ background: "linear-gradient(135deg, rgba(124,92,252,0.06), rgba(124,92,252,0.02))" }}
+        >
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-4 h-4 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              <span className="text-xs font-semibold text-accent uppercase tracking-wider">AI Rules Advisor</span>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                ref={qaInputRef}
+                type="text"
+                value={qaQuestion}
+                onChange={(e) => setQaQuestion(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") askQuestion(); }}
+                placeholder="Ask a rules question… e.g. 'Does protection prevent board wipes?'"
+                className="input-base flex-1 py-2 text-sm"
+                disabled={qaLoading}
+              />
+              <button
+                onClick={askQuestion}
+                disabled={qaLoading || !qaQuestion.trim()}
+                className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold disabled:opacity-40 flex-shrink-0"
+              >
+                {qaLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Ask"
+                )}
+              </button>
+            </div>
+
+            {/* Quick question chips */}
+            {!qaResponse && !qaLoading && !qaError && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {[
+                  "How does the stack work?",
+                  "Can I respond to a split second spell?",
+                  "How does trample + deathtouch work?",
+                  "What happens if two state-based actions happen simultaneously?",
+                ].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => { setQaQuestion(q); }}
+                    className="text-[11px] px-2 py-1 rounded-lg text-text-muted hover:text-accent hover:bg-accent/10 transition-colors"
+                    style={{ background: "rgba(255,255,255,0.03)" }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Error */}
+            {qaError && (
+              <div className="mt-3 px-3 py-2 rounded-xl bg-banned/10 border border-banned/20">
+                <p className="text-xs text-banned">{qaError}</p>
+              </div>
+            )}
+
+            {/* Loading */}
+            {qaLoading && (
+              <div className="mt-3 flex items-center gap-2 py-3">
+                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-text-muted">Searching rules and analyzing…</span>
+              </div>
+            )}
+
+            {/* Response */}
+            {qaResponse && (
+              <div className="mt-3 space-y-3">
+                {/* Answer */}
+                <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  {qaResponse.confidence && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <span
+                        className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase"
+                        style={{
+                          background: qaResponse.confidence === "high" ? "rgba(34,197,94,0.15)" : qaResponse.confidence === "medium" ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
+                          color: qaResponse.confidence === "high" ? "#22C55E" : qaResponse.confidence === "medium" ? "#F59E0B" : "#EF4444",
+                        }}
+                      >
+                        {qaResponse.confidence} confidence
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">{qaResponse.answer}</p>
+                </div>
+
+                {/* Citations */}
+                {qaResponse.citations && qaResponse.citations.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-1.5">Rule Citations</p>
+                    <div className="space-y-1">
+                      {qaResponse.citations.map((cite, i) => (
+                        <div
+                          key={i}
+                          className="rounded-lg px-3 py-2 flex items-start gap-2"
+                          style={{ background: "rgba(124,92,252,0.06)", border: "1px solid rgba(124,92,252,0.12)" }}
+                        >
+                          <span className="text-xs font-bold text-accent flex-shrink-0 mt-0.5">{cite.ruleId}</span>
+                          <span className="text-xs text-text-secondary leading-relaxed">{cite.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Related terms */}
+                {qaResponse.relatedTerms && qaResponse.relatedTerms.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mr-1 self-center">Related:</span>
+                    {qaResponse.relatedTerms.map((term) => (
+                      <button
+                        key={term}
+                        onClick={() => { setShowQA(false); setSearch(term); }}
+                        className="text-[11px] px-2 py-0.5 rounded-md text-accent/70 hover:text-accent hover:bg-accent/10 transition-colors"
+                        style={{ background: "rgba(124,92,252,0.08)" }}
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Follow up */}
+                {qaResponse.followUp && (
+                  <div className="rounded-lg px-3 py-2" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
+                    <p className="text-[10px] text-amber-400/70 uppercase tracking-wider font-semibold mb-0.5">Good to know</p>
+                    <p className="text-xs text-text-secondary leading-relaxed">{qaResponse.followUp}</p>
+                  </div>
+                )}
+
+                {/* Ask another */}
+                <button
+                  onClick={() => { setQaResponse(null); setQaQuestion(""); setTimeout(() => qaInputRef.current?.focus(), 50); }}
+                  className="text-xs text-accent/60 hover:text-accent transition-colors"
+                >
+                  Ask another question
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-1 min-h-0 relative">
         {/* ── Mobile TOC drawer overlay ── */}

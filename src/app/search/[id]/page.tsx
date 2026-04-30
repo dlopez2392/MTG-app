@@ -33,11 +33,6 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const [activeTab, setActiveTab] = useState("versions");
   const comboState = useCardCombos(card?.name ?? "");
 
-  const handleTabChange = useCallback((tab: string) => {
-    setActiveTab(tab);
-    if (tab === "combos") comboState.load();
-  }, [comboState]);
-
   const [addedFeedback, setAddedFeedback] = useState<string | null>(null);
   const [savingImage, setSavingImage] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -47,6 +42,48 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
   const [showDeckPicker, setShowDeckPicker] = useState(false);
   const [showBinderPicker, setShowBinderPicker] = useState(false);
   const [pricingSource, setPricingSource] = useState<"tcg" | "cardmarket" | "cardhoarder">("tcg");
+
+  // Alternatives state
+  const [altStatus, setAltStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [altData, setAltData] = useState<{
+    alternatives: { name: string; reason: string; role: string; estimatedPrice: string; keyDifference: string }[];
+    summary: string;
+    deckbuildingTip?: string;
+  } | null>(null);
+  const [altError, setAltError] = useState("");
+
+  const loadAlternatives = useCallback(async () => {
+    if (!card || altStatus === "loading") return;
+    setAltStatus("loading");
+    setAltError("");
+    try {
+      const res = await fetch("/api/card-alternatives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardName: card.name,
+          typeLine: card.type_line,
+          manaCost: card.mana_cost ?? card.card_faces?.[0]?.mana_cost,
+          oracleText: card.oracle_text ?? card.card_faces?.[0]?.oracle_text,
+          priceUsd: card.prices?.usd,
+          colors: card.colors ?? card.card_faces?.[0]?.colors,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed");
+      setAltData(json);
+      setAltStatus("done");
+    } catch (err) {
+      setAltError(err instanceof Error ? err.message : "Failed to load alternatives");
+      setAltStatus("error");
+    }
+  }, [card, altStatus]);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    if (tab === "combos") comboState.load();
+    if (tab === "alternatives" && altStatus === "idle") loadAlternatives();
+  }, [comboState, altStatus, loadAlternatives]);
 
   const deckId = searchParams.get("deckId");
   const category = (searchParams.get("category") ?? "main") as DeckCategory;
@@ -679,6 +716,7 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
               { value: "versions", label: "Versions" },
               { value: "rulings", label: "Ruling" },
               { value: "combos", label: `Combos${comboState.status === "done" && comboState.count > 0 ? ` (${comboState.count})` : ""}` },
+              { value: "alternatives", label: "Alternatives" },
             ]}
             active={activeTab}
             onChange={handleTabChange}
@@ -709,6 +747,100 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
               status={comboState.status}
               error={comboState.error}
             />
+          )}
+
+          {activeTab === "alternatives" && (
+            <div>
+              {altStatus === "idle" && (
+                <div className="text-center py-8">
+                  <button
+                    onClick={loadAlternatives}
+                    className="px-6 py-3 rounded-xl btn-gradient text-sm font-bold inline-flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                    </svg>
+                    Find Alternatives
+                  </button>
+                  <p className="text-xs text-text-muted mt-2">AI-powered card substitution suggestions</p>
+                </div>
+              )}
+
+              {altStatus === "loading" && (
+                <div className="flex flex-col items-center gap-3 py-10">
+                  <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-text-muted">Finding alternatives for {card.name}…</p>
+                </div>
+              )}
+
+              {altStatus === "error" && (
+                <div className="rounded-xl px-4 py-3 bg-banned/10 border border-banned/20">
+                  <p className="text-sm text-banned">{altError}</p>
+                  <button onClick={loadAlternatives} className="mt-2 text-xs text-banned/70 hover:text-banned">Try again</button>
+                </div>
+              )}
+
+              {altStatus === "done" && altData && (
+                <div className="space-y-3">
+                  {/* Summary */}
+                  <div className="rounded-xl p-3" style={{ background: "rgba(124,92,252,0.06)", border: "1px solid rgba(124,92,252,0.12)" }}>
+                    <p className="text-xs text-text-secondary leading-relaxed">{altData.summary}</p>
+                  </div>
+
+                  {/* Alternatives list */}
+                  {altData.alternatives.map((alt, i) => {
+                    const roleColor = alt.role === "budget" ? "#22C55E" : alt.role === "upgrade" ? "#F59E0B" : "#3B82F6";
+                    const roleLabel = alt.role === "budget" ? "Budget" : alt.role === "upgrade" ? "Upgrade" : "Sidegrade";
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          const q = encodeURIComponent(alt.name);
+                          fetch(`https://api.scryfall.com/cards/named?fuzzy=${q}`)
+                            .then((r) => r.json())
+                            .then((c) => { if (c.id) router.push(`/search/${c.id}`); })
+                            .catch(() => {});
+                        }}
+                        className="w-full text-left bg-bg-card border border-border rounded-xl p-3.5 hover:border-accent/30 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm font-semibold text-text-primary truncate">{alt.name}</span>
+                            <span
+                              className="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase flex-shrink-0"
+                              style={{ background: `${roleColor}20`, color: roleColor }}
+                            >
+                              {roleLabel}
+                            </span>
+                          </div>
+                          {alt.estimatedPrice && (
+                            <span className="text-xs text-text-muted flex-shrink-0">{alt.estimatedPrice}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-secondary leading-relaxed mb-1">{alt.reason}</p>
+                        <p className="text-[11px] text-text-muted italic">{alt.keyDifference}</p>
+                      </button>
+                    );
+                  })}
+
+                  {/* Deckbuilding tip */}
+                  {altData.deckbuildingTip && (
+                    <div className="rounded-xl p-3" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.12)" }}>
+                      <p className="text-[10px] text-amber-400/70 uppercase tracking-wider font-semibold mb-0.5">Deckbuilding Tip</p>
+                      <p className="text-xs text-text-secondary leading-relaxed">{altData.deckbuildingTip}</p>
+                    </div>
+                  )}
+
+                  {/* Reload */}
+                  <button
+                    onClick={() => { setAltStatus("idle"); setAltData(null); loadAlternatives(); }}
+                    className="text-xs text-text-muted hover:text-accent transition-colors py-1"
+                  >
+                    Refresh suggestions
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

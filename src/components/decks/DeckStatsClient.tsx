@@ -5,6 +5,7 @@ import { useDecks, useDeckCards } from "@/hooks/useDecks";
 import { useGameLog } from "@/hooks/useGameLog";
 import { calculateDeckStats } from "@/lib/utils/deckStats";
 import { computeMyDeckMatchups } from "@/lib/utils/matchupStats";
+import { analyzeLocalBracket } from "@/lib/utils/bracketAnalysis";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
 import ManaCurveChart from "@/components/decks/stats/ManaCurveChart";
@@ -97,6 +98,7 @@ export default function DeckStatsClient({ deckId }: Props) {
 
   const stats: DeckStats | null = cards ? calculateDeckStats(cards) : null;
   const opponentMatchups = deck ? computeMyDeckMatchups(entries, deckId, deck.name) : [];
+  const bracketResult = cards && cards.length > 0 ? analyzeLocalBracket(cards) : null;
 
   if (!stats) {
     return (
@@ -140,6 +142,93 @@ export default function DeckStatsClient({ deckId }: Props) {
               gradient="linear-gradient(135deg, rgba(234,179,8,0.4), rgba(234,179,8,0.1))"
             />
           </div>
+
+          {/* ── Bracket Estimation ── */}
+          {bracketResult && (() => {
+            const BSTYLES: Record<number, { color: string; bg: string; glow: string; label: string }> = {
+              1: { color: "#22C55E", bg: "rgba(34,197,94,0.12)", glow: "rgba(34,197,94,0.25)", label: "Casual" },
+              2: { color: "#3B82F6", bg: "rgba(59,130,246,0.12)", glow: "rgba(59,130,246,0.25)", label: "Focused" },
+              3: { color: "#F59E0B", bg: "rgba(245,158,11,0.12)", glow: "rgba(245,158,11,0.25)", label: "Optimized" },
+              4: { color: "#EF4444", bg: "rgba(239,68,68,0.12)", glow: "rgba(239,68,68,0.25)", label: "Competitive" },
+            };
+            const bs = BSTYLES[bracketResult.bracket] ?? BSTYLES[1];
+            const signalTags = [
+              { label: "Game Changers", count: bracketResult.signals.gameChangers.length, color: "#EF4444" },
+              { label: "Fast Mana", count: bracketResult.signals.fastMana.length, color: "#F59E0B" },
+              { label: "Tutors", count: bracketResult.signals.tutors.length, color: "#A855F7" },
+              { label: "Combo Pieces", count: bracketResult.signals.comboPieces.length, color: "#EC4899" },
+              { label: "Stax", count: bracketResult.signals.staxPieces.length, color: "#6366F1" },
+              { label: "MLD", count: bracketResult.signals.mldCards.length, color: "#EF4444" },
+              { label: "Extra Turns", count: bracketResult.signals.extraTurns.length, color: "#06B6D4" },
+            ].filter((t) => t.count > 0);
+
+            return (
+              <div
+                className="rounded-2xl p-[1px] overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${bs.color}66, ${bs.color}1a)` }}
+              >
+                <div
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(20,20,30,0.9), rgba(15,15,25,0.95))",
+                    boxShadow: `inset 0 0 32px ${bs.glow}`,
+                  }}
+                >
+                  <div className="flex items-center gap-4 mb-3">
+                    <span
+                      className="inline-flex items-center justify-center font-black rounded-xl w-14 h-14 text-2xl"
+                      style={{ background: bs.bg, color: bs.color, boxShadow: `0 0 20px ${bs.glow}, inset 0 0 16px ${bs.glow}` }}
+                    >
+                      {bracketResult.bracket}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-base font-bold" style={{ color: bs.color }}>
+                        Bracket {bracketResult.bracket} — {bs.label}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] text-white/30">Confidence:</span>
+                        <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${bracketResult.confidence * 100}%`, background: bs.color }} />
+                        </div>
+                        <span className="text-[10px] text-white/40">{Math.round(bracketResult.confidence * 100)}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {signalTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {signalTags.map((tag) => (
+                        <div key={tag.label} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5" style={{ background: `${tag.color}15` }}>
+                          <span className="w-2 h-2 rounded-full" style={{ background: tag.color }} />
+                          <span className="text-xs font-medium" style={{ color: tag.color }}>{tag.count}</span>
+                          <span className="text-[11px] text-white/40">{tag.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {bracketResult.reasons.length > 0 && (
+                    <div className="flex flex-col gap-1">
+                      {bracketResult.reasons.slice(0, 4).map((reason, i) => (
+                        <p key={i} className="text-[11px] text-white/40 flex items-start gap-1.5">
+                          <span style={{ color: bs.color }} className="mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => window.location.href = "/brackets"}
+                    className="mt-3 text-[11px] font-medium transition-colors hover:underline"
+                    style={{ color: `${bs.color}99` }}
+                  >
+                    Run full AI analysis →
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ── Land / Nonland ratio ── */}
           <div
@@ -344,6 +433,26 @@ export default function DeckStatsClient({ deckId }: Props) {
               </div>
             </GlassSection>
           )}
+
+          {/* ── Matchup Analysis link ── */}
+          <button
+            onClick={() => window.location.href = `/decks/matchup?deckA=${deckId}`}
+            className="w-full rounded-2xl border p-4 flex items-center gap-3 transition-all active:scale-[0.98] text-left"
+            style={{ background: "linear-gradient(135deg, rgba(124,92,252,0.08), rgba(124,92,252,0.02))", borderColor: "rgba(124,92,252,0.2)" }}
+          >
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(124,92,252,0.15)" }}>
+              <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text-primary">Matchup Analysis</p>
+              <p className="text-[11px] text-text-muted">Compare this deck head-to-head vs another</p>
+            </div>
+            <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
 
           {/* ── AI Deck Coach ── */}
           {cards && cards.length > 0 && (

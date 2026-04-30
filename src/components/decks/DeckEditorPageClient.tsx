@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDecks } from "@/hooks/useDecks";
+import { useDecks, useDeckCards } from "@/hooks/useDecks";
+import { analyzeLocalBracket } from "@/lib/utils/bracketAnalysis";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
 import DeckEditor from "@/components/decks/DeckEditor";
@@ -16,6 +17,7 @@ interface Props {
 export default function DeckEditorPageClient({ deckId }: Props) {
   const router = useRouter();
   const { allDecks, deleteDeck, updateDeck } = useDecks();
+  const { cards } = useDeckCards(deckId);
   const [deck, setDeck] = useState<Deck | undefined>();
 
   useEffect(() => {
@@ -36,6 +38,24 @@ export default function DeckEditorPageClient({ deckId }: Props) {
         showBack
         rightContent={
           <div className="flex items-center gap-2">
+            {(() => {
+              if (!cards || cards.length === 0) return null;
+              const br = analyzeLocalBracket(cards);
+              const BCOL: Record<number, string> = { 1: "#22C55E", 2: "#3B82F6", 3: "#F59E0B", 4: "#EF4444" };
+              const BLAB: Record<number, string> = { 1: "Casual", 2: "Focused", 3: "Optimized", 4: "Competitive" };
+              const c = BCOL[br.bracket] ?? "#22C55E";
+              return (
+                <button
+                  onClick={() => router.push(`/decks/${deckId}/stats`)}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg transition-opacity hover:opacity-80"
+                  style={{ background: `${c}20` }}
+                  title={`Bracket ${br.bracket} — ${BLAB[br.bracket]}`}
+                >
+                  <span className="text-xs font-black" style={{ color: c }}>{br.bracket}</span>
+                  <span className="text-[10px] font-medium text-white/40">{BLAB[br.bracket]}</span>
+                </button>
+              );
+            })()}
             <button
               onClick={async () => {
                 const next = !deck?.public;
