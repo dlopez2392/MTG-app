@@ -305,6 +305,124 @@ function CardDetailPageInner({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
 
+        {/* ── Quick Actions ── */}
+        <div className="flex items-center gap-2 mt-4">
+          {deckId ? (
+            <button
+              onClick={handleAddToDeckDirect}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl btn-gradient text-sm font-bold"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add to Deck
+            </button>
+          ) : allDecks.length > 0 ? (
+            <button
+              onClick={() => { setShowDeckPicker(!showDeckPicker); setShowBinderPicker(false); }}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-colors",
+                showDeckPicker ? "border-accent bg-accent/10 text-accent" : "border-border bg-bg-card text-text-secondary hover:border-accent/40"
+              )}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878" />
+              </svg>
+              Deck
+            </button>
+          ) : null}
+
+          {binderId ? (
+            <button
+              onClick={handleAddToCollectionDirect}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl btn-gradient text-sm font-bold"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add to Binder
+            </button>
+          ) : allBinders.length > 0 ? (
+            <button
+              onClick={() => { setShowBinderPicker(!showBinderPicker); setShowDeckPicker(false); }}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-colors",
+                showBinderPicker ? "border-accent bg-accent/10 text-accent" : "border-border bg-bg-card text-text-secondary hover:border-accent/40"
+              )}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+              Binder
+            </button>
+          ) : null}
+
+          <button
+            onClick={() => {
+              if (!card) return;
+              const onWishlist = isOnWishlist(card.id);
+              if (onWishlist) {
+                const item = wishlistItems.find((w) => w.scryfallId === card.id);
+                if (item) removeFromWishlist(item.id);
+                setAddedFeedback("Removed from wishlist");
+              } else {
+                addToWishlist({
+                  scryfallId: card.id,
+                  name: card.name,
+                  imageUri: card.image_uris?.normal ?? card.card_faces?.[0]?.image_uris?.normal,
+                  priceUsd: card.prices?.usd ?? undefined,
+                  typeLine: card.type_line,
+                  manaCost: card.mana_cost ?? card.card_faces?.[0]?.mana_cost,
+                  rarity: card.rarity,
+                });
+                setAddedFeedback("Added to wishlist!");
+              }
+              setTimeout(() => setAddedFeedback(null), 2000);
+            }}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-sm font-bold border transition-colors",
+              isOnWishlist(card.id)
+                ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                : "border-border bg-bg-card text-text-secondary hover:border-amber-500/40"
+            )}
+          >
+            <svg className="w-4 h-4" fill={isOnWishlist(card.id) ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Deck picker dropdown */}
+        {showDeckPicker && (
+          <div className="mt-2 bg-bg-card border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+            {allDecks.map((d) => (
+              <button
+                key={d.id}
+                onClick={() => handleAddToDeck(d.id!)}
+                className="w-full text-left px-4 py-2.5 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors border-b border-border last:border-b-0"
+              >
+                {d.name}
+                {d.format && <span className="text-[10px] text-text-muted ml-2 capitalize">({d.format})</span>}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Binder picker dropdown */}
+        {showBinderPicker && (
+          <div className="mt-2 bg-bg-card border border-border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+            {allBinders.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => handleAddToCollection(b.id!)}
+                className="w-full text-left px-4 py-2.5 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors border-b border-border last:border-b-0"
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ── Pricing Section ── */}
         <div className="mt-5">
           <div className="bg-bg-card border border-border rounded-2xl">
