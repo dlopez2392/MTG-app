@@ -380,6 +380,15 @@ export default function SettingsPageClient() {
                 onChange={(v) => updateSetting("perCommanderTracking", v)}
               />
             </SettingRow>
+            <SettingRow
+              label="Keep Screen Awake"
+              description="Prevent the screen from sleeping during life counter sessions"
+            >
+              <Toggle
+                value={settings.keepScreenAwake}
+                onChange={(v) => updateSetting("keepScreenAwake", v)}
+              />
+            </SettingRow>
           </div>
         </section>
 

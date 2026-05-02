@@ -93,6 +93,7 @@ export default function PlayerPanel({
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showCmdr, setShowCmdr] = useState(false);
+  const [showCounters, setShowCounters] = useState(false);
   const [delta, setDelta] = useState<number | null>(null);
   const deltaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevLifeRef = useRef(player.life);
@@ -414,92 +415,176 @@ export default function PlayerPanel({
 
       </div>{/* end rotation wrapper */}
 
-      {/* ── Counter badges — positioned on panel, rotated to face player ── */}
-      <div className="absolute z-20 flex flex-col gap-2" style={{
-        transform: `rotate(${rotation}deg)`,
-        ...(isSideways
-          ? { bottom: "50%", left: "8px", transformOrigin: "left center", marginBottom: "-20px" }
-          : { bottom: "12px", left: "12px" }),
-      }}>
-        {showPoisonCounters && onPoisonChange && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onPoisonChange(1); }}
-            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]"
-          >
-            <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
-            </svg>
-            <span className={cn("text-sm font-bold tabular-nums", player.poisonCounters >= 10 ? "text-red-400" : "text-white/80")}>
-              {player.poisonCounters}
-            </span>
+      {/* ── Compact counter badges — tap to open full overlay ── */}
+      {(() => {
+        const hasAnyCounter = showPoisonCounters || showEnergyCounters || showExperienceCounters || showMonarch || showInitiative || showDungeon;
+        if (!hasAnyCounter) return null;
+
+        const badges: { key: string; icon: React.ReactNode; value: number | boolean; color: string; activeColor?: string }[] = [];
+        if (showPoisonCounters) badges.push({
+          key: "poison", value: player.poisonCounters, color: "text-green-400",
+          icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>,
+        });
+        if (showEnergyCounters) badges.push({
+          key: "energy", value: player.energyCounters, color: "text-yellow-400",
+          icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>,
+        });
+        if (showExperienceCounters) badges.push({
+          key: "experience", value: player.experienceCounters, color: "text-purple-400",
+          icon: <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>,
+        });
+        if (showMonarch) badges.push({
+          key: "monarch", value: player.isMonarch, color: "text-white/50", activeColor: "text-yellow-300",
+          icon: <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>,
+        });
+        if (showInitiative) badges.push({
+          key: "initiative", value: player.hasInitiative, color: "text-white/50", activeColor: "text-blue-300",
+          icon: <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>,
+        });
+        if (showDungeon) badges.push({
+          key: "dungeon", value: player.dungeonLevel, color: "text-stone-400",
+          icon: <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>,
+        });
+
+        const visibleBadges = badges.filter((b) => typeof b.value === "boolean" ? b.value : (b.value as number) > 0);
+
+        if (visibleBadges.length === 0 && !showCounters) return null;
+
+        return (
+          <div className="absolute z-20" style={{
+            ...(isSideways
+              ? { bottom: "50%", left: "16px", transform: `rotate(${rotation}deg)`, transformOrigin: "left center", marginBottom: "-16px" }
+              : rotation === 180
+                ? { top: "12px", right: "12px", transform: "rotate(180deg)", transformOrigin: "top right" }
+                : { bottom: "12px", left: "12px" }),
+          }}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setShowCounters(true); }}
+              className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-sm active:scale-95 transition-transform px-2 py-1.5"
+            >
+              {visibleBadges.length > 0 ? visibleBadges.map((b) => (
+                <div key={b.key} className="flex items-center gap-0.5">
+                  <svg className={cn("w-3.5 h-3.5 flex-shrink-0", typeof b.value === "boolean" ? (b.activeColor ?? b.color) : (b.key === "poison" && (b.value as number) >= 10 ? "text-red-400" : b.color))} fill="currentColor" viewBox="0 0 24 24">{b.icon}</svg>
+                  {typeof b.value === "number" && (
+                    <span className={cn("text-xs font-bold tabular-nums", b.key === "poison" && b.value >= 10 ? "text-red-400" : "text-white/80")}>{b.value}</span>
+                  )}
+                </div>
+              )) : (
+                <svg className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+              )}
+            </button>
+          </div>
+        );
+      })()}
+
+      {/* ── Counters overlay — tap-to-expand detail view ── */}
+      {showCounters && (
+        <div
+          className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3"
+          style={{ transform: `rotate(${rotation}deg)` }}
+        >
+          <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold mb-1">Counters</p>
+
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+            {showPoisonCounters && onPoisonChange && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => onPoisonChange(-1)} disabled={player.poisonCounters <= 0}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                <div className="flex items-center gap-1 min-w-[40px] justify-center">
+                  <svg className={cn("w-4 h-4", player.poisonCounters >= 10 ? "text-red-400" : "text-green-400")} fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
+                  </svg>
+                  <span className={cn("text-base font-bold tabular-nums", player.poisonCounters >= 10 ? "text-red-400" : "text-white")}>{player.poisonCounters}</span>
+                </div>
+                <button type="button" onClick={() => onPoisonChange(1)}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+              </div>
+            )}
+
+            {showEnergyCounters && onEnergyChange && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => onEnergyChange(-1)} disabled={player.energyCounters <= 0}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                <div className="flex items-center gap-1 min-w-[40px] justify-center">
+                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                  </svg>
+                  <span className="text-base font-bold tabular-nums text-white">{player.energyCounters}</span>
+                </div>
+                <button type="button" onClick={() => onEnergyChange(1)}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+              </div>
+            )}
+
+            {showExperienceCounters && onExperienceChange && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => onExperienceChange(-1)} disabled={player.experienceCounters <= 0}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                <div className="flex items-center gap-1 min-w-[40px] justify-center">
+                  <svg className="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>
+                  </svg>
+                  <span className="text-base font-bold tabular-nums text-white">{player.experienceCounters}</span>
+                </div>
+                <button type="button" onClick={() => onExperienceChange(1)}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+              </div>
+            )}
+
+            {showDungeon && onDungeonChange && (
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => onDungeonChange(-1)} disabled={player.dungeonLevel <= 0}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                <div className="flex items-center gap-1 min-w-[40px] justify-center">
+                  <svg className="w-4 h-4 text-stone-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>
+                  </svg>
+                  <span className="text-base font-bold tabular-nums text-white">{player.dungeonLevel}</span>
+                </div>
+                <button type="button" onClick={() => onDungeonChange(1)}
+                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+              </div>
+            )}
+          </div>
+
+          {(showMonarch || showInitiative) && (
+            <div className="flex gap-3 mt-1">
+              {showMonarch && onMonarchToggle && (
+                <button type="button" onClick={() => onMonarchToggle()}
+                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-sm font-bold",
+                    player.isMonarch ? "bg-yellow-600/70 text-yellow-300" : "bg-white/10 text-white/60"
+                  )}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>
+                  </svg>
+                  Monarch
+                </button>
+              )}
+              {showInitiative && onInitiativeToggle && (
+                <button type="button" onClick={() => onInitiativeToggle()}
+                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-sm font-bold",
+                    player.hasInitiative ? "bg-blue-600/70 text-blue-300" : "bg-white/10 text-white/60"
+                  )}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>
+                  </svg>
+                  Initiative
+                </button>
+              )}
+            </div>
+          )}
+
+          <button type="button" onClick={() => setShowCounters(false)}
+            className="mt-1 px-6 py-2 rounded-full bg-white/10 text-sm font-bold text-white/70 active:bg-white/20 min-h-[44px]">
+            Done
           </button>
-        )}
-        {showEnergyCounters && onEnergyChange && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onEnergyChange(1); }}
-            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]"
-          >
-            <svg className="w-5 h-5 text-yellow-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-            </svg>
-            <span className="text-sm font-bold tabular-nums text-white/80">{player.energyCounters}</span>
-          </button>
-        )}
-        {showExperienceCounters && onExperienceChange && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onExperienceChange(1); }}
-            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]"
-          >
-            <svg className="w-5 h-5 text-purple-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>
-            </svg>
-            <span className="text-sm font-bold tabular-nums text-white/80">{player.experienceCounters}</span>
-          </button>
-        )}
-        {showMonarch && onMonarchToggle && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onMonarchToggle(); }}
-            className={cn("flex items-center gap-1.5 rounded-full backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]", player.isMonarch ? "bg-yellow-600/70" : "bg-black/60")}
-          >
-            <svg className={cn("w-5 h-5 flex-shrink-0", player.isMonarch ? "text-yellow-300" : "text-white/70")} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>
-            </svg>
-            <span className={cn("text-sm font-bold", player.isMonarch ? "text-yellow-300" : "text-white/70")}>
-              Monarch
-            </span>
-          </button>
-        )}
-        {showInitiative && onInitiativeToggle && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onInitiativeToggle(); }}
-            className={cn("flex items-center gap-1.5 rounded-full backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]", player.hasInitiative ? "bg-blue-600/70" : "bg-black/60")}
-          >
-            <svg className={cn("w-5 h-5 flex-shrink-0", player.hasInitiative ? "text-blue-300" : "text-white/70")} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>
-            </svg>
-            <span className={cn("text-sm font-bold", player.hasInitiative ? "text-blue-300" : "text-white/70")}>
-              Initiative
-            </span>
-          </button>
-        )}
-        {showDungeon && onDungeonChange && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onDungeonChange(1); }}
-            className="flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-sm active:scale-90 transition-transform px-2.5 py-2 min-h-[44px]"
-          >
-            <svg className="w-5 h-5 text-stone-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>
-            </svg>
-            <span className="text-sm font-bold tabular-nums text-white/80">{player.dungeonLevel}</span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Commander damage overlay ── */}
       {showCommanderDamage && showCmdr && (

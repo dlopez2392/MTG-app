@@ -17,6 +17,8 @@ export interface UserSettings {
   defaultFoil: boolean;
   // Notifications
   priceDropAlerts: boolean;
+  // Life Counter (cont.)
+  keepScreenAwake: boolean;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
@@ -31,4 +33,5 @@ export const DEFAULT_SETTINGS: UserSettings = {
   defaultCondition: "near_mint",
   defaultFoil: false,
   priceDropAlerts: true,
+  keepScreenAwake: true,
 };

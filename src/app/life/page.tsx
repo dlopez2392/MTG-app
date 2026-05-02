@@ -132,7 +132,7 @@ export default function LifePage() {
   }, []);
 
   useEffect(() => {
-    if (gameStarted) {
+    if (gameStarted && settings.keepScreenAwake) {
       requestWakeLock();
       const handleVisibilityChange = () => {
         if (document.visibilityState === "visible" && gameStarted) {
@@ -147,7 +147,7 @@ export default function LifePage() {
     } else {
       releaseWakeLock();
     }
-  }, [gameStarted, requestWakeLock, releaseWakeLock]);
+  }, [gameStarted, settings.keepScreenAwake, requestWakeLock, releaseWakeLock]);
 
   const supportsNativeFullscreen =
     typeof document !== "undefined" &&
