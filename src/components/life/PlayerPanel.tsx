@@ -92,7 +92,6 @@ export default function PlayerPanel({
 }: PlayerPanelProps) {
   const [artUrl, setArtUrl] = useState<string | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [showCmdr, setShowCmdr] = useState(false);
   const [showCounters, setShowCounters] = useState(false);
   const [delta, setDelta] = useState<number | null>(null);
   const deltaTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -253,40 +252,16 @@ export default function PlayerPanel({
       <div className={cn("absolute inset-0 flex items-center justify-center pointer-events-none", turnTimer ? "z-[15]" : "z-[12]")}>
         <div className="relative flex flex-col items-center" style={{ overflow: "visible" }}>
           <div style={{ position: "relative", zIndex: 2 }}>
-            {/* Commander icon — only shown when commander damage tracking is enabled */}
-            {showCommanderDamage && (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setShowCmdr(!showCmdr); }}
-                className="pointer-events-auto absolute flex items-center gap-1.5 rounded-full bg-black/50 backdrop-blur-sm px-2.5 py-1.5 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
-                style={{ right: "calc(100% + 16px)" }}
-              >
-                <svg className={cn(compact ? "w-6 h-6" : "w-7 h-7")} viewBox="0 0 120 110">
-                  <defs>
-                    <linearGradient id={`cg-${player.id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#E8D078"/>
-                      <stop offset="40%" stopColor="#C8A040"/>
-                      <stop offset="100%" stopColor="#987020"/>
-                    </linearGradient>
-                  </defs>
-                  <path d="M60 4 L82 28 L82 62 L60 78 L38 62 L38 28 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-                  <path d="M36 32 L14 44 L6 72 L34 96 L46 84 L44 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-                  <path d="M84 32 L106 44 L114 72 L86 96 L74 84 L76 58 Z" fill={`url(#cg-${player.id})`} stroke="#2A2218" strokeWidth="6" strokeLinejoin="round"/>
-                </svg>
-                {cmdrTotal > 0 && (
-                  <span className={cn("text-sm font-bold tabular-nums", cmdrTotal >= 21 ? "text-red-400" : "text-white/80")}>
-                    {cmdrTotal}
-                  </span>
-                )}
-              </button>
-            )}
-
-            {/* Counter badge — right side of life total, mirrors cmdr damage on left */}
+            {/* Unified counter badge — all counters accessible from one button */}
             {(() => {
-              const hasAnyCounter = showPoisonCounters || showEnergyCounters || showExperienceCounters || showMonarch || showInitiative || showDungeon;
+              const hasAnyCounter = showCommanderDamage || showPoisonCounters || showEnergyCounters || showExperienceCounters || showMonarch || showInitiative || showDungeon;
               if (!hasAnyCounter) return null;
 
               const badges: { key: string; icon: React.ReactNode; value: number | boolean; color: string; activeColor?: string }[] = [];
+              if (showCommanderDamage) badges.push({
+                key: "cmdr", value: cmdrTotal, color: "text-amber-400",
+                icon: <path d="M12 2l3 5h5l-4 4 2 6-6-3-6 3 2-6-4-4h5z"/>,
+              });
               if (showPoisonCounters) badges.push({
                 key: "poison", value: player.poisonCounters, color: "text-green-400",
                 icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>,
@@ -319,19 +294,18 @@ export default function PlayerPanel({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setShowCounters(true); }}
                   className="pointer-events-auto absolute flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-1.5 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
-                  style={{ left: "calc(100% + 16px)" }}
+                  style={{ left: "calc(100% + 12px)" }}
                 >
                   {visibleBadges.length > 0 ? visibleBadges.map((b) => (
                     <div key={b.key} className="flex items-center gap-0.5">
                       <svg className={cn(compact ? "w-4 h-4" : "w-5 h-5", "flex-shrink-0", typeof b.value === "boolean" ? (b.activeColor ?? b.color) : (b.key === "poison" && (b.value as number) >= 10 ? "text-red-400" : b.color))} fill="currentColor" viewBox="0 0 24 24">{b.icon}</svg>
                       {typeof b.value === "number" && (
-                        <span className={cn("text-sm font-bold tabular-nums", b.key === "poison" && b.value >= 10 ? "text-red-400" : "text-white/80")}>{b.value}</span>
+                        <span className={cn("text-xs font-bold tabular-nums", b.key === "poison" && b.value >= 10 ? "text-red-400" : b.key === "cmdr" && b.value >= 21 ? "text-red-400" : "text-white/80")}>{b.value}</span>
                       )}
                     </div>
                   )) : (
-                    <svg className={cn(compact ? "w-4 h-4" : "w-5 h-5", "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7 7 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a7 7 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a7 7 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a7 7 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <svg className={cn(compact ? "w-5 h-5" : "w-6 h-6", "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/>
                     </svg>
                   )}
                 </button>
@@ -474,19 +448,61 @@ export default function PlayerPanel({
 
       {/* Counter badges are rendered inside the life total area, not here */}
 
-      {/* ── Counters overlay — tap-to-expand detail view ── */}
+      {/* ── Unified counters overlay — all counters in one panel ── */}
       {showCounters && (
         <div
-          className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3"
+          className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center gap-1.5 p-3 overflow-y-auto"
           style={{ transform: `rotate(${rotation}deg)` }}
         >
-          <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold mb-1">Counters</p>
+          <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold">Counters</p>
 
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+          <div className="flex flex-col gap-1.5 w-full max-w-[280px]">
+            {/* Commander Damage */}
+            {showCommanderDamage && (
+              <>
+                {perCommanderTracking && opponents.length > 0 ? (
+                  opponents.map((opp) => {
+                    const oppDmg = player.commanderDamage[opp.id] ?? 0;
+                    return (
+                      <div key={opp.id} className="flex items-center justify-center gap-2">
+                        <button type="button" onClick={() => onCommanderDamage(-1, opp.id)} disabled={oppDmg <= 0}
+                          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
+                        <div className="flex items-center gap-1.5 min-w-[50px] justify-center">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: opp.color }} />
+                          <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2l3 5h5l-4 4 2 6-6-3-6 3 2-6-4-4h5z"/>
+                          </svg>
+                          <span className={cn("text-sm font-bold tabular-nums", oppDmg >= 21 ? "text-red-400" : "text-white")}>{oppDmg}</span>
+                        </div>
+                        <button type="button" onClick={() => onCommanderDamage(1, opp.id)}
+                          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <button type="button" onClick={() => onCommanderDamage(-1)} disabled={(player.commanderDamage[CMDR_KEY] ?? 0) <= 0}
+                      className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
+                    <div className="flex items-center gap-1 min-w-[40px] justify-center">
+                      <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2l3 5h5l-4 4 2 6-6-3-6 3 2-6-4-4h5z"/>
+                      </svg>
+                      <span className={cn("text-base font-bold tabular-nums", (player.commanderDamage[CMDR_KEY] ?? 0) >= 21 ? "text-red-400" : "text-white")}>
+                        {player.commanderDamage[CMDR_KEY] ?? 0}
+                      </span>
+                    </div>
+                    <button type="button" onClick={() => onCommanderDamage(1)}
+                      className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Poison */}
             {showPoisonCounters && onPoisonChange && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <button type="button" onClick={() => onPoisonChange(-1)} disabled={player.poisonCounters <= 0}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
                 <div className="flex items-center gap-1 min-w-[40px] justify-center">
                   <svg className={cn("w-4 h-4", player.poisonCounters >= 10 ? "text-red-400" : "text-green-400")} fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
@@ -494,14 +510,15 @@ export default function PlayerPanel({
                   <span className={cn("text-base font-bold tabular-nums", player.poisonCounters >= 10 ? "text-red-400" : "text-white")}>{player.poisonCounters}</span>
                 </div>
                 <button type="button" onClick={() => onPoisonChange(1)}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
               </div>
             )}
 
+            {/* Energy */}
             {showEnergyCounters && onEnergyChange && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <button type="button" onClick={() => onEnergyChange(-1)} disabled={player.energyCounters <= 0}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
                 <div className="flex items-center gap-1 min-w-[40px] justify-center">
                   <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -509,14 +526,15 @@ export default function PlayerPanel({
                   <span className="text-base font-bold tabular-nums text-white">{player.energyCounters}</span>
                 </div>
                 <button type="button" onClick={() => onEnergyChange(1)}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
               </div>
             )}
 
+            {/* Experience */}
             {showExperienceCounters && onExperienceChange && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <button type="button" onClick={() => onExperienceChange(-1)} disabled={player.experienceCounters <= 0}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
                 <div className="flex items-center gap-1 min-w-[40px] justify-center">
                   <svg className="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>
@@ -524,14 +542,15 @@ export default function PlayerPanel({
                   <span className="text-base font-bold tabular-nums text-white">{player.experienceCounters}</span>
                 </div>
                 <button type="button" onClick={() => onExperienceChange(1)}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
               </div>
             )}
 
+            {/* Dungeon */}
             {showDungeon && onDungeonChange && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <button type="button" onClick={() => onDungeonChange(-1)} disabled={player.dungeonLevel <= 0}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-base font-bold">−</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-sm font-bold">−</button>
                 <div className="flex items-center gap-1 min-w-[40px] justify-center">
                   <svg className="w-4 h-4 text-stone-400" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>
@@ -539,20 +558,21 @@ export default function PlayerPanel({
                   <span className="text-base font-bold tabular-nums text-white">{player.dungeonLevel}</span>
                 </div>
                 <button type="button" onClick={() => onDungeonChange(1)}
-                  className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-base font-bold">+</button>
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-sm font-bold">+</button>
               </div>
             )}
           </div>
 
+          {/* Monarch / Initiative toggles */}
           {(showMonarch || showInitiative) && (
-            <div className="flex gap-3 mt-1">
+            <div className="flex gap-2 mt-0.5">
               {showMonarch && onMonarchToggle && (
                 <button type="button" onClick={() => onMonarchToggle()}
-                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-sm font-bold",
+                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-xs font-bold",
                     player.isMonarch ? "bg-yellow-600/70 text-yellow-300" : "bg-white/10 text-white/60"
                   )}
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>
                   </svg>
                   Monarch
@@ -560,11 +580,11 @@ export default function PlayerPanel({
               )}
               {showInitiative && onInitiativeToggle && (
                 <button type="button" onClick={() => onInitiativeToggle()}
-                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-sm font-bold",
+                  className={cn("flex items-center gap-1.5 rounded-full px-3 py-1.5 active:scale-95 transition-transform text-xs font-bold",
                     player.hasInitiative ? "bg-blue-600/70 text-blue-300" : "bg-white/10 text-white/60"
                   )}
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>
                   </svg>
                   Initiative
@@ -574,52 +594,7 @@ export default function PlayerPanel({
           )}
 
           <button type="button" onClick={() => setShowCounters(false)}
-            className="mt-1 px-6 py-2 rounded-full bg-white/10 text-sm font-bold text-white/70 active:bg-white/20 min-h-[44px]">
-            Done
-          </button>
-        </div>
-      )}
-
-      {/* ── Commander damage overlay ── */}
-      {showCommanderDamage && showCmdr && (
-        <div
-          className="absolute inset-0 z-30 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center gap-2 p-3"
-          style={{ transform: `rotate(${rotation}deg)` }}
-        >
-          <p className="text-[10px] text-white/60 uppercase tracking-widest font-semibold mb-1">Commander Damage</p>
-
-          {perCommanderTracking && opponents.length > 0 ? (
-            opponents.map((opp) => {
-              const oppDmg = player.commanderDamage[opp.id] ?? 0;
-              return (
-                <div key={opp.id} className="flex items-center gap-3">
-                  <button type="button" onClick={() => onCommanderDamage(-1, opp.id)} disabled={oppDmg <= 0}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-lg font-bold">−</button>
-                  <div className="flex items-center gap-1.5 min-w-[60px] justify-center">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: opp.color }} />
-                    <span className={cn("text-base font-bold tabular-nums", oppDmg >= 21 ? "text-red-400" : "text-white")}>
-                      {oppDmg}
-                    </span>
-                  </div>
-                  <button type="button" onClick={() => onCommanderDamage(1, opp.id)}
-                    className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-lg font-bold">+</button>
-                </div>
-              );
-            })
-          ) : (
-            <div className="flex items-center gap-4">
-              <button type="button" onClick={() => onCommanderDamage(-1)} disabled={(player.commanderDamage[CMDR_KEY] ?? 0) <= 0}
-                className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 disabled:opacity-30 text-xl font-bold">−</button>
-              <span className={cn("text-3xl font-bold tabular-nums", (player.commanderDamage[CMDR_KEY] ?? 0) >= 21 ? "text-red-400" : "text-white")}>
-                {player.commanderDamage[CMDR_KEY] ?? 0}
-              </span>
-              <button type="button" onClick={() => onCommanderDamage(1)}
-                className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/60 active:bg-white/20 text-xl font-bold">+</button>
-            </div>
-          )}
-
-          <button type="button" onClick={() => setShowCmdr(false)}
-            className="mt-2 px-6 py-2.5 rounded-full bg-white/10 text-sm font-bold text-white/70 active:bg-white/20 min-h-[44px]">
+            className="mt-0.5 px-5 py-1.5 rounded-full bg-white/10 text-xs font-bold text-white/70 active:bg-white/20 min-h-[36px]">
             Done
           </button>
         </div>
