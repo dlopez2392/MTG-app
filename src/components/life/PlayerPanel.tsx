@@ -281,6 +281,63 @@ export default function PlayerPanel({
               </button>
             )}
 
+            {/* Counter badge — right side of life total, mirrors cmdr damage on left */}
+            {(() => {
+              const hasAnyCounter = showPoisonCounters || showEnergyCounters || showExperienceCounters || showMonarch || showInitiative || showDungeon;
+              if (!hasAnyCounter) return null;
+
+              const badges: { key: string; icon: React.ReactNode; value: number | boolean; color: string; activeColor?: string }[] = [];
+              if (showPoisonCounters) badges.push({
+                key: "poison", value: player.poisonCounters, color: "text-green-400",
+                icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>,
+              });
+              if (showEnergyCounters) badges.push({
+                key: "energy", value: player.energyCounters, color: "text-yellow-400",
+                icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>,
+              });
+              if (showExperienceCounters) badges.push({
+                key: "experience", value: player.experienceCounters, color: "text-purple-400",
+                icon: <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>,
+              });
+              if (showMonarch) badges.push({
+                key: "monarch", value: player.isMonarch, color: "text-white/50", activeColor: "text-yellow-300",
+                icon: <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>,
+              });
+              if (showInitiative) badges.push({
+                key: "initiative", value: player.hasInitiative, color: "text-white/50", activeColor: "text-blue-300",
+                icon: <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>,
+              });
+              if (showDungeon) badges.push({
+                key: "dungeon", value: player.dungeonLevel, color: "text-stone-400",
+                icon: <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>,
+              });
+
+              const visibleBadges = badges.filter((b) => typeof b.value === "boolean" ? b.value : (b.value as number) > 0);
+
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setShowCounters(true); }}
+                  className="pointer-events-auto absolute flex items-center gap-1 rounded-full bg-black/50 backdrop-blur-sm px-2 py-1.5 active:scale-90 transition-transform top-1/2 -translate-y-1/2"
+                  style={{ left: "calc(100% + 16px)" }}
+                >
+                  {visibleBadges.length > 0 ? visibleBadges.map((b) => (
+                    <div key={b.key} className="flex items-center gap-0.5">
+                      <svg className={cn(compact ? "w-4 h-4" : "w-5 h-5", "flex-shrink-0", typeof b.value === "boolean" ? (b.activeColor ?? b.color) : (b.key === "poison" && (b.value as number) >= 10 ? "text-red-400" : b.color))} fill="currentColor" viewBox="0 0 24 24">{b.icon}</svg>
+                      {typeof b.value === "number" && (
+                        <span className={cn("text-sm font-bold tabular-nums", b.key === "poison" && b.value >= 10 ? "text-red-400" : "text-white/80")}>{b.value}</span>
+                      )}
+                    </div>
+                  )) : (
+                    <svg className={cn(compact ? "w-4 h-4" : "w-5 h-5", "text-white/50")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7 7 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a7 7 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a7 7 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a7 7 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"/>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                  )}
+                </button>
+              );
+            })()}
+
             <span
               className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
               style={{
@@ -415,70 +472,7 @@ export default function PlayerPanel({
 
       </div>{/* end rotation wrapper */}
 
-      {/* ── Compact counter badges — tap to open full overlay ── */}
-      {(() => {
-        const hasAnyCounter = showPoisonCounters || showEnergyCounters || showExperienceCounters || showMonarch || showInitiative || showDungeon;
-        if (!hasAnyCounter) return null;
-
-        const badges: { key: string; icon: React.ReactNode; value: number | boolean; color: string; activeColor?: string }[] = [];
-        if (showPoisonCounters) badges.push({
-          key: "poison", value: player.poisonCounters, color: "text-green-400",
-          icon: <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>,
-        });
-        if (showEnergyCounters) badges.push({
-          key: "energy", value: player.energyCounters, color: "text-yellow-400",
-          icon: <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>,
-        });
-        if (showExperienceCounters) badges.push({
-          key: "experience", value: player.experienceCounters, color: "text-purple-400",
-          icon: <path d="M12 2l2.09 6.26L20.18 9l-5 4.27L16.82 20 12 16.77 7.18 20l1.64-6.73L3.82 9l6.09-.74L12 2z"/>,
-        });
-        if (showMonarch) badges.push({
-          key: "monarch", value: player.isMonarch, color: "text-white/50", activeColor: "text-yellow-300",
-          icon: <path d="M2 20h20l-2-8-4 4-4-8-4 8-4-4-2 8zm2-12l2 2 4-8 4 8 4-8 2 2"/>,
-        });
-        if (showInitiative) badges.push({
-          key: "initiative", value: player.hasInitiative, color: "text-white/50", activeColor: "text-blue-300",
-          icon: <path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/>,
-        });
-        if (showDungeon) badges.push({
-          key: "dungeon", value: player.dungeonLevel, color: "text-stone-400",
-          icon: <path d="M3 3h18v18H3V3zm2 2v14h14V5H5zm4 2h6v2h-2v2h2v2h-2v2h2v2H9v-2h2v-2H9v-2h2V9H9V7z"/>,
-        });
-
-        const visibleBadges = badges.filter((b) => typeof b.value === "boolean" ? b.value : (b.value as number) > 0);
-
-        // Always show the badge button so users can tap to open the overlay
-
-        return (
-          <div className="absolute z-20" style={{
-            ...(isSideways
-              ? { bottom: "50%", left: "16px", transform: `rotate(${rotation}deg)`, transformOrigin: "left center", marginBottom: "-16px" }
-              : rotation === 180
-                ? { top: "12px", right: "12px", transform: "rotate(180deg)", transformOrigin: "top right" }
-                : { bottom: "12px", left: "12px" }),
-          }}>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setShowCounters(true); }}
-              className="flex items-center gap-1 rounded-full bg-black/60 backdrop-blur-sm active:scale-95 transition-transform px-2 py-1.5"
-            >
-              {visibleBadges.length > 0 ? visibleBadges.map((b) => (
-                <div key={b.key} className="flex items-center gap-0.5">
-                  <svg className={cn("w-3.5 h-3.5 flex-shrink-0", typeof b.value === "boolean" ? (b.activeColor ?? b.color) : (b.key === "poison" && (b.value as number) >= 10 ? "text-red-400" : b.color))} fill="currentColor" viewBox="0 0 24 24">{b.icon}</svg>
-                  {typeof b.value === "number" && (
-                    <span className={cn("text-xs font-bold tabular-nums", b.key === "poison" && b.value >= 10 ? "text-red-400" : "text-white/80")}>{b.value}</span>
-                  )}
-                </div>
-              )) : (
-                <svg className="w-3.5 h-3.5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                </svg>
-              )}
-            </button>
-          </div>
-        );
-      })()}
+      {/* Counter badges are rendered inside the life total area, not here */}
 
       {/* ── Counters overlay — tap-to-expand detail view ── */}
       {showCounters && (
