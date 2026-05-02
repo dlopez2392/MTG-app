@@ -448,7 +448,7 @@ export default function PlayerPanel({
 
         const visibleBadges = badges.filter((b) => typeof b.value === "boolean" ? b.value : (b.value as number) > 0);
 
-        if (visibleBadges.length === 0 && !showCounters) return null;
+        // Always show the badge button so users can tap to open the overlay
 
         return (
           <div className="absolute z-20" style={{
