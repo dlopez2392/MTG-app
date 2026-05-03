@@ -44,12 +44,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    const base64Match = image.match(/^data:image\/([\w+]+);base64,(.+)$/);
+    const base64Match = image.match(/^data:image\/([^;]+);base64,(.+)$/);
     if (!base64Match) {
       return NextResponse.json({ error: "Invalid image format. Expected base64 data URI." }, { status: 400 });
     }
 
-    const mimeType = `image/${base64Match[1]}` as "image/jpeg" | "image/png" | "image/webp";
+    const rawMime = base64Match[1].toLowerCase();
+    const mimeType = `image/${rawMime === "jpg" ? "jpeg" : rawMime}` as "image/jpeg" | "image/png" | "image/webp";
     const base64Data = base64Match[2];
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });

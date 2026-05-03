@@ -59,8 +59,8 @@ export default function ScanPageClient() {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facing,
-          width: { ideal: 1280 },
-          height: { ideal: 960 },
+          width: { ideal: 720 },
+          height: { ideal: 1280 },
         },
       });
       streamRef.current = stream;
@@ -116,15 +116,22 @@ export default function ScanPageClient() {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      setError("Camera not ready yet. Please wait a moment and try again.");
+      return;
+    }
+
     const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const maxDim = 1024;
+    const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
     captureAndIdentify(dataUrl);
   }, [captureAndIdentify]);
 
@@ -132,12 +139,25 @@ export default function ScanPageClient() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const maxDim = 1024;
+      const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
       captureAndIdentify(dataUrl);
+      URL.revokeObjectURL(img.src);
     };
-    reader.readAsDataURL(file);
+    img.src = URL.createObjectURL(file);
     e.target.value = "";
   }, [captureAndIdentify]);
 
@@ -176,7 +196,7 @@ export default function ScanPageClient() {
                   autoPlay
                   playsInline
                   muted
-                  className="w-full aspect-[4/3] object-cover"
+                  className="w-full aspect-[3/4] object-cover"
                 />
 
                 {/* Scan guide overlay */}
@@ -463,7 +483,6 @@ export default function ScanPageClient() {
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFileUpload}
           className="hidden"
         />
