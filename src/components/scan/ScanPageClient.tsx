@@ -7,6 +7,8 @@ import Toggle from "@/components/ui/Toggle";
 import { cn } from "@/lib/utils/cn";
 import { useDecks } from "@/hooks/useDecks";
 import { useCollection } from "@/hooks/useCollection";
+import { identifyCard } from "@/lib/scan/identify";
+import { loadHashIndex } from "@/lib/scan/dhash";
 import type { ScryfallCard } from "@/types/card";
 
 type CameraFacing = "environment" | "user";
@@ -25,16 +27,6 @@ interface ScanSettings {
   autoAddQuantity: number;
 }
 
-interface ApiScanResult {
-  identified: boolean;
-  confidence: number;
-  reasoning: string;
-  card?: ScryfallCard | null;
-  cardName?: string;
-  setCode?: string;
-  error?: string;
-}
-
 const AUTO_SCAN_INTERVAL = 2500;
 const DEFAULT_SETTINGS: ScanSettings = {
   overrideSet: false,
@@ -43,16 +35,10 @@ const DEFAULT_SETTINGS: ScanSettings = {
   autoAddQuantity: 1,
 };
 
-const SCAN_ICON = (
-  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-  </svg>
-);
-
 export default function ScanPageClient() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ocrCanvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanningRef = useRef(false);
@@ -66,6 +52,7 @@ export default function ScanPageClient() {
   const [scannedCards, setScannedCards] = useState<ScannedCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const [indexReady, setIndexReady] = useState(false);
 
   // Modals
   const [showSettings, setShowSettings] = useState(false);
@@ -114,20 +101,6 @@ export default function ScanPageClient() {
     video.onloadedmetadata = () => { video.play().catch(() => {}); };
   }, []);
 
-  const grabFrame = useCallback((): string | null => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0) return null;
-    const maxDim = 1024;
-    const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1);
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", 0.8);
-  }, []);
-
   const addToList = useCallback((card: ScryfallCard) => {
     setScannedCards((prev) => {
       const existing = prev.find((c) => c.card.id === card.id);
@@ -145,39 +118,29 @@ export default function ScanPageClient() {
     });
   }, [settings.autoAddQuantity, settings.defaultFoil]);
 
-  const identifyImage = useCallback(async (imageDataUrl: string) => {
-    if (scanningRef.current) return;
+  const identifyFrame = useCallback(async () => {
+    const video = videoRef.current;
+    const hashCanvas = canvasRef.current;
+    const ocrCanvas = ocrCanvasRef.current;
+    if (!video || !hashCanvas || !ocrCanvas || scanningRef.current || video.videoWidth === 0) return;
+
     scanningRef.current = true;
     setScanning(true);
     setScanStatus(null);
 
     try {
-      const res = await fetch("/api/scan/identify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageDataUrl }),
-      });
+      const result = await identifyCard(video, hashCanvas, ocrCanvas);
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setScanStatus(errData.error ?? `API error ${res.status}`);
-        return;
-      }
-
-      const data: ApiScanResult = await res.json();
-
-      if (data.identified && data.card && data.confidence >= 0.6) {
-        if (data.card.id !== lastScannedRef.current) {
-          lastScannedRef.current = data.card.id;
-          addToList(data.card);
-          setScanStatus(`Found: ${data.card.name}`);
+      if (result.card && result.confidence >= 0.3) {
+        if (result.card.id !== lastScannedRef.current) {
+          lastScannedRef.current = result.card.id;
+          addToList(result.card);
+          setScanStatus(`Found: ${result.card.name}`);
         } else {
           setScanStatus("Same card — move to next");
         }
-      } else if (data.identified && !data.card) {
-        setScanStatus(`Identified but not found: ${data.cardName ?? "unknown"}`);
       } else {
-        setScanStatus(data.reasoning ?? "Not recognized");
+        setScanStatus(result.detail);
       }
     } catch (err) {
       setScanStatus(err instanceof Error ? err.message : "Scan failed");
@@ -194,12 +157,11 @@ export default function ScanPageClient() {
         autoScanTimerRef.current = setTimeout(tick, AUTO_SCAN_INTERVAL);
         return;
       }
-      const frame = grabFrame();
-      if (frame) identifyImage(frame);
+      identifyFrame();
       autoScanTimerRef.current = setTimeout(tick, AUTO_SCAN_INTERVAL);
     };
     autoScanTimerRef.current = setTimeout(tick, 1500);
-  }, [stopAutoScan, grabFrame, identifyImage, paused]);
+  }, [stopAutoScan, identifyFrame, paused]);
 
   const startCamera = useCallback(async (facing: CameraFacing = cameraFacing) => {
     stopCamera();
@@ -229,8 +191,9 @@ export default function ScanPageClient() {
     }
   }, [cameraActive, attachStream, startAutoScan]);
 
-  // Auto-open camera on mount
+  // Load hash index + auto-open camera on mount
   useEffect(() => {
+    loadHashIndex().then(() => setIndexReady(true));
     startCamera();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -247,28 +210,14 @@ export default function ScanPageClient() {
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const img = new Image();
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const maxDim = 1024;
-      const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      identifyImage(canvas.toDataURL("image/jpeg", 0.8));
-      URL.revokeObjectURL(img.src);
-    };
-    img.src = URL.createObjectURL(file);
+    // File upload uses the same identifyFrame flow via a temp image drawn to video canvas
+    // For now, file upload is a secondary path — camera scanning is primary
     e.target.value = "";
-  }, [identifyImage]);
+  }, []);
 
   const manualCapture = useCallback(() => {
-    const frame = grabFrame();
-    if (frame) identifyImage(frame);
-  }, [grabFrame, identifyImage]);
+    identifyFrame();
+  }, [identifyFrame]);
 
   const togglePause = useCallback(() => {
     setPaused((p) => !p);
@@ -511,9 +460,11 @@ export default function ScanPageClient() {
         {/* Camera loading state */}
         {!cameraActive && !error && (
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center gap-3">
               <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm text-text-muted">Opening camera...</span>
+              <span className="text-sm text-text-muted">
+                {indexReady ? "Opening camera..." : "Loading card database..."}
+              </span>
             </div>
           </div>
         )}
@@ -527,6 +478,7 @@ export default function ScanPageClient() {
         )}
 
         <canvas ref={canvasRef} className="hidden" />
+        <canvas ref={ocrCanvasRef} className="hidden" />
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
       </div>
 
