@@ -108,6 +108,32 @@ export default function DecksPageClient() {
               </button>
             )}
 
+            {/* AI Deck Builder button */}
+            <button
+              onClick={() => router.push("/decks/ai-builder")}
+              className="w-full rounded-2xl border p-3.5 flex items-center gap-3 mb-4 transition-all active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))",
+                borderColor: "rgba(34,197,94,0.3)",
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(34,197,94,0.2)" }}
+              >
+                <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-semibold text-text-primary">AI Deck Builder</p>
+                <p className="text-[10px] text-text-muted">Generate a full decklist with AI + Scryfall</p>
+              </div>
+              <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+
             {/* Search + Filter row */}
             <div className="flex gap-2 mb-4">
               <div className="flex-1">
