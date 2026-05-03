@@ -11,6 +11,7 @@ import { groupCards, sortCards } from "@/lib/utils/deckGrouping";
 import type { GroupBy, SortBy, SortDir } from "@/lib/utils/deckGrouping";
 import Tabs from "@/components/ui/Tabs";
 import Toast from "@/components/ui/Toast";
+import ManaCost from "@/components/cards/ManaCost";
 import DeckCardRow from "./DeckCardRow";
 import DeckCardGrid from "./DeckCardGrid";
 import DeckImportExport from "./DeckImportExport";
@@ -71,6 +72,8 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [recentlyRemoved, setRecentlyRemoved] = useState<DeckCard[]>([]);
+  const [showRemoved, setShowRemoved] = useState(false);
 
   const filteredCards = useMemo(() => {
     let result = cards?.filter((c) => c.category === activeTab) ?? [];
@@ -107,6 +110,32 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
     const card = cards?.find((c) => c.id === id);
     if (card) showToast(`${card.name} · ${qty}×`);
   }, [updateCardQuantity, cards, showToast]);
+
+  const handleRemove = useCallback((id: string) => {
+    const card = cards?.find((c) => c.id === id);
+    if (card) {
+      setRecentlyRemoved((prev) => [card, ...prev.filter((c) => c.scryfallId !== card.scryfallId)].slice(0, 10));
+      setShowRemoved(true);
+    }
+    removeCardFromDeck(id);
+  }, [cards, removeCardFromDeck]);
+
+  const handleRestore = useCallback(async (card: DeckCard) => {
+    await addCardToDeck(deckId, {
+      id: card.scryfallId,
+      name: card.name,
+      mana_cost: card.manaCost,
+      cmc: card.cmc,
+      type_line: card.typeLine,
+      colors: card.colors,
+      rarity: card.rarity,
+      image_uris: card.imageUri ? { normal: card.imageUri } : undefined,
+      prices: { usd: card.priceUsd ?? null },
+    } as Partial<ScryfallCard>, card.category, card.quantity);
+    setRecentlyRemoved((prev) => prev.filter((c) => c.scryfallId !== card.scryfallId));
+    showToast(`Restored ${card.name}`);
+    refresh();
+  }, [deckId, addCardToDeck, showToast, refresh]);
 
   const toggleSort = (key: SortBy) => {
     if (sortBy === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -349,7 +378,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
                   key={card.id}
                   card={card}
                   onQuantityChange={handleQuantityChange}
-                  onRemove={removeCardFromDeck}
+                  onRemove={handleRemove}
                   onCardClick={() => router.push(`/search/${card.scryfallId}?deckId=${deckId}&category=${activeTab}`)}
                   ownedQty={collectionMap.get(card.scryfallId)}
                 />
@@ -383,7 +412,7 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
               <DeckCardGrid
                 cards={group.cards}
                 onQuantityChange={handleQuantityChange}
-                onRemove={removeCardFromDeck}
+                onRemove={handleRemove}
                 onCardClick={(card) => router.push(`/search/${card.scryfallId}?deckId=${deckId}&category=${activeTab}`)}
               />
             </div>
@@ -400,6 +429,53 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           await addCardToDeck(deckId, card, category, quantity);
         }}
       />
+
+      {/* ── Recently Removed ── */}
+      {recentlyRemoved.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setShowRemoved(!showRemoved)}
+            className="flex items-center gap-2 w-full px-2 py-1.5 text-left"
+          >
+            <svg className={cn("w-3 h-3 text-text-muted transition-transform", showRemoved && "rotate-90")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
+              Recently Removed ({recentlyRemoved.length})
+            </span>
+            <div className="flex-1 h-px bg-border/40" />
+            <button
+              onClick={(e) => { e.stopPropagation(); setRecentlyRemoved([]); }}
+              className="text-[10px] text-text-muted hover:text-text-secondary px-1.5 py-0.5 rounded hover:bg-bg-hover transition-colors"
+            >
+              Clear
+            </button>
+          </button>
+          {showRemoved && (
+            <div className="flex flex-col gap-0.5 mt-1">
+              {recentlyRemoved.map((card) => (
+                <div
+                  key={card.scryfallId}
+                  className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-bg-hover/50 transition-colors opacity-60 hover:opacity-100"
+                >
+                  <span className="text-xs text-text-muted tabular-nums w-5 text-center">{card.quantity}×</span>
+                  <span className="text-sm text-text-secondary truncate flex-1">{card.name}</span>
+                  {card.manaCost && <ManaCost cost={card.manaCost} size={13} />}
+                  <button
+                    onClick={() => handleRestore(card)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-semibold rounded-md text-legal bg-legal/10 hover:bg-legal/20 transition-colors flex-shrink-0"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <Toast message={toast.message} visible={toast.visible} />
 
