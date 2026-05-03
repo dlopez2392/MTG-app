@@ -27,7 +27,7 @@ interface ScanSettings {
   autoAddQuantity: number;
 }
 
-const AUTO_SCAN_INTERVAL = 2500;
+const AUTO_SCAN_INTERVAL = 3500;
 const DEFAULT_SETTINGS: ScanSettings = {
   overrideSet: false,
   setCode: "",
