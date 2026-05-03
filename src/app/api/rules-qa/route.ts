@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { readFile } from "fs/promises";
 import { join } from "path";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
+import { getDeepSeek } from "@/lib/deepseek/client";
 
 interface RulesRequest {
   question: string;
@@ -116,8 +114,8 @@ RESPONSE FORMAT (JSON):
 Keep "answer" under 300 words. Include 1-5 citations. Only include "followUp" if genuinely useful.`;
 
 export async function POST(req: Request) {
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: "AI rules advisor is not configured. Add GEMINI_API_KEY to environment variables." }, { status: 503 });
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return NextResponse.json({ error: "AI rules advisor is not configured. Add DEEPSEEK_API_KEY to environment variables." }, { status: 503 });
   }
 
   const body: RulesRequest = await req.json();
@@ -130,27 +128,27 @@ export async function POST(req: Request) {
     const rules = await loadRules();
     const relevantRules = findRelevantRules(rules, body.question);
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const deepseek = getDeepSeek();
 
-    const userPrompt = `${SYSTEM_PROMPT}
-
-Here are the most relevant Comprehensive Rules sections for this question:
+    const userPrompt = `Here are the most relevant Comprehensive Rules sections for this question:
 
 ${relevantRules}
 
 ${body.context ? `Additional context from the user: ${body.context}\n` : ""}
 USER QUESTION: ${body.question}`;
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 4096,
-        responseMimeType: "application/json",
-      },
+    const result = await deepseek.chat.completions.create({
+      model: "deepseek-v4-flash",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 4096,
+      response_format: { type: "json_object" },
     });
 
-    const text = result.response.text();
+    const text = result.choices[0]?.message?.content ?? "";
     const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     const parsed = JSON.parse(cleaned);
 

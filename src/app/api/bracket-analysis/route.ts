@@ -1,9 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { formatBanListForPrompt } from "@/lib/data/bannedCards";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
+import { getDeepSeek } from "@/lib/deepseek/client";
 
 interface DeckCardInput {
   name: string;
@@ -120,8 +118,8 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!process.env.GEMINI_API_KEY) {
-    return NextResponse.json({ error: "AI analysis is not configured. Add GEMINI_API_KEY to environment variables." }, { status: 503 });
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return NextResponse.json({ error: "AI analysis is not configured. Add DEEPSEEK_API_KEY to environment variables." }, { status: 503 });
   }
 
   const body: BracketRequest = await req.json();
@@ -132,20 +130,20 @@ export async function POST(req: Request) {
 
   try {
     const deckSummary = buildDeckSummary(body);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const deepseek = getDeepSeek();
 
-    const result = await model.generateContent({
-      contents: [
-        { role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\nAnalyze this Commander deck for bracket placement:\n\n${deckSummary}` }] },
+    const result = await deepseek.chat.completions.create({
+      model: "deepseek-v4-flash",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Analyze this Commander deck for bracket placement:\n\n${deckSummary}` },
       ],
-      generationConfig: {
-        temperature: 0.5,
-        maxOutputTokens: 16384,
-        responseMimeType: "application/json",
-      },
+      temperature: 0.5,
+      max_tokens: 16384,
+      response_format: { type: "json_object" },
     });
 
-    const text = result.response.text();
+    const text = result.choices[0]?.message?.content ?? "";
     const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     const analysis = JSON.parse(cleaned);
 

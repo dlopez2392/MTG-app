@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
+import { getDeepSeek } from "@/lib/deepseek/client";
 
 interface DeckSummary {
   name: string;
@@ -60,7 +58,7 @@ RESPONSE FORMAT (JSON):
 Keep each field concise. Include 3-5 key interactions and 2-4 swing cards.`;
 
 export async function POST(req: Request) {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI matchup analysis not configured." }, { status: 503 });
   }
 
@@ -71,11 +69,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const deepseek = getDeepSeek();
 
-    const prompt = `${SYSTEM_PROMPT}
-
-=== DECK A ===
+    const userPrompt = `=== DECK A ===
 ${formatDeck(body.deckA)}
 
 === DECK B ===
@@ -83,16 +79,18 @@ ${formatDeck(body.deckB)}
 
 Analyze this matchup.`;
 
-    const result = await model.generateContent({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.5,
-        maxOutputTokens: 8192,
-        responseMimeType: "application/json",
-      },
+    const result = await deepseek.chat.completions.create({
+      model: "deepseek-v4-flash",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.5,
+      max_tokens: 8192,
+      response_format: { type: "json_object" },
     });
 
-    const text = result.response.text();
+    const text = result.choices[0]?.message?.content ?? "";
     const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
     const parsed = JSON.parse(cleaned);
 
