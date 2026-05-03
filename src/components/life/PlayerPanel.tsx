@@ -206,21 +206,20 @@ export default function PlayerPanel({
           }),
         }}
       >
-      {/* Art background */}
+      {/* Art background — scaled to fill entire panel */}
       {artUrl && (
-        <img
-          src={artUrl} alt="" aria-hidden
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ objectPosition: "center 25%", filter: "saturate(1.2) brightness(0.85)" }}
-        />
+        <div className="absolute inset-0 pointer-events-none" style={{ opacity: 0.55 }}>
+          <img
+            src={artUrl} alt="" aria-hidden
+            className="absolute w-full h-full object-cover"
+            style={{ filter: "saturate(1.3) brightness(0.7)", top: "50%", left: "50%", transform: "translate(-50%, -50%)", minWidth: "100%", minHeight: "100%" }}
+          />
+        </div>
       )}
 
-      {/* Player color tint + bottom-heavy gradient overlay */}
+      {/* Edge vignette */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: `linear-gradient(to bottom, ${player.color}40 0%, ${player.color}90 50%, ${player.color}CC 100%)`,
-      }} />
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.6) 100%)",
+        background: `radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%)`,
       }} />
 
       {/* ── Tap zones (no visible buttons) ── */}
