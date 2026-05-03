@@ -65,6 +65,7 @@ export default function ScanPageClient() {
   const [paused, setPaused] = useState(false);
   const [scannedCards, setScannedCards] = useState<ScannedCard[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
 
   // Modals
   const [showSettings, setShowSettings] = useState(false);
@@ -148,6 +149,7 @@ export default function ScanPageClient() {
     if (scanningRef.current) return;
     scanningRef.current = true;
     setScanning(true);
+    setScanStatus(null);
 
     try {
       const res = await fetch("/api/scan/identify", {
@@ -156,16 +158,29 @@ export default function ScanPageClient() {
         body: JSON.stringify({ image: imageDataUrl }),
       });
 
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setScanStatus(errData.error ?? `API error ${res.status}`);
+        return;
+      }
+
       const data: ApiScanResult = await res.json();
 
       if (data.identified && data.card && data.confidence >= 0.6) {
         if (data.card.id !== lastScannedRef.current) {
           lastScannedRef.current = data.card.id;
           addToList(data.card);
+          setScanStatus(`Found: ${data.card.name}`);
+        } else {
+          setScanStatus("Same card — move to next");
         }
+      } else if (data.identified && !data.card) {
+        setScanStatus(`Identified but not found: ${data.cardName ?? "unknown"}`);
+      } else {
+        setScanStatus(data.reasoning ?? "Not recognized");
       }
-    } catch {
-      // Silent fail for auto-scan — don't interrupt
+    } catch (err) {
+      setScanStatus(err instanceof Error ? err.message : "Scan failed");
     } finally {
       scanningRef.current = false;
       setScanning(false);
@@ -193,10 +208,10 @@ export default function ScanPageClient() {
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facing }, width: { ideal: 720 }, height: { ideal: 1280 } },
+          video: { facingMode: { ideal: facing }, width: { ideal: 1920 }, height: { ideal: 1080 } },
         });
       } catch {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 720 }, height: { ideal: 1280 } } });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } } });
       }
       streamRef.current = stream;
       setCameraActive(true);
@@ -418,6 +433,20 @@ export default function ScanPageClient() {
                 </div>
               )}
             </div>
+
+            {/* Scan result feedback */}
+            {scanStatus && !scanning && (
+              <div className="absolute bottom-16 left-3 right-3 flex justify-center pointer-events-none">
+                <div className={cn(
+                  "rounded-full px-3 py-1 backdrop-blur-sm text-xs font-medium max-w-[90%] truncate",
+                  scanStatus.startsWith("Found:") ? "bg-emerald-500/80 text-white" :
+                  scanStatus.startsWith("Same card") ? "bg-white/20 text-white/60" :
+                  "bg-red-500/60 text-white"
+                )}>
+                  {scanStatus}
+                </div>
+              </div>
+            )}
 
             {/* Bottom controls */}
             <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-4">
