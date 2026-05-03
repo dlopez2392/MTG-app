@@ -27,11 +27,28 @@ interface ExploreResult {
 }
 
 const SOURCES = [
-  { key: "archidekt", label: "Archidekt", color: "#8B5CF6", importable: true },
-  { key: "moxfield", label: "Moxfield", color: "#3B82F6", importable: true },
-  { key: "edhrec", label: "EDHREC", color: "#22C55E", importable: false },
-  { key: "mtgtop8", label: "MTGTop8", color: "#F59E0B", importable: false },
+  { key: "archidekt", label: "Archidekt", color: "#8B5CF6", importable: true, external: false },
+  { key: "moxfield", label: "Moxfield", color: "#3B82F6", importable: false, external: true },
+  { key: "edhrec", label: "EDHREC", color: "#22C55E", importable: false, external: false },
+  { key: "mtgtop8", label: "MTGTop8", color: "#F59E0B", importable: false, external: false },
 ];
+
+const MOXFIELD_FORMAT_MAP: Record<string, string> = {
+  commander: "commander",
+  standard: "standard",
+  modern: "modern",
+  pioneer: "pioneer",
+  pauper: "pauper",
+  legacy: "legacy",
+  vintage: "vintage",
+};
+
+function getMoxfieldUrl(format: string, query: string): string {
+  const fmt = MOXFIELD_FORMAT_MAP[format] ?? "commander";
+  const params = new URLSearchParams({ fmt, sortType: "views", sortDirection: "descending" });
+  if (query) params.set("q", query);
+  return `https://www.moxfield.com/decks?${params}`;
+}
 
 const FORMATS = [
   { value: "commander", label: "Commander" },
@@ -174,7 +191,10 @@ export default function ExploreDecks() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const isExternalSource = SOURCES.find((s) => s.key === source)?.external ?? false;
+
   const fetchDecks = useCallback(async (p: number, append = false) => {
+    if (isExternalSource) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     try {
@@ -192,7 +212,7 @@ export default function ExploreDecks() {
     } finally {
       setLoading(false);
     }
-  }, [format, debouncedSearch, source]);
+  }, [format, debouncedSearch, source, isExternalSource]);
 
   useEffect(() => {
     fetchDecks(1);
@@ -235,6 +255,7 @@ export default function ExploreDecks() {
   }, [router]);
 
   const isEdhrec = source === "edhrec";
+  const isExternal = SOURCES.find((s) => s.key === source)?.external ?? false;
 
   return (
     <div className="space-y-4">
@@ -257,8 +278,8 @@ export default function ExploreDecks() {
         ))}
       </div>
 
-      {/* Format chips — hidden for EDHREC (commander only) */}
-      {!isEdhrec && (
+      {/* Format chips — hidden for EDHREC (commander only) and external sources */}
+      {!isEdhrec && !isExternal && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {FORMATS.map((f) => (
             <button
@@ -318,45 +339,100 @@ export default function ExploreDecks() {
         </div>
       )}
 
-      {/* Results */}
-      {error ? (
-        <div className="text-center py-8">
-          <p className="text-text-muted text-sm">{error}</p>
-          <button
-            onClick={() => fetchDecks(1)}
-            className="mt-3 px-4 py-2 rounded-xl btn-gradient text-sm font-medium transition-colors"
+      {/* External source — link out */}
+      {isExternal && source === "moxfield" && (
+        <div className="space-y-3">
+          <a
+            href={getMoxfieldUrl(format, debouncedSearch)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded-2xl border border-border overflow-hidden transition-transform active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))", borderColor: "rgba(59,130,246,0.3)" }}
           >
-            Retry
-          </button>
-        </div>
-      ) : loading && decks.length === 0 ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : decks.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-text-muted text-sm">No decks found</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {decks.map((deck) => (
-              <ExploreCard key={deck.id} deck={deck} onImport={handleImport} importing={importingId === deck.id} />
-            ))}
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(59,130,246,0.2)" }}>
+                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary">Browse Moxfield</p>
+                <p className="text-[11px] text-text-muted mt-0.5">Search and browse decks on moxfield.com</p>
+              </div>
+              <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </div>
+          </a>
+
+          {/* Format quick links */}
+          <div className="glass-card border border-border rounded-2xl p-3">
+            <p className="text-[10px] text-text-muted uppercase tracking-wider font-semibold mb-2">Quick Links by Format</p>
+            <div className="grid grid-cols-2 gap-2">
+              {FORMATS.map((f) => (
+                <a
+                  key={f.value}
+                  href={getMoxfieldUrl(f.value, "")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-bg-hover border border-border text-sm text-text-secondary hover:text-text-primary hover:border-accent/30 transition-colors"
+                >
+                  <span className="flex-1">{f.label}</span>
+                  <svg className="w-3 h-3 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </a>
+              ))}
+            </div>
           </div>
 
-          {hasMore && (
-            <div className="flex justify-center pt-2 pb-4">
-              <button
-                onClick={() => fetchDecks(page + 1, true)}
-                disabled={loading}
-                className="px-6 py-2.5 rounded-xl bg-bg-card border border-border text-sm text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors disabled:opacity-50"
-              >
-                {loading ? "Loading..." : "Load more"}
-              </button>
+          <p className="text-[10px] text-text-muted text-center px-4">
+            Moxfield decks open in your browser. Use Archidekt for in-app import.
+          </p>
+        </div>
+      )}
+
+      {/* Results */}
+      {!isExternal && (
+        error ? (
+          <div className="text-center py-8">
+            <p className="text-text-muted text-sm">{error}</p>
+            <button
+              onClick={() => fetchDecks(1)}
+              className="mt-3 px-4 py-2 rounded-xl btn-gradient text-sm font-medium transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        ) : loading && decks.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : decks.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-text-muted text-sm">No decks found</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {decks.map((deck) => (
+                <ExploreCard key={deck.id} deck={deck} onImport={handleImport} importing={importingId === deck.id} />
+              ))}
             </div>
-          )}
-        </>
+
+            {hasMore && (
+              <div className="flex justify-center pt-2 pb-4">
+                <button
+                  onClick={() => fetchDecks(page + 1, true)}
+                  disabled={loading}
+                  className="px-6 py-2.5 rounded-xl bg-bg-card border border-border text-sm text-text-secondary hover:text-text-primary hover:border-accent/40 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Loading..." : "Load more"}
+                </button>
+              </div>
+            )}
+          </>
+        )
       )}
     </div>
   );
