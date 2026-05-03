@@ -49,6 +49,20 @@ export default function ScanPageClient() {
     setCameraActive(false);
   }, []);
 
+  const attachStream = useCallback((stream: MediaStream) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("webkit-playsinline", "true");
+    video.muted = true;
+    video.srcObject = stream;
+
+    video.onloadedmetadata = () => {
+      video.play().catch(() => {});
+    };
+  }, []);
+
   const startCamera = useCallback(async (facing: CameraFacing = cameraFacing) => {
     stopCamera();
     setError(null);
@@ -56,24 +70,35 @@ export default function ScanPageClient() {
     setCapturedImage(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facing,
-          width: { ideal: 720 },
-          height: { ideal: 1280 },
-        },
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: 720 },
+            height: { ideal: 1280 },
+          },
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 720 }, height: { ideal: 1280 } },
+        });
       }
+
+      streamRef.current = stream;
       setCameraActive(true);
       setCameraFacing(facing);
     } catch {
       setError("Camera access denied. Please allow camera permissions and try again.");
     }
   }, [cameraFacing, stopCamera]);
+
+  // Attach stream to video element once it mounts
+  useEffect(() => {
+    if (cameraActive && streamRef.current) {
+      attachStream(streamRef.current);
+    }
+  }, [cameraActive, attachStream]);
 
   useEffect(() => {
     return () => {
@@ -193,10 +218,10 @@ export default function ScanPageClient() {
               <div className="relative rounded-2xl overflow-hidden border border-border bg-black">
                 <video
                   ref={videoRef}
-                  autoPlay
                   playsInline
                   muted
-                  className="w-full aspect-[3/4] object-cover"
+                  className="w-full h-auto object-cover"
+                  style={{ aspectRatio: "3/4", transform: "translateZ(0)" }}
                 />
 
                 {/* Scan guide overlay */}
