@@ -129,16 +129,21 @@ export default function ScanPageClient() {
     setScanStatus(null);
 
     try {
-      const result = await identifyCard(video, hashCanvas, ocrCanvas);
+      const setOverride = settings.overrideSet && settings.setCode ? settings.setCode : undefined;
+      const result = await identifyCard(video, hashCanvas, ocrCanvas, setOverride);
 
-      if (result.card && result.confidence >= 0.3) {
+      if (result.card && result.confidence >= 0.5) {
         if (result.card.id !== lastScannedRef.current) {
           lastScannedRef.current = result.card.id;
           addToList(result.card);
           setScanStatus(`Found: ${result.card.name}`);
+          // Allow re-scanning same card after 5s
+          setTimeout(() => { lastScannedRef.current = ""; }, 5000);
         } else {
           setScanStatus("Same card — move to next");
         }
+      } else if (result.card) {
+        setScanStatus(`Low confidence: ${result.card.name} — move closer`);
       } else {
         setScanStatus(result.detail);
       }
