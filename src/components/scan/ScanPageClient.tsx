@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
-import HeroBanner from "@/components/layout/HeroBanner";
 import Modal from "@/components/ui/Modal";
 import Toggle from "@/components/ui/Toggle";
 import { cn } from "@/lib/utils/cn";
@@ -215,6 +214,12 @@ export default function ScanPageClient() {
     }
   }, [cameraActive, attachStream, startAutoScan]);
 
+  // Auto-open camera on mount
+  useEffect(() => {
+    startCamera();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     return () => {
       stopAutoScan();
@@ -317,7 +322,7 @@ export default function ScanPageClient() {
   return (
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* Header */}
-      {cameraActive ? (
+      {cameraActive && (
         <div className="px-4 pt-4 pb-2 space-y-2">
           {/* Title row */}
           <div className="flex items-center justify-between">
@@ -390,8 +395,6 @@ export default function ScanPageClient() {
             </button>
           </div>
         </div>
-      ) : (
-        <HeroBanner title="SCANNER" subtitle="AI-powered card scanning" accent="#10B981" icon={SCAN_ICON} />
       )}
 
       <div className="px-4 max-w-2xl mx-auto w-full flex-1 flex flex-col">
@@ -526,54 +529,12 @@ export default function ScanPageClient() {
           </div>
         )}
 
-        {/* Start screen */}
-        {!cameraActive && (
-          <div className="space-y-3">
-            <button
-              onClick={() => startCamera()}
-              className="w-full glass-card border border-border rounded-2xl p-6 flex flex-col items-center gap-3 hover:border-emerald-500/40 transition-colors active:scale-[0.98]"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-text-primary">Open Camera</p>
-                <p className="text-xs text-text-muted mt-0.5">Auto-scans cards as you point</p>
-              </div>
-            </button>
-
+        {/* Camera loading state */}
+        {!cameraActive && !error && (
+          <div className="flex-1 flex items-center justify-center">
             <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs text-text-muted">or</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full glass-card border border-border rounded-2xl p-4 flex items-center gap-3 hover:border-accent/40 transition-colors active:scale-[0.98]"
-            >
-              <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium text-text-primary">Upload Photo</p>
-                <p className="text-xs text-text-muted">Select an image from your device</p>
-              </div>
-            </button>
-
-            <div className="glass-card border border-border rounded-2xl p-4 space-y-2">
-              <p className="text-xs font-semibold text-text-primary">Tips for best results</p>
-              <ul className="text-xs text-text-muted space-y-1.5">
-                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Good lighting — avoid glare on foil cards</li>
-                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Keep the card flat and fill the frame</li>
-                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Hold steady — auto-scan runs continuously</li>
-                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Works with any language or edition</li>
-              </ul>
+              <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-text-muted">Opening camera...</span>
             </div>
           </div>
         )}
