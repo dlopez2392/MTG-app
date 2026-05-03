@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
@@ -73,6 +73,34 @@ export default function AIDeckBuilderClient() {
   const [budget, setBudget] = useState("");
   const [strategy, setStrategy] = useState("");
   const [colors, setColors] = useState("");
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commanderRef = useRef<HTMLDivElement>(null);
+
+  const fetchSuggestions = useCallback((query: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.length < 2) { setSuggestions([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/scryfall/autocomplete?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setSuggestions(data.data ?? []);
+        setShowSuggestions(true);
+      } catch { setSuggestions([]); }
+    }, 200);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (commanderRef.current && !commanderRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [result, setResult] = useState<DeckResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -209,15 +237,41 @@ export default function AIDeckBuilderClient() {
 
                   {/* Commander (only for Commander format) */}
                   {format === "commander" && (
-                    <div>
+                    <div ref={commanderRef} className="relative">
                       <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-1 block">Commander</label>
                       <input
                         type="text"
                         value={commander}
-                        onChange={(e) => setCommander(e.target.value)}
+                        onChange={(e) => {
+                          setCommander(e.target.value);
+                          fetchSuggestions(e.target.value);
+                        }}
+                        onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                         placeholder="e.g. Atraxa, Praetors' Voice"
                         className="w-full input-base px-3 py-2.5 text-sm"
+                        autoComplete="off"
                       />
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div
+                          className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-border shadow-xl"
+                          style={{ background: "rgba(20,20,30,0.98)", backdropFilter: "blur(12px)" }}
+                        >
+                          {suggestions.map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() => {
+                                setCommander(name);
+                                setShowSuggestions(false);
+                                setSuggestions([]);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white/90 transition-colors"
+                            >
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
