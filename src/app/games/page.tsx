@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import HeroBanner from "@/components/layout/HeroBanner";
 import PageContainer from "@/components/layout/PageContainer";
@@ -34,6 +34,116 @@ function resultBg(r: GameResult) {
 }
 function resultLabel(r: GameResult) {
   return r === "win" ? "W" : r === "loss" ? "L" : "D";
+}
+
+// ── Searchable Deck Select ────────────────────────────────────────────────────
+function DeckSelect({
+  decks,
+  value,
+  onChange,
+  placeholder = "Search decks…",
+  allowCustom = false,
+}: {
+  decks: Array<{ id?: string; name: string }>;
+  value: string;
+  onChange: (id: string, name: string) => void;
+  placeholder?: string;
+  allowCustom?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filtered = decks.filter((d) =>
+    d.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedName = decks.find((d) => (d.id ?? d.name) === value)?.name ?? value;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full input-base px-3 py-2.5 flex items-center justify-between gap-2 text-left"
+      >
+        <span className={cn("truncate text-sm", selectedName ? "text-text-primary" : "text-text-muted")}>
+          {selectedName || placeholder}
+        </span>
+        <svg className={cn("w-4 h-4 text-text-muted flex-shrink-0 transition-transform", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl bg-bg-card border border-border shadow-xl overflow-hidden">
+          {decks.length > 4 && (
+            <div className="p-2 border-b border-border">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search…"
+                className="w-full input-base px-2.5 py-1.5 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+          <div className="max-h-48 overflow-y-auto scrollbar-hide">
+            {filtered.map((d) => (
+              <button
+                key={d.id ?? d.name}
+                type="button"
+                onClick={() => {
+                  onChange(d.id ?? "", d.name);
+                  setSearch("");
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm hover:bg-bg-hover transition-colors flex items-center justify-between",
+                  (d.id ?? d.name) === value ? "text-accent font-semibold" : "text-text-primary"
+                )}
+              >
+                <span className="truncate">{d.name}</span>
+                {(d.id ?? d.name) === value && (
+                  <svg className="w-4 h-4 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-3 py-2 text-xs text-text-muted">No decks found</p>
+            )}
+            {allowCustom && (
+              <button
+                type="button"
+                onClick={() => {
+                  onChange("", "");
+                  setSearch("");
+                  setOpen(false);
+                }}
+                className={cn(
+                  "w-full text-left px-3 py-2 text-sm hover:bg-bg-hover transition-colors border-t border-border",
+                  value === "" ? "text-accent font-semibold" : "text-text-muted"
+                )}
+              >
+                — Custom name —
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Log Entry Form ────────────────────────────────────────────────────────────
@@ -87,16 +197,13 @@ function LogForm({ decks, initial, onSave, onCancel, saveLabel = "Save", playgro
       <div>
         <label className="text-xs text-text-muted font-medium block mb-1">Deck</label>
         {decks.length > 0 ? (
-          <select
+          <DeckSelect
+            decks={decks}
             value={deckId || deckName}
-            onChange={handleDeckChange}
-            className="w-full input-base px-3 py-2.5"
-          >
-            {decks.map((d) => (
-              <option key={d.id ?? d.name} value={d.id ?? d.name}>{d.name}</option>
-            ))}
-            <option value="">— Custom name —</option>
-          </select>
+            onChange={(id, name) => { setDeckId(id); setDeckName(name); }}
+            placeholder="Select a deck…"
+            allowCustom
+          />
         ) : null}
         {(decks.length === 0 || deckId === "") && (
           <input
@@ -434,32 +541,13 @@ function GamesPageInner() {
           /* ── Log view ── */
           <>
             {deckOptions.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none -mx-1 px-1">
-                <button
-                  onClick={() => setFilterDeck("all")}
-                  className={cn(
-                    "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                    filterDeck === "all"
-                      ? "bg-accent/20 text-accent border border-accent/40"
-                      : "bg-bg-card border border-border text-text-secondary hover:text-text-primary"
-                  )}
-                >
-                  All decks
-                </button>
-                {deckOptions.map((d) => (
-                  <button
-                    key={d.id ?? d.name}
-                    onClick={() => setFilterDeck(d.id ?? d.name)}
-                    className={cn(
-                      "flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors",
-                      filterDeck === (d.id ?? d.name)
-                        ? "bg-accent/20 text-accent border border-accent/40"
-                        : "bg-bg-card border border-border text-text-secondary hover:text-text-primary"
-                    )}
-                  >
-                    {d.name}
-                  </button>
-                ))}
+              <div className="mb-3">
+                <DeckSelect
+                  decks={[{ id: "all", name: "All Decks" }, ...deckOptions]}
+                  value={filterDeck}
+                  onChange={(id) => setFilterDeck(id || "all")}
+                  placeholder="Filter by deck…"
+                />
               </div>
             )}
 
