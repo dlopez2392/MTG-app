@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;600;700;800;900&family=Cinzel+Decorative:wght@700;900&display=swap");
 @import "tailwindcss";
 
 @theme inline {
@@ -53,7 +52,7 @@
   --color-toggle-on: var(--color-accent);
 
   --font-sans: var(--font-geist-sans);
-  --font-display: "Big Shoulders Display", var(--font-geist-sans), Arial, sans-serif;
+  --font-display: var(--font-big-shoulders), var(--font-geist-sans), Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -168,7 +167,7 @@ input[type="email"] {
 
 /* MTG title font */
 .font-mtg {
-  font-family: "Cinzel Decorative", Georgia, serif;
+  font-family: var(--font-cinzel), Georgia, serif;
 }
 
 /* MTG-inspired gradient text — gold/lavender/violet tones */

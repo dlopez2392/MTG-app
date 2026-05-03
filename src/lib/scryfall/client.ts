@@ -6,6 +6,7 @@ const MIN_REQUEST_GAP = 100;
 let lastRequestTime = 0;
 
 const cache = new Map<string, { data: unknown; expiry: number }>();
+const MAX_CACHE_SIZE = 500;
 
 const CACHE_TTLS = {
   autocomplete: 2 * 60 * 1000,
@@ -27,6 +28,16 @@ function getCached<T>(key: string): T | null {
 }
 
 function setCache(key: string, data: unknown, ttl: number) {
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const now = Date.now();
+    for (const [k, v] of cache) {
+      if (v.expiry < now) cache.delete(k);
+    }
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const first = cache.keys().next().value;
+      if (first) cache.delete(first);
+    }
+  }
   cache.set(key, { data, expiry: Date.now() + ttl });
 }
 

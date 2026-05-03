@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     return new Response("Invalid url", { status: 400 });
   }
 
-  if (!parsed.hostname.endsWith("scryfall.io")) {
+  if (parsed.hostname !== "scryfall.io" && !parsed.hostname.endsWith(".scryfall.io")) {
     return new Response("Only scryfall.io images are allowed", { status: 403 });
   }
 
@@ -32,7 +32,6 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type": contentType,
       "Cache-Control": "public, max-age=86400",
-      "Access-Control-Allow-Origin": "*",
     },
   });
 }

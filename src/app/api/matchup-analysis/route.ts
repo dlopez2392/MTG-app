@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getDeepSeek } from "@/lib/deepseek/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 interface DeckSummary {
   name: string;
@@ -58,6 +60,16 @@ RESPONSE FORMAT (JSON):
 Keep each field concise. Include 3-5 key interactions and 2-4 swing cards.`;
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`ai:${userId}`, 10, 60_000);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI matchup analysis not configured." }, { status: 503 });
   }
@@ -66,6 +78,10 @@ export async function POST(req: Request) {
 
   if (!body.deckA?.cards?.length || !body.deckB?.cards?.length) {
     return NextResponse.json({ error: "Both decks must have cards" }, { status: 400 });
+  }
+
+  if (body.deckA.cards.length > 200 || body.deckB.cards.length > 200) {
+    return NextResponse.json({ error: "Too many cards per deck (max 200)" }, { status: 400 });
   }
 
   try {

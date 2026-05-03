@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Big_Shoulders, Cinzel_Decorative } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import BottomNav from "@/components/layout/BottomNav";
 import PageBackground from "@/components/layout/PageBackground";
@@ -13,6 +13,19 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const bigShoulders = Big_Shoulders({
+  variable: "--font-big-shoulders",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const cinzel = Cinzel_Decorative({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["700", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -45,7 +58,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bigShoulders.variable} ${cinzel.variable} h-full antialiased`}
       >
         <head>
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />

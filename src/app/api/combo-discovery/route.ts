@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getDeepSeek } from "@/lib/deepseek/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 interface ComboRequest {
   deckName: string;
@@ -45,6 +47,16 @@ RESPONSE FORMAT (JSON):
 Return 0 combos if none exist — don't invent fake interactions. Include up to 3 missing pieces for combos that are 1 card away. Be specific with card names.`;
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`ai:${userId}`, 10, 60_000);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI combo analysis not configured." }, { status: 503 });
   }
@@ -53,6 +65,10 @@ export async function POST(req: Request) {
 
   if (!body.cards || body.cards.length === 0) {
     return NextResponse.json({ error: "Deck has no cards to analyze" }, { status: 400 });
+  }
+
+  if (body.cards.length > 200) {
+    return NextResponse.json({ error: "Too many cards (max 200)" }, { status: 400 });
   }
 
   try {

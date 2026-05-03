@@ -320,6 +320,7 @@ async function fetchMoxfield(format: string, page: number, query: string): Promi
 
 const cache = new Map<string, { data: unknown; expiry: number }>();
 const CACHE_TTL = 10 * 60 * 1000;
+const MAX_CACHE_SIZE = 200;
 
 // ── Route ──
 
@@ -349,6 +350,16 @@ export async function GET(req: Request) {
       result = await fetchArchidekt(format, page, query);
     }
 
+    if (cache.size >= MAX_CACHE_SIZE) {
+      const now = Date.now();
+      for (const [k, v] of cache) {
+        if (v.expiry < now) cache.delete(k);
+      }
+      if (cache.size >= MAX_CACHE_SIZE) {
+        const first = cache.keys().next().value;
+        if (first) cache.delete(first);
+      }
+    }
     cache.set(cacheKey, { data: result, expiry: Date.now() + CACHE_TTL });
     return NextResponse.json(result);
   } catch (err) {

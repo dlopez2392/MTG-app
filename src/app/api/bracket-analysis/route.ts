@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { formatBanListForPrompt } from "@/lib/data/bannedCards";
 import { getDeepSeek } from "@/lib/deepseek/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 interface DeckCardInput {
   name: string;
@@ -117,6 +118,11 @@ function buildDeckSummary(req: BracketRequest): string {
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { success } = rateLimit(`ai:${userId}`, 10, 60_000);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
 
   if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI analysis is not configured. Add DEEPSEEK_API_KEY to environment variables." }, { status: 503 });

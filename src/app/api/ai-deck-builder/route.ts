@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getDeepSeek } from "@/lib/deepseek/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 interface BuildRequest {
   format: string;
@@ -109,6 +111,16 @@ async function validateWithScryfall(
 }
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`ai:${userId}`, 10, 60_000);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI deck builder not configured." }, { status: 503 });
   }
@@ -117,6 +129,10 @@ export async function POST(req: Request) {
 
   if (!body.format || !body.strategy) {
     return NextResponse.json({ error: "Format and strategy are required" }, { status: 400 });
+  }
+
+  if (body.strategy.length > 1000 || (body.commander && body.commander.length > 200)) {
+    return NextResponse.json({ error: "Input too long" }, { status: 400 });
   }
 
   try {

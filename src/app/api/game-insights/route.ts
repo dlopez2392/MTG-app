@@ -1,5 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getDeepSeek } from "@/lib/deepseek/client";
+import { rateLimit } from "@/lib/rateLimit";
 
 interface GameInsightRequest {
   entries: {
@@ -50,6 +52,16 @@ RESPONSE FORMAT (JSON):
 Return 3-6 insights ordered by impact. Be honest but encouraging — highlight strengths alongside weaknesses.`;
 
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { success } = rateLimit(`ai:${userId}`, 10, 60_000);
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 });
+  }
+
   if (!process.env.DEEPSEEK_API_KEY) {
     return NextResponse.json({ error: "AI insights not configured." }, { status: 503 });
   }
@@ -58,6 +70,10 @@ export async function POST(req: Request) {
 
   if (!body.entries || body.entries.length === 0) {
     return NextResponse.json({ error: "No game history to analyze" }, { status: 400 });
+  }
+
+  if (body.entries.length > 500) {
+    return NextResponse.json({ error: "Too many entries (max 500)" }, { status: 400 });
   }
 
   try {
