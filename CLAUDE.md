@@ -71,8 +71,12 @@ Every data hook (`useDecks`, `useGameLog`, `usePlaygroup`, etc.) follows the sam
 | Deck Editor | `src/components/decks/DeckEditor.tsx` | Moxfield-style grouping/sorting, compact card rows, value summary |
 | Playgroup | `src/app/playgroup/page.tsx`, `src/hooks/usePlaygroup.ts` | Member CRUD, head-to-head stats, friend email search, account linking |
 | Game Log | `src/app/games/page.tsx`, `src/hooks/useGameLog.ts` | Log results per deck, playgroup opponent chips |
+| Game Analytics | `src/components/games/GameAnalyticsClient.tsx` | Win-rate charts, streaks, format/opponent stats, AI insights |
 | Deck Stats | `src/components/decks/DeckStatsClient.tsx` | Mana curve, color pie, rarity, AI coach, opponent matchups |
-| Card Scanner | `src/components/scan/ScanPageClient.tsx` | Camera + dHash + OCR |
+| Combo Discovery | `src/components/decks/stats/ComboDiscovery.tsx` | AI finds infinite combos, synergies, near-miss pieces in decklist |
+| AI Deck Builder | `src/components/decks/AIDeckBuilderClient.tsx` | Generate full decklist from constraints, Scryfall-validated, save to deck |
+| AI Game Insights | `src/components/games/GameInsights.tsx` | AI analyzes game history for patterns, weak matchups, deck verdicts |
+| Card Scanner | `src/components/scan/ScanPageClient.tsx` | Camera + dHash + OCR (client-side, no AI API) |
 | Collection | `src/hooks/useCollection.ts` | Binders with card tracking |
 | User Profiles | `src/app/api/profile/route.ts` | Auto-created from Clerk, discoverable opt-in |
 | PWA | `src/app/manifest.ts`, `public/sw.js` | Installable, offline shell caching |
