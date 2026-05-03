@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import TopBar from "@/components/layout/TopBar";
 import PageContainer from "@/components/layout/PageContainer";
+import GameInsights from "@/components/games/GameInsights";
 import { useGameLog, computeStats } from "@/hooks/useGameLog";
 import { cn } from "@/lib/utils/cn";
 import type { GameEntry } from "@/types/game";
@@ -263,6 +264,9 @@ export default function GameAnalyticsClient() {
               color={recentWinRate >= 50 ? "text-legal" : "text-banned"}
             />
           </div>
+
+          {/* ── AI Game Insights ── */}
+          {totalGames >= 3 && <GameInsights entries={entries} />}
 
           {/* ── Win Rate Trend ── */}
           {winTrend.length >= 2 && (
