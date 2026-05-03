@@ -3,13 +3,30 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import HeroBanner from "@/components/layout/HeroBanner";
-import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
+import Toggle from "@/components/ui/Toggle";
 import { cn } from "@/lib/utils/cn";
+import { useDecks } from "@/hooks/useDecks";
+import { useCollection } from "@/hooks/useCollection";
 import type { ScryfallCard } from "@/types/card";
 
 type CameraFacing = "environment" | "user";
 
-interface ScanResult {
+interface ScannedCard {
+  id: string;
+  card: ScryfallCard;
+  quantity: number;
+  isFoil: boolean;
+}
+
+interface ScanSettings {
+  overrideSet: boolean;
+  setCode: string;
+  defaultFoil: boolean;
+  autoAddQuantity: number;
+}
+
+interface ApiScanResult {
   identified: boolean;
   confidence: number;
   reasoning: string;
@@ -20,6 +37,12 @@ interface ScanResult {
 }
 
 const AUTO_SCAN_INTERVAL = 2500;
+const DEFAULT_SETTINGS: ScanSettings = {
+  overrideSet: false,
+  setCode: "",
+  defaultFoil: false,
+  autoAddQuantity: 1,
+};
 
 const SCAN_ICON = (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -35,13 +58,35 @@ export default function ScanPageClient() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scanningRef = useRef(false);
   const autoScanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScannedRef = useRef<string>("");
 
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<CameraFacing>("environment");
   const [scanning, setScanning] = useState(false);
-  const [result, setResult] = useState<ScanResult | null>(null);
+  const [paused, setPaused] = useState(false);
+  const [scannedCards, setScannedCards] = useState<ScannedCard[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+  // Modals
+  const [showSettings, setShowSettings] = useState(false);
+  const [showAddTo, setShowAddTo] = useState(false);
+  const [settings, setSettings] = useState<ScanSettings>(DEFAULT_SETTINGS);
+  const [addStatus, setAddStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Hooks for Add to...
+  const { allDecks, addCardToDeck } = useDecks();
+  const { allBinders, addCardToBinder } = useCollection();
+
+  // Computed
+  const totalCards = scannedCards.reduce((sum, c) => sum + c.quantity, 0);
+  const totalPrice = scannedCards.reduce((sum, c) => {
+    const price = c.isFoil
+      ? parseFloat(c.card.prices.usd_foil ?? c.card.prices.usd ?? "0")
+      : parseFloat(c.card.prices.usd ?? "0");
+    return sum + price * c.quantity;
+  }, 0);
+
+  // ── Camera ──
 
   const stopAutoScan = useCallback(() => {
     if (autoScanTimerRef.current) {
@@ -62,44 +107,48 @@ export default function ScanPageClient() {
   const attachStream = useCallback((stream: MediaStream) => {
     const video = videoRef.current;
     if (!video) return;
-
     video.setAttribute("playsinline", "true");
     video.setAttribute("webkit-playsinline", "true");
     video.muted = true;
     video.srcObject = stream;
-
-    video.onloadedmetadata = () => {
-      video.play().catch(() => {});
-    };
+    video.onloadedmetadata = () => { video.play().catch(() => {}); };
   }, []);
 
   const grabFrame = useCallback((): string | null => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (!video || !canvas || video.videoWidth === 0) return null;
-
     const maxDim = 1024;
     const scale = Math.min(maxDim / video.videoWidth, maxDim / video.videoHeight, 1);
     canvas.width = Math.round(video.videoWidth * scale);
     canvas.height = Math.round(video.videoHeight * scale);
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/jpeg", 0.8);
   }, []);
 
-  const identifyImage = useCallback(async (imageDataUrl: string, keepCamera: boolean) => {
+  const addToList = useCallback((card: ScryfallCard) => {
+    setScannedCards((prev) => {
+      const existing = prev.find((c) => c.card.id === card.id);
+      if (existing) {
+        return prev.map((c) =>
+          c.card.id === card.id ? { ...c, quantity: c.quantity + 1 } : c
+        );
+      }
+      return [...prev, {
+        id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
+        card,
+        quantity: settings.autoAddQuantity,
+        isFoil: settings.defaultFoil,
+      }];
+    });
+  }, [settings.autoAddQuantity, settings.defaultFoil]);
+
+  const identifyImage = useCallback(async (imageDataUrl: string) => {
     if (scanningRef.current) return;
     scanningRef.current = true;
     setScanning(true);
-    setError(null);
-
-    if (!keepCamera) {
-      setCapturedImage(imageDataUrl);
-      stopCamera();
-    }
 
     try {
       const res = await fetch("/api/scan/identify", {
@@ -108,80 +157,57 @@ export default function ScanPageClient() {
         body: JSON.stringify({ image: imageDataUrl }),
       });
 
-      const data: ScanResult = await res.json();
-
-      if (!res.ok) {
-        if (!keepCamera) setError(data.error ?? "Identification failed.");
-        return;
-      }
+      const data: ApiScanResult = await res.json();
 
       if (data.identified && data.card && data.confidence >= 0.6) {
-        setCapturedImage(imageDataUrl);
-        stopCamera();
-        setResult(data);
+        if (data.card.id !== lastScannedRef.current) {
+          lastScannedRef.current = data.card.id;
+          addToList(data.card);
+        }
       }
-      // If not identified or low confidence, auto-scan continues
     } catch {
-      if (!keepCamera) setError("Network error. Check your connection.");
+      // Silent fail for auto-scan — don't interrupt
     } finally {
       scanningRef.current = false;
       setScanning(false);
     }
-  }, [stopCamera]);
+  }, [addToList]);
 
-  // Auto-scan loop
   const startAutoScan = useCallback(() => {
     stopAutoScan();
-
     const tick = () => {
-      if (!streamRef.current || scanningRef.current) {
+      if (!streamRef.current || scanningRef.current || paused) {
         autoScanTimerRef.current = setTimeout(tick, AUTO_SCAN_INTERVAL);
         return;
       }
-
       const frame = grabFrame();
-      if (frame) {
-        identifyImage(frame, true);
-      }
-
+      if (frame) identifyImage(frame);
       autoScanTimerRef.current = setTimeout(tick, AUTO_SCAN_INTERVAL);
     };
-
-    // First scan after a short delay to let camera warm up
     autoScanTimerRef.current = setTimeout(tick, 1500);
-  }, [stopAutoScan, grabFrame, identifyImage]);
+  }, [stopAutoScan, grabFrame, identifyImage, paused]);
 
   const startCamera = useCallback(async (facing: CameraFacing = cameraFacing) => {
     stopCamera();
     setError(null);
-    setResult(null);
-    setCapturedImage(null);
-
     try {
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: facing },
-            width: { ideal: 720 },
-            height: { ideal: 1280 },
-          },
+          video: { facingMode: { ideal: facing }, width: { ideal: 720 }, height: { ideal: 1280 } },
         });
       } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 720 }, height: { ideal: 1280 } },
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 720 }, height: { ideal: 1280 } } });
       }
-
       streamRef.current = stream;
       setCameraActive(true);
       setCameraFacing(facing);
+      setPaused(false);
     } catch {
-      setError("Camera access denied. Please allow camera permissions and try again.");
+      setError("Camera access denied. Please allow camera permissions.");
     }
   }, [cameraFacing, stopCamera]);
 
-  // Attach stream and start auto-scan once video mounts
   useEffect(() => {
     if (cameraActive && streamRef.current) {
       attachStream(streamRef.current);
@@ -189,40 +215,30 @@ export default function ScanPageClient() {
     }
   }, [cameraActive, attachStream, startAutoScan]);
 
-  // Stop auto-scan when result is found
-  useEffect(() => {
-    if (result) stopAutoScan();
-  }, [result, stopAutoScan]);
-
   useEffect(() => {
     return () => {
       stopAutoScan();
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
     };
   }, [stopAutoScan]);
+
+  // ── Handlers ──
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const img = new Image();
     img.onload = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-
       const maxDim = 1024;
       const scale = Math.min(maxDim / img.width, maxDim / img.height, 1);
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
-
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-      identifyImage(dataUrl, false);
+      identifyImage(canvas.toDataURL("image/jpeg", 0.8));
       URL.revokeObjectURL(img.src);
     };
     img.src = URL.createObjectURL(file);
@@ -231,63 +247,183 @@ export default function ScanPageClient() {
 
   const manualCapture = useCallback(() => {
     const frame = grabFrame();
-    if (frame) {
-      stopAutoScan();
-      identifyImage(frame, false);
+    if (frame) identifyImage(frame);
+  }, [grabFrame, identifyImage]);
+
+  const togglePause = useCallback(() => {
+    setPaused((p) => !p);
+  }, []);
+
+  const removeCard = useCallback((id: string) => {
+    setScannedCards((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  const updateQuantity = useCallback((id: string, delta: number) => {
+    setScannedCards((prev) => prev.map((c) => {
+      if (c.id !== id) return c;
+      const newQty = Math.max(1, c.quantity + delta);
+      return { ...c, quantity: newQty };
+    }));
+  }, []);
+
+  const toggleFoil = useCallback((id: string) => {
+    setScannedCards((prev) => prev.map((c) =>
+      c.id === id ? { ...c, isFoil: !c.isFoil } : c
+    ));
+  }, []);
+
+  const clearList = useCallback(() => {
+    setScannedCards([]);
+    lastScannedRef.current = "";
+  }, []);
+
+  const addAllToBinder = useCallback(async (binderId: string) => {
+    try {
+      for (const sc of scannedCards) {
+        const imageUri = sc.card.image_uris?.normal ?? sc.card.card_faces?.[0]?.image_uris?.normal;
+        await addCardToBinder(binderId, {
+          scryfallId: sc.card.id,
+          name: sc.card.name,
+          quantity: sc.quantity,
+          isFoil: sc.isFoil,
+          setCode: sc.card.set,
+          setName: sc.card.set_name,
+          collectorNumber: sc.card.collector_number,
+          imageUri,
+          priceUsd: sc.isFoil ? sc.card.prices.usd_foil : sc.card.prices.usd,
+          typeLine: sc.card.type_line,
+          rarity: sc.card.rarity,
+        });
+      }
+      setAddStatus({ type: "success", message: `Added ${totalCards} card${totalCards !== 1 ? "s" : ""} to binder` });
+      setTimeout(() => { setShowAddTo(false); setAddStatus(null); clearList(); }, 1500);
+    } catch {
+      setAddStatus({ type: "error", message: "Failed to add cards" });
     }
-  }, [grabFrame, identifyImage, stopAutoScan]);
+  }, [scannedCards, totalCards, addCardToBinder, clearList]);
 
-  const flipCamera = useCallback(() => {
-    startCamera(cameraFacing === "environment" ? "user" : "environment");
-  }, [cameraFacing, startCamera]);
-
-  const resetScanner = useCallback(() => {
-    setResult(null);
-    setError(null);
-    setCapturedImage(null);
-    setScanning(false);
-    scanningRef.current = false;
-    startCamera();
-  }, [startCamera]);
-
-  const card = result?.card;
-  const cardImage = card?.image_uris?.normal ?? card?.card_faces?.[0]?.image_uris?.normal;
+  const addAllToDeck = useCallback(async (deckId: string) => {
+    try {
+      for (const sc of scannedCards) {
+        await addCardToDeck(deckId, sc.card, "main", sc.quantity);
+      }
+      setAddStatus({ type: "success", message: `Added ${totalCards} card${totalCards !== 1 ? "s" : ""} to deck` });
+      setTimeout(() => { setShowAddTo(false); setAddStatus(null); clearList(); }, 1500);
+    } catch {
+      setAddStatus({ type: "error", message: "Failed to add cards" });
+    }
+  }, [scannedCards, totalCards, addCardToDeck, clearList]);
 
   return (
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
-      <HeroBanner
-        title="SCANNER"
-        subtitle="Identify cards with AI"
-        accent="#10B981"
-        icon={SCAN_ICON}
-      />
+      {/* Header */}
+      {cameraActive ? (
+        <div className="px-4 pt-4 pb-2 space-y-2">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-bold text-text-primary">Scan List</h1>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-text-primary">{totalCards}</span>
+              <svg className="w-5 h-5 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v8.25A2.25 2.25 0 006 16.5h2.25m8.25-8.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-6A2.25 2.25 0 019.75 18v-2.25m8.25-8.25h-6a2.25 2.25 0 00-2.25 2.25v6" />
+              </svg>
+            </div>
+          </div>
 
-      <div className="px-4 max-w-2xl mx-auto w-full space-y-4">
+          {/* Actions row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={clearList}
+                disabled={scannedCards.length === 0}
+                className="p-2 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-30"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                </svg>
+              </button>
+            </div>
+
+            <span className="text-lg font-bold text-amber-400">${totalPrice.toFixed(2)}</span>
+          </div>
+
+          {/* Control bar */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={() => { if (scannedCards.length > 0) setShowAddTo(true); }}
+              disabled={scannedCards.length === 0}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-bg-card text-sm font-medium text-text-primary disabled:opacity-30 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              Add to...
+            </button>
+
+            <button
+              onClick={togglePause}
+              className={cn(
+                "w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90",
+                paused ? "bg-emerald-500 shadow-emerald-500/30" : "bg-bg-card border-2 border-border"
+              )}
+            >
+              {paused ? (
+                <svg className="w-6 h-6 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6 text-text-primary" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-bg-card text-sm font-medium text-text-primary transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Settings
+            </button>
+          </div>
+        </div>
+      ) : (
+        <HeroBanner title="SCANNER" subtitle="AI-powered card scanning" accent="#10B981" icon={SCAN_ICON} />
+      )}
+
+      <div className="px-4 max-w-2xl mx-auto w-full flex-1 flex flex-col">
         {/* Camera viewfinder */}
-        {cameraActive && !result && !capturedImage && (
-          <div className="relative rounded-2xl overflow-hidden border border-border bg-black">
+        {cameraActive && (
+          <div className="relative rounded-2xl overflow-hidden border border-border bg-black flex-1 min-h-0">
             <video
               ref={videoRef}
               playsInline
               muted
-              className="w-full h-auto object-cover"
-              style={{ aspectRatio: "3/4", transform: "translateZ(0)" }}
+              className="w-full h-full object-cover"
+              style={{ transform: "translateZ(0)" }}
             />
 
-            {/* Scan guide overlay */}
+            {/* Scan guide */}
             <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-8 border-2 border-white/30 rounded-xl" />
-              <div className="absolute top-8 left-8 w-6 h-6 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg" />
-              <div className="absolute top-8 right-8 w-6 h-6 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg" />
-              <div className="absolute bottom-8 left-8 w-6 h-6 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg" />
-              <div className="absolute bottom-8 right-8 w-6 h-6 border-b-2 border-r-2 border-emerald-400 rounded-br-lg" />
+              <div className="absolute inset-[12%] border-2 border-white/25 rounded-xl" />
+              <div className="absolute top-[12%] left-[12%] w-6 h-6 border-t-2 border-l-2 border-emerald-400 rounded-tl-lg" />
+              <div className="absolute top-[12%] right-[12%] w-6 h-6 border-t-2 border-r-2 border-emerald-400 rounded-tr-lg" />
+              <div className="absolute bottom-[12%] left-[12%] w-6 h-6 border-b-2 border-l-2 border-emerald-400 rounded-bl-lg" />
+              <div className="absolute bottom-[12%] right-[12%] w-6 h-6 border-b-2 border-r-2 border-emerald-400 rounded-br-lg" />
             </div>
 
-            {/* Scanning indicator */}
-            <div className="absolute top-3 left-0 right-0 flex items-center justify-center gap-2">
-              {scanning ? (
+            {/* Status indicator */}
+            <div className="absolute top-3 left-0 right-0 flex justify-center">
+              {paused ? (
+                <div className="bg-amber-500/80 backdrop-blur-sm rounded-full px-3 py-1.5">
+                  <span className="text-xs text-white font-medium">Paused</span>
+                </div>
+              ) : scanning ? (
                 <div className="flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5">
-                  <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs text-emerald-400 font-medium">Scanning...</span>
                 </div>
               ) : (
@@ -297,30 +433,22 @@ export default function ScanPageClient() {
               )}
             </div>
 
-            {/* Camera controls */}
-            <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-6">
-              <button
-                onClick={stopCamera}
-                className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white/80 flex items-center justify-center"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            {/* Bottom controls */}
+            <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-4">
+              <button onClick={stopCamera} className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white/80 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-
               <button
                 onClick={manualCapture}
                 disabled={scanning}
-                className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 text-white flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+                className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
               >
-                <div className="w-10 h-10 rounded-full bg-white" />
+                <div className="w-8 h-8 rounded-full bg-white" />
               </button>
-
-              <button
-                onClick={flipCamera}
-                className="w-10 h-10 rounded-full bg-black/60 backdrop-blur-sm text-white/80 flex items-center justify-center"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <button onClick={() => startCamera(cameraFacing === "environment" ? "user" : "environment")} className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-sm text-white/80 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
                 </svg>
               </button>
@@ -328,8 +456,78 @@ export default function ScanPageClient() {
           </div>
         )}
 
-        {/* Start screen — camera not active, no result */}
-        {!cameraActive && !result && !capturedImage && !error && (
+        {/* Scanned cards strip */}
+        {cameraActive && scannedCards.length > 0 && (
+          <div className="mt-3 -mx-4 px-4">
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              {scannedCards.map((sc) => {
+                const img = sc.card.image_uris?.normal ?? sc.card.card_faces?.[0]?.image_uris?.normal;
+                const price = sc.isFoil
+                  ? sc.card.prices.usd_foil ?? sc.card.prices.usd
+                  : sc.card.prices.usd;
+                return (
+                  <div key={sc.id} className="relative flex-shrink-0 w-32">
+                    {/* Remove button */}
+                    <button
+                      onClick={() => removeCard(sc.id)}
+                      className="absolute -top-1.5 -right-1.5 z-10 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+
+                    {/* Card image */}
+                    {img && (
+                      <Link href={`/search/${sc.card.id}`}>
+                        <img src={img} alt={sc.card.name} className="w-full rounded-lg shadow-md" />
+                      </Link>
+                    )}
+
+                    {/* Price + set overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent rounded-b-lg p-1.5 pt-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-emerald-400">{price ? `$${price}` : "—"}</span>
+                        <span className="text-[9px] text-white/60 uppercase">#{sc.card.collector_number}</span>
+                      </div>
+                    </div>
+
+                    {/* Controls below card */}
+                    <div className="mt-1.5 flex items-center justify-between gap-1">
+                      <button
+                        onClick={() => toggleFoil(sc.id)}
+                        className={cn(
+                          "text-[9px] px-1.5 py-0.5 rounded font-semibold transition-colors",
+                          sc.isFoil ? "bg-purple-500/20 text-purple-300" : "bg-bg-hover text-text-muted"
+                        )}
+                      >
+                        {sc.isFoil ? "FOIL" : "REG"}
+                      </button>
+                      <div className="flex items-center gap-0.5">
+                        <button
+                          onClick={() => updateQuantity(sc.id, -1)}
+                          className="w-5 h-5 rounded bg-bg-hover text-text-muted flex items-center justify-center text-xs font-bold"
+                        >
+                          −
+                        </button>
+                        <span className="text-xs font-bold text-text-primary w-4 text-center">{sc.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(sc.id, 1)}
+                          className="w-5 h-5 rounded bg-accent/20 text-accent flex items-center justify-center text-xs font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Start screen */}
+        {!cameraActive && (
           <div className="space-y-3">
             <button
               onClick={() => startCamera()}
@@ -368,205 +566,143 @@ export default function ScanPageClient() {
               </div>
             </button>
 
-            {/* Tips */}
             <div className="glass-card border border-border rounded-2xl p-4 space-y-2">
               <p className="text-xs font-semibold text-text-primary">Tips for best results</p>
               <ul className="text-xs text-text-muted space-y-1.5">
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-400 mt-0.5">&#9679;</span>
-                  Good lighting — avoid glare on foil cards
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-400 mt-0.5">&#9679;</span>
-                  Keep the card flat and fill the frame
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-400 mt-0.5">&#9679;</span>
-                  Hold steady — auto-scan runs every few seconds
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-emerald-400 mt-0.5">&#9679;</span>
-                  Works with any language or edition
-                </li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Good lighting — avoid glare on foil cards</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Keep the card flat and fill the frame</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Hold steady — auto-scan runs continuously</li>
+                <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">&#9679;</span>Works with any language or edition</li>
               </ul>
             </div>
           </div>
         )}
 
-        {/* Upload scanning state (no camera) */}
-        {scanning && capturedImage && !cameraActive && (
-          <div className="glass-card border border-border rounded-2xl p-8 flex flex-col items-center gap-4">
-            <img
-              src={capturedImage}
-              alt="Captured card"
-              className="w-48 rounded-xl border border-border opacity-60"
-            />
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-text-secondary">Identifying card with AI...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && !scanning && (
-          <div className="glass-card border border-red-500/20 rounded-2xl p-4 bg-red-500/5">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm text-red-400">{error}</p>
-                <Button variant="secondary" size="sm" className="mt-3" onClick={resetScanner}>
-                  Try Again
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Result */}
-        {result && !scanning && (
-          <div className="space-y-4">
-            {result.identified && card ? (
-              <>
-                {/* Confidence bar */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 rounded-full bg-bg-card overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-500",
-                        result.confidence >= 0.8 ? "bg-emerald-500" :
-                        result.confidence >= 0.5 ? "bg-amber-500" : "bg-red-500"
-                      )}
-                      style={{ width: `${result.confidence * 100}%` }}
-                    />
-                  </div>
-                  <span className={cn(
-                    "text-xs font-semibold",
-                    result.confidence >= 0.8 ? "text-emerald-400" :
-                    result.confidence >= 0.5 ? "text-amber-400" : "text-red-400"
-                  )}>
-                    {Math.round(result.confidence * 100)}%
-                  </span>
-                </div>
-
-                {/* Card result */}
-                <div className="glass-card border border-border rounded-2xl overflow-hidden">
-                  <div className="flex gap-4 p-4">
-                    {cardImage && (
-                      <img
-                        src={cardImage}
-                        alt={card.name}
-                        className="w-28 rounded-lg shadow-lg flex-shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div>
-                        <h3 className="text-base font-bold text-text-primary truncate">{card.name}</h3>
-                        <p className="text-xs text-text-muted">{card.set_name} &middot; {card.collector_number}</p>
-                      </div>
-                      <p className="text-xs text-text-secondary">{card.type_line}</p>
-                      {card.oracle_text && (
-                        <p className="text-[11px] text-text-muted leading-relaxed line-clamp-3">{card.oracle_text}</p>
-                      )}
-                      <div className="flex items-center gap-3 pt-1">
-                        {card.prices.usd && (
-                          <span className="text-xs font-semibold text-emerald-400">${card.prices.usd}</span>
-                        )}
-                        {card.prices.usd_foil && (
-                          <span className="text-xs text-text-muted">Foil: ${card.prices.usd_foil}</span>
-                        )}
-                        <span className={cn(
-                          "text-[10px] px-1.5 py-0.5 rounded-md font-semibold uppercase",
-                          card.rarity === "mythic" ? "bg-orange-500/15 text-orange-400" :
-                          card.rarity === "rare" ? "bg-amber-500/15 text-amber-400" :
-                          card.rarity === "uncommon" ? "bg-slate-400/15 text-slate-300" :
-                          "bg-slate-600/15 text-slate-400"
-                        )}>
-                          {card.rarity}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="border-t border-border p-3 flex gap-2">
-                    <Link
-                      href={`/search/${card.id}`}
-                      className="flex-1 py-2 rounded-xl text-center text-sm font-medium btn-gradient text-white"
-                    >
-                      View Details
-                    </Link>
-                    <button
-                      onClick={resetScanner}
-                      className="flex-1 py-2 rounded-xl text-center text-sm font-medium bg-bg-card border border-border text-text-secondary hover:text-text-primary transition-colors"
-                    >
-                      Scan Another
-                    </button>
-                  </div>
-                </div>
-
-                {result.reasoning && (
-                  <p className="text-[11px] text-text-muted text-center px-4">{result.reasoning}</p>
-                )}
-              </>
-            ) : result.identified && !card ? (
-              <div className="glass-card border border-border rounded-2xl p-6 text-center space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">
-                    Possible match: {result.cardName}
-                  </p>
-                  {result.setCode && (
-                    <p className="text-xs text-text-muted mt-0.5">Set: {result.setCode.toUpperCase()}</p>
-                  )}
-                  <p className="text-xs text-text-muted mt-1">{result.reasoning}</p>
-                </div>
-                <div className="flex gap-2 justify-center">
-                  <Link
-                    href={`/search?q=${encodeURIComponent(result.cardName ?? "")}`}
-                    className="px-4 py-2 rounded-xl text-sm font-medium btn-gradient text-white"
-                  >
-                    Search for Card
-                  </Link>
-                  <Button variant="secondary" size="sm" onClick={resetScanner}>
-                    Scan Again
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="glass-card border border-border rounded-2xl p-6 text-center space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center mx-auto">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-text-primary">No card detected</p>
-                  <p className="text-xs text-text-muted mt-1">{result.reasoning}</p>
-                </div>
-                <Button variant="secondary" size="sm" onClick={resetScanner}>
-                  Try Again
-                </Button>
-              </div>
-            )}
+        {/* Error */}
+        {error && (
+          <div className="glass-card border border-red-500/20 rounded-2xl p-4 bg-red-500/5 mt-4">
+            <p className="text-sm text-red-400">{error}</p>
+            <button onClick={() => { setError(null); startCamera(); }} className="mt-2 text-sm text-accent underline">Try Again</button>
           </div>
         )}
 
         <canvas ref={canvasRef} className="hidden" />
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
       </div>
+
+      {/* ── Settings Modal ── */}
+      <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Scan Settings">
+        <div className="space-y-1">
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium text-text-primary">Default Foil</p>
+              <p className="text-xs text-text-muted">Mark scanned cards as foil by default</p>
+            </div>
+            <Toggle value={settings.defaultFoil} onChange={(v) => setSettings((s) => ({ ...s, defaultFoil: v }))} />
+          </div>
+
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium text-text-primary">Override Set</p>
+              <p className="text-xs text-text-muted">Force a specific set code for all scans</p>
+            </div>
+            <Toggle value={settings.overrideSet} onChange={(v) => setSettings((s) => ({ ...s, overrideSet: v }))} />
+          </div>
+
+          {settings.overrideSet && (
+            <input
+              type="text"
+              placeholder="Set code (e.g. MH3)"
+              value={settings.setCode}
+              onChange={(e) => setSettings((s) => ({ ...s, setCode: e.target.value.toLowerCase() }))}
+              className="w-full input-base mb-2"
+            />
+          )}
+
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-sm font-medium text-text-primary">Auto-add Quantity</p>
+              <p className="text-xs text-text-muted">Default quantity when a card is scanned</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSettings((s) => ({ ...s, autoAddQuantity: Math.max(1, s.autoAddQuantity - 1) }))}
+                className="w-7 h-7 rounded-lg bg-bg-hover text-text-muted flex items-center justify-center text-sm font-bold"
+              >−</button>
+              <span className="text-sm font-bold text-text-primary w-4 text-center">{settings.autoAddQuantity}</span>
+              <button
+                onClick={() => setSettings((s) => ({ ...s, autoAddQuantity: Math.min(99, s.autoAddQuantity + 1) }))}
+                className="w-7 h-7 rounded-lg bg-accent/20 text-accent flex items-center justify-center text-sm font-bold"
+              >+</button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Add to... Modal ── */}
+      <Modal open={showAddTo} onClose={() => { setShowAddTo(false); setAddStatus(null); }} title="Add to...">
+        {addStatus ? (
+          <div className={cn(
+            "rounded-xl px-4 py-3 text-sm font-medium",
+            addStatus.type === "success" ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"
+          )}>
+            {addStatus.message}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <p className="text-xs text-text-muted">{totalCards} card{totalCards !== 1 ? "s" : ""} &middot; ${totalPrice.toFixed(2)}</p>
+
+            {/* Binders */}
+            {allBinders.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Collection Binders</p>
+                <div className="space-y-1">
+                  {allBinders.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => addAllToBinder(b.id!)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-bg-hover border border-border text-left hover:border-accent/30 transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                      </svg>
+                      <span className="text-sm text-text-primary">{b.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Decks */}
+            {allDecks.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Decks</p>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {allDecks.map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => addAllToDeck(d.id!)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-bg-hover border border-border text-left hover:border-accent/30 transition-colors"
+                    >
+                      <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <div className="min-w-0">
+                        <span className="text-sm text-text-primary truncate block">{d.name}</span>
+                        {d.format && <span className="text-[10px] text-text-muted capitalize">{d.format}</span>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {allBinders.length === 0 && allDecks.length === 0 && (
+              <p className="text-sm text-text-muted text-center py-4">No binders or decks yet. Create one first.</p>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
