@@ -199,7 +199,7 @@ export default function PodOrganizerPage() {
         subtitle="Build balanced pods for Commander night"
         accent="#F59E0B"
         icon={ICON}
-        onBack={() => router.push("/playgroup")}
+        onBack={() => router.back()}
       />
 
       <PageContainer>

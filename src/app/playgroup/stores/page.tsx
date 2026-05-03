@@ -83,7 +83,7 @@ export default function StoreFinderPage() {
         subtitle="Discover game stores and events near you"
         accent="#7C5CFC"
         icon={ICON}
-        onBack={() => router.push("/playgroup")}
+        onBack={() => router.back()}
       />
 
       <PageContainer>
