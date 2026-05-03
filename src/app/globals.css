@@ -59,13 +59,17 @@
 
 /* Frosted glass surface */
 .glass {
-  background: var(--color-bg-secondary);
+  background: color-mix(in srgb, var(--color-bg-secondary) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Glass card — section containers */
 .glass-card {
-  background: var(--color-bg-card);
-  border-color: var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-card) 80%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
 }
 
 /* Hero art filter */
