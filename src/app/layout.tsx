@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Big_Shoulders, Cinzel_Decorative } from "next/font/google";
+import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import BottomNav from "@/components/layout/BottomNav";
 import PageBackground from "@/components/layout/PageBackground";
@@ -66,11 +67,9 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         </head>
         <body className="min-h-full flex flex-col bg-bg-primary text-text-primary" suppressHydrationWarning>
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})}`,
-            }}
-          />
+          <Script id="sw-register" strategy="afterInteractive">
+            {`if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})}`}
+          </Script>
           <PageBackground />
           <div className="relative z-10 flex-1 flex flex-col">{children}</div>
           <BottomNav />
