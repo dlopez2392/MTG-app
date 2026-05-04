@@ -30,6 +30,7 @@ const cinzel = Cinzel_Decorative({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mtghoudini.com"),
   title: "MTG Houdini",
   description: "Your ultimate Magic: The Gathering companion app",
   appleWebApp: {

@@ -94,7 +94,6 @@ export default function PlayerSetup({
     [...DEFAULT_PLAYER_COLOR_KEYS]
   );
   const [playgroupSearch, setPlaygroupSearch] = useState<string[]>(Array(6).fill(""));
-  const [poisonCounters, setPoisonCounters] = useState(false);
   const [turnTimer, setTurnTimer] = useState(false);
   const [gameTimer, setGameTimer] = useState(false);
   const [gameTimerMinutes, setGameTimerMinutes] = useState(90);
@@ -113,7 +112,7 @@ export default function PlayerSetup({
       .slice(0, playerCount)
       .map((k) => MTG_PLAYER_COLORS.find((c) => c.key === k)!.color);
     onStart(playerCount, startingLife, names, colors, {
-      poisonCounters,
+      poisonCounters: false,
       turnTimer,
       gameTimer,
       gameTimerMinutes,
@@ -245,34 +244,6 @@ export default function PlayerSetup({
           <label className="block text-xs font-bold text-text-muted uppercase tracking-widest">
             Options
           </label>
-
-          {/* Poison Counters */}
-          <button
-            type="button"
-            onClick={() => setPoisonCounters(!poisonCounters)}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer",
-              poisonCounters
-                ? "bg-green-900/30 border-green-500/50"
-                : "bg-bg-card border-border"
-            )}
-          >
-            <svg className={cn("w-5 h-5 flex-shrink-0", poisonCounters ? "text-green-400" : "text-text-muted")} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C9.5 2 7 4 7 7c0 2 1 3.5 2 4.5V15h6v-3.5c1-1 2-2.5 2-4.5 0-3-2.5-5-5-5zm-1 13v4h2v-4h-2z"/>
-            </svg>
-            <span className={cn("text-sm font-semibold flex-1 text-left", poisonCounters ? "text-green-400" : "text-text-secondary")}>
-              Poison Counters
-            </span>
-            <div className={cn(
-              "w-10 h-6 rounded-full transition-colors relative",
-              poisonCounters ? "bg-green-500" : "bg-white/10"
-            )}>
-              <div className={cn(
-                "absolute top-1 w-4 h-4 rounded-full bg-white transition-transform",
-                poisonCounters ? "translate-x-5" : "translate-x-1"
-              )} />
-            </div>
-          </button>
 
           {/* Game Timer */}
           <div>

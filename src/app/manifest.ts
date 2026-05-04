@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "com.mtghoudini.app",
     name: "MTG Houdini",
     short_name: "Houdini",
     description: "Your ultimate Magic: The Gathering companion app",
