@@ -76,6 +76,18 @@ const FEATURES = [
       </svg>
     ),
   },
+  {
+    href: "/collection",
+    title: "COLLECTION",
+    description: "Track & organize your card collection",
+    accent: "#06B6D4",
+    art: "https://cards.scryfall.io/art_crop/front/c/f/cf3e83e4-3009-4aeb-a103-1e105e1e0e10.jpg",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+      </svg>
+    ),
+  },
 ];
 
 export default function HomePage() {

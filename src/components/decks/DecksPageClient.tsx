@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useDecks } from "@/hooks/useDecks";
 import HeroBanner from "@/components/layout/HeroBanner";
@@ -12,6 +13,11 @@ import Input from "@/components/ui/Input";
 import ConfirmModal from "@/components/ui/ConfirmModal";
 import Tabs from "@/components/ui/Tabs";
 import type { Deck } from "@/types/deck";
+
+const CollectionPageClient = dynamic(
+  () => import("@/components/collection/CollectionPageClient"),
+  { ssr: false }
+);
 
 const DECK_ICON = (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -34,7 +40,7 @@ export default function DecksPageClient() {
   const router = useRouter();
   const { allDecks, deleteDeck } = useDecks();
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"decks" | "explore">("decks");
+  const [tab, setTab] = useState<"decks" | "explore" | "collection">("decks");
   const [formatFilter, setFormatFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [deckToDelete, setDeckToDelete] = useState<Deck | null>(null);
@@ -72,9 +78,10 @@ export default function DecksPageClient() {
           tabs={[
             { value: "decks", label: "Decks" },
             { value: "explore", label: "Explore" },
+            { value: "collection", label: "Collection" },
           ]}
           active={tab}
-          onChange={(v) => setTab(v as "decks" | "explore")}
+          onChange={(v) => setTab(v as "decks" | "explore" | "collection")}
           className="mb-4"
         />
 
@@ -210,8 +217,10 @@ export default function DecksPageClient() {
               <DeckGrid decks={filteredDecks} onDeckClick={handleDeckClick} onDeckDelete={handleDeckDelete} />
             )}
           </>
-        ) : (
+        ) : tab === "explore" ? (
           <ExploreDecks />
+        ) : (
+          <CollectionPageClient />
         )}
 
         <ConfirmModal
