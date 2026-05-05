@@ -47,10 +47,10 @@ async function embedBatch(texts) {
 }
 
 async function upsertRows(rows) {
-  const BATCH_SIZE = 20;
+  const BATCH_SIZE = 10;
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    if (i > 0) await new Promise((r) => setTimeout(r, 300));
+    if (i > 0) await new Promise((r) => setTimeout(r, 500));
     let retries = 5;
     while (retries > 0) {
       const { error } = await supabase
