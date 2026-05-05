@@ -150,13 +150,19 @@ export async function POST(req: Request) {
         { role: "user", content: userPrompt },
       ],
       temperature: 0.5,
-      max_tokens: 8192,
+      max_tokens: 16384,
       response_format: { type: "json_object" },
     });
 
     const text = result.choices[0]?.message?.content ?? "";
     const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    const aiDeck = JSON.parse(cleaned);
+    let aiDeck;
+    try {
+      aiDeck = JSON.parse(cleaned);
+    } catch {
+      const truncated = cleaned.replace(/,\s*\{[^}]*$/, "").replace(/,?\s*$/, "]}");
+      aiDeck = JSON.parse(truncated);
+    }
 
     const uniqueNames = [...new Set<string>(
       (aiDeck.cards ?? []).map((c: { name: string }) => c.name)
