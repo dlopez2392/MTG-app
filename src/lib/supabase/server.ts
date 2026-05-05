@@ -1,6 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-let instance: ReturnType<typeof createClient> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let instance: SupabaseClient<any> | null = null;
 
 export function getSupabase() {
   if (!instance) {
@@ -11,5 +12,5 @@ export function getSupabase() {
     }
     instance = createClient(url, key);
   }
-  return instance;
+  return instance!;
 }
