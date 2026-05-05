@@ -56,7 +56,20 @@ export async function generateRuling(
 
   const text = result.choices[0]?.message?.content ?? "{}";
   const cleaned = text.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-  const parsed = JSON.parse(cleaned);
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    const repaired = cleaned
+      .replace(/,\s*\{[^}]*$/, "")
+      .replace(/,?\s*$/, "")
+      .replace(/("ruling"\s*:\s*"(?:[^"\\]|\\.)*)$/, '$1...(truncated)"');
+    try {
+      parsed = JSON.parse(repaired.endsWith("}") ? repaired : repaired + "]}");
+    } catch {
+      parsed = { ruling: cleaned.slice(0, 2000), confidence: "low" };
+    }
+  }
 
   return {
     ruling: parsed.ruling ?? "",
