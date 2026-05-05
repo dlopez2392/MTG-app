@@ -13,7 +13,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (quantity <= 0) {
     await sb.from("collection_cards").delete().eq("id", cardId).eq("user_id", userId);
   } else {
-    await sb.from("collection_cards").update({ quantity }).eq("id", cardId).eq("user_id", userId);
+    await sb.from("collection_cards").update({ quantity } as never).eq("id", cardId).eq("user_id", userId);
   }
 
   return NextResponse.json({ success: true });
