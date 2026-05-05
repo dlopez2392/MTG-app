@@ -63,16 +63,17 @@ async function fetchRules() {
   if (!res.ok) throw new Error(`CR fetch failed: ${res.status}`);
   const json = await res.json();
 
-  // Handle both flat array and { data: [...] } wrapper
+  // Handle array, { data: [...] }, or object keyed by rule number
   let rules;
   if (Array.isArray(json)) {
     rules = json;
   } else if (json.data && Array.isArray(json.data)) {
     rules = json.data;
+  } else if (typeof json === "object" && json !== null) {
+    rules = Object.values(json);
   } else {
-    console.error("Unexpected CR response structure:", Object.keys(json));
-    console.error("First 200 chars:", JSON.stringify(json).slice(0, 200));
-    throw new Error("Could not parse CR response — see logged structure above");
+    console.error("Unexpected CR response structure:", JSON.stringify(json).slice(0, 200));
+    throw new Error("Could not parse CR response");
   }
 
   console.log(`  Got ${rules.length} rule entries`);
@@ -91,10 +92,11 @@ async function fetchGlossary() {
     glossary = json;
   } else if (json.data && Array.isArray(json.data)) {
     glossary = json.data;
+  } else if (typeof json === "object" && json !== null) {
+    glossary = Object.values(json);
   } else {
-    console.error("Unexpected glossary response structure:", Object.keys(json));
-    console.error("First 200 chars:", JSON.stringify(json).slice(0, 200));
-    throw new Error("Could not parse glossary response — see logged structure above");
+    console.error("Unexpected glossary response structure:", JSON.stringify(json).slice(0, 200));
+    throw new Error("Could not parse glossary response");
   }
 
   console.log(`  Got ${glossary.length} glossary entries`);

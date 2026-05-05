@@ -47,18 +47,26 @@ async function embedBatch(texts) {
 }
 
 async function upsertRows(rows) {
-  const BATCH_SIZE = 500;
+  const BATCH_SIZE = 20;
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase
-      .from("rules_embeddings")
-      .upsert(batch, { onConflict: "source,source_id" });
-    if (error) {
-      console.error(`Upsert error at batch ${i}:`, error.message);
-      throw error;
+    if (i > 0) await new Promise((r) => setTimeout(r, 300));
+    let retries = 5;
+    while (retries > 0) {
+      const { error } = await supabase
+        .from("rules_embeddings")
+        .upsert(batch, { onConflict: "source,source_id" });
+      if (!error) break;
+      retries--;
+      if (retries === 0) {
+        console.error(`Upsert error at batch ${i}:`, error.message);
+        throw error;
+      }
+      console.log(`  Retry (${6 - retries}/5) at batch ${i}...`);
+      await new Promise((r) => setTimeout(r, 3000));
     }
-    console.log(`  Upserted ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length}`);
   }
+  console.log(`  Upserted ${rows.length} rows`);
 }
 
 async function downloadRulings() {
@@ -106,16 +114,19 @@ async function main() {
   }
   console.log(`After dedup: ${unique.length} unique rulings`);
 
-  // Process in batches of 500
+  // Resume support: pass START_BATCH env var to skip already-ingested batches
   const PROCESS_BATCH = 500;
-  for (let b = 0; b < unique.length; b += PROCESS_BATCH) {
+  const startBatch = parseInt(process.env.START_BATCH || "0", 10);
+  const startOffset = startBatch * PROCESS_BATCH;
+  if (startOffset > 0) console.log(`Resuming from batch ${startBatch + 1} (offset ${startOffset})`);
+  for (let b = startOffset; b < unique.length; b += PROCESS_BATCH) {
     const batch = unique.slice(b, b + PROCESS_BATCH);
     console.log(`\nProcessing batch ${b / PROCESS_BATCH + 1} (${b}–${b + batch.length})...`);
 
     const texts = batch.map((r) => r.comment);
     const embeddings = await embedBatch(texts);
 
-    const rows = batch.map((r, i) => ({
+    const rowsRaw = batch.map((r, i) => ({
       source: "scryfall_ruling",
       source_id: `${r.oracle_id}::${r.published_at}::${r.comment.slice(0, 50)}`,
       title: `Ruling for ${r.oracle_id}`,
@@ -123,6 +134,14 @@ async function main() {
       metadata: JSON.stringify({ oracle_id: r.oracle_id, published_at: r.published_at }),
       embedding: JSON.stringify(embeddings[i]),
     }));
+
+    // Deduplicate within batch by source_id to avoid upsert conflict
+    const seenIds = new Set();
+    const rows = rowsRaw.filter((r) => {
+      if (seenIds.has(r.source_id)) return false;
+      seenIds.add(r.source_id);
+      return true;
+    });
 
     await upsertRows(rows);
   }
