@@ -45,3 +45,6 @@ next-env.d.ts
 
 # cache
 .cache/
+
+# superpowers brainstorming
+.superpowers/
