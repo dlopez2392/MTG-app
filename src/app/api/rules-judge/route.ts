@@ -7,6 +7,7 @@ import {
   vectorSearch,
   directRuleLookup,
   cardRulingsLookup,
+  oracleCardLookup,
   deduplicateAndCap,
 } from "@/lib/rules/retrieval";
 
@@ -96,36 +97,65 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Fetch oracle text for provided card names
-    const cardResults = await Promise.all(
-      (body.cards ?? []).map((name) => fetchCardOracle(name))
+    // Fetch oracle text — local DB first, Scryfall API fallback
+    const requestedCards = body.cards ?? [];
+    const localResults = await oracleCardLookup(requestedCards);
+    const cardOracleTexts: { name: string; oracleText: string }[] = [];
+    const oracleIds: string[] = [];
+
+    // Use local data where available
+    const resolvedNames = new Set<string>();
+    for (const local of localResults) {
+      cardOracleTexts.push({ name: local.name, oracleText: local.oracleText });
+      if (local.oracleId) oracleIds.push(local.oracleId);
+      resolvedNames.add(local.name.toLowerCase());
+    }
+
+    // Fall back to Scryfall for cards not in local DB
+    const missingCards = requestedCards.filter(
+      (name) => !resolvedNames.has(name.toLowerCase())
     );
-    const cardData = cardResults.filter(
-      (c): c is NonNullable<typeof c> => c !== null
-    );
-    const cardOracleTexts = cardData.map((c) => ({
-      name: c.name,
-      oracleText: c.oracleText,
-    }));
-    const oracleIds = cardData
-      .map((c) => c.oracleId)
-      .filter((id): id is string => !!id);
+    if (missingCards.length > 0) {
+      const fallbackResults = await Promise.all(
+        missingCards.map((name) => fetchCardOracle(name))
+      );
+      for (const c of fallbackResults) {
+        if (c) {
+          cardOracleTexts.push({ name: c.name, oracleText: c.oracleText });
+          if (c.oracleId) oracleIds.push(c.oracleId);
+          resolvedNames.add(c.name.toLowerCase());
+        }
+      }
+    }
 
     // Step 1: Analyze question
     const analysis = await analyzeQuestion(body.question, cardOracleTexts);
 
     // Fetch oracle text for additional cards found in analysis
     const additionalCardNames = analysis.cardsReferenced.filter(
-      (name) => !cardData.some((c) => c.name.toLowerCase() === name.toLowerCase())
+      (name) => !resolvedNames.has(name.toLowerCase())
     );
     if (additionalCardNames.length > 0) {
-      const additionalResults = await Promise.all(
-        additionalCardNames.slice(0, 5).map((name) => fetchCardOracle(name))
+      const additionalLocal = await oracleCardLookup(additionalCardNames.slice(0, 5));
+      for (const c of additionalLocal) {
+        cardOracleTexts.push({ name: c.name, oracleText: c.oracleText });
+        if (c.oracleId) oracleIds.push(c.oracleId);
+        resolvedNames.add(c.name.toLowerCase());
+      }
+
+      // Scryfall fallback for any still missing
+      const stillMissing = additionalCardNames.filter(
+        (name) => !resolvedNames.has(name.toLowerCase())
       );
-      for (const c of additionalResults) {
-        if (c) {
-          cardOracleTexts.push({ name: c.name, oracleText: c.oracleText });
-          if (c.oracleId) oracleIds.push(c.oracleId);
+      if (stillMissing.length > 0) {
+        const fallbackResults = await Promise.all(
+          stillMissing.slice(0, 5).map((name) => fetchCardOracle(name))
+        );
+        for (const c of fallbackResults) {
+          if (c) {
+            cardOracleTexts.push({ name: c.name, oracleText: c.oracleText });
+            if (c.oracleId) oracleIds.push(c.oracleId);
+          }
         }
       }
     }

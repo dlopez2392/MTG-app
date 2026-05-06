@@ -113,6 +113,56 @@ export async function cardRulingsLookup(oracleIds: string[]): Promise<RuleChunk[
 }
 
 /**
+ * Look up oracle card data by card name (exact match via title).
+ * Falls back to ilike for partial matches.
+ */
+export async function oracleCardLookup(
+  cardNames: string[]
+): Promise<{ name: string; oracleText: string; oracleId: string; metadata: Record<string, unknown> }[]> {
+  if (cardNames.length === 0) return [];
+  const supabase = getSupabase();
+  const results: { name: string; oracleText: string; oracleId: string; metadata: Record<string, unknown> }[] = [];
+
+  for (const name of cardNames) {
+    // Try exact match first
+    let { data, error } = await supabase
+      .from("rules_embeddings")
+      .select("title, content, metadata")
+      .eq("source", "oracle_card")
+      .ilike("title", name)
+      .limit(1);
+
+    if (error) {
+      console.error("oracleCardLookup error:", error.message);
+      continue;
+    }
+
+    if (!data || data.length === 0) {
+      // Try fuzzy match
+      ({ data, error } = await supabase
+        .from("rules_embeddings")
+        .select("title, content, metadata")
+        .eq("source", "oracle_card")
+        .ilike("title", `%${name}%`)
+        .limit(1));
+
+      if (error || !data || data.length === 0) continue;
+    }
+
+    const row = data[0];
+    const meta = typeof row.metadata === "string" ? JSON.parse(row.metadata) : row.metadata;
+    results.push({
+      name: row.title,
+      oracleText: row.content,
+      oracleId: meta.oracle_id || "",
+      metadata: meta,
+    });
+  }
+
+  return results;
+}
+
+/**
  * Deduplicate by source+sourceId and cap total chunks.
  */
 export function deduplicateAndCap(chunks: RuleChunk[], maxChunks = 40): RuleChunk[] {
