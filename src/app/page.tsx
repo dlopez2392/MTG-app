@@ -53,6 +53,18 @@ const FEATURES = [
     ),
   },
   {
+    href: "/collection",
+    title: "COLLECTION",
+    description: "Organize cards in binders",
+    accent: "#10B981",
+    art: "https://cards.scryfall.io/art_crop/front/c/2/c21d4fc0-03c2-4e57-8568-1d08aec18c97.jpg",
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+      </svg>
+    ),
+  },
+  {
     href: "/playgroup",
     title: "PLAYGROUP",
     description: "Track your pod & head-to-head stats",
