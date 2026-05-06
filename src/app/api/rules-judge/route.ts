@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
 import { analyzeQuestion } from "@/lib/rules/analyze";
 import { generateRuling } from "@/lib/rules/answer";
+import { getCachedRuling, setCachedRuling } from "@/lib/rules/cache";
 import {
   vectorSearch,
   directRuleLookup,
@@ -97,8 +98,14 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Fetch oracle text — local DB first, Scryfall API fallback
+    // Check cache first
     const requestedCards = body.cards ?? [];
+    const cached = getCachedRuling(body.question, requestedCards, body.gameContext?.format);
+    if (cached) {
+      return NextResponse.json(cached);
+    }
+
+    // Fetch oracle text — local DB first, Scryfall API fallback
     const localResults = await oracleCardLookup(requestedCards);
     const cardOracleTexts: { name: string; oracleText: string }[] = [];
     const oracleIds: string[] = [];
@@ -160,14 +167,14 @@ export async function POST(req: Request) {
       }
     }
 
-    // Step 2: Parallel retrieval
+    // Step 2: Parallel retrieval — include tournament docs for procedure questions
     const searchQueries = [
       body.question,
       ...analysis.ruleAreas.slice(0, 3),
     ];
 
     const [vectorResults, directResults, cardRulings] = await Promise.all([
-      vectorSearch(searchQueries),
+      vectorSearch(searchQueries, 25),
       directRuleLookup(analysis.specificRules),
       cardRulingsLookup(oracleIds),
     ]);
@@ -176,16 +183,18 @@ export async function POST(req: Request) {
       ...directResults,
       ...vectorResults,
       ...cardRulings,
-    ]);
+    ], 50);
 
     // Step 3: Generate ruling
     const ruling = await generateRuling(
       body.question,
       allChunks,
       cardOracleTexts,
-      analysis.complexity
+      analysis.complexity,
+      body.gameContext?.format
     );
 
+    setCachedRuling(body.question, requestedCards, body.gameContext?.format, ruling);
     return NextResponse.json(ruling);
   } catch (err) {
     const message =

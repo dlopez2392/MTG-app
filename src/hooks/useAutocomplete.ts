@@ -25,10 +25,20 @@ export function useAutocomplete(query: string) {
     let cancelled = false;
     setLoading(true);
 
-    fetch(`/api/scryfall/suggest?q=${encodeURIComponent(debouncedQuery)}`)
+    fetch(`/api/cards/autocomplete?q=${encodeURIComponent(debouncedQuery)}`)
       .then((res) => res.json())
       .then((data: CardSuggestion[]) => {
-        if (!cancelled) setSuggestions(data);
+        if (cancelled) return;
+        if (data.length > 0) {
+          setSuggestions(data);
+          setLoading(false);
+        } else {
+          return fetch(`/api/scryfall/suggest?q=${encodeURIComponent(debouncedQuery)}`)
+            .then((res) => res.json())
+            .then((fallback: CardSuggestion[]) => {
+              if (!cancelled) setSuggestions(fallback);
+            });
+        }
       })
       .catch(() => {
         if (!cancelled) setSuggestions([]);
