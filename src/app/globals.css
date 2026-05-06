@@ -251,6 +251,23 @@ input[type="email"] {
   background: radial-gradient(ellipse 80% 60% at 50% 40%, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%);
 }
 
+/* Mystic Portal pulsing core glow */
+@keyframes portal-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+}
+
+.portal-glow {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    #7C5CFC 0%,
+    #4C1D95 40%,
+    #1a0b2e 70%,
+    #0B0E14 100%
+  );
+  animation: portal-pulse 4s ease-in-out infinite;
+}
+
 /* Accent-tinted close/back button */
 .btn-accent-subtle {
   background: linear-gradient(135deg, color-mix(in srgb, #F4C96B 15%, transparent), color-mix(in srgb, #D4602A 15%, transparent));
