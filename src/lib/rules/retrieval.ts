@@ -163,6 +163,99 @@ export async function oracleCardLookup(
 }
 
 /**
+ * Two-hop retrieval: extract key mechanics from each card's oracle text,
+ * then build cross-card interaction queries to find rules governing
+ * how those mechanics interact with each other.
+ */
+export function buildInteractionQueries(
+  cardOracleTexts: { name: string; oracleText: string }[],
+  cardMetadata?: Record<string, unknown>[]
+): string[] {
+  if (cardOracleTexts.length < 2) return [];
+
+  const KEYWORD_ABILITIES = [
+    "deathtouch", "defender", "double strike", "enchant", "equip",
+    "first strike", "flash", "flying", "haste", "hexproof",
+    "indestructible", "intimidate", "landwalk", "lifelink", "menace",
+    "protection", "reach", "shroud", "trample", "vigilance",
+    "ward", "wither", "infect", "persist", "undying", "cascade",
+    "convoke", "dredge", "flashback", "madness", "prowess",
+    "regenerate", "annihilator", "exalted", "phasing",
+  ];
+
+  const MECHANIC_PATTERNS = [
+    { pattern: /enters? the battlefield/i, label: "enter the battlefield trigger" },
+    { pattern: /dies?|is put into .* graveyard from the battlefield/i, label: "dies trigger" },
+    { pattern: /can't be (blocked|countered|destroyed|targeted|sacrificed)/i, label: (m: string) => m },
+    { pattern: /whenever .* deals? (combat )?damage/i, label: "damage trigger" },
+    { pattern: /at the beginning of/i, label: "beginning of phase trigger" },
+    { pattern: /sacrifice/i, label: "sacrifice" },
+    { pattern: /counter target/i, label: "counter spell" },
+    { pattern: /counter on/i, label: "counters" },
+    { pattern: /create .* token/i, label: "token creation" },
+    { pattern: /can't .* counters?/i, label: "counter prevention" },
+    { pattern: /copy/i, label: "copy effect" },
+    { pattern: /exile/i, label: "exile" },
+    { pattern: /graveyard/i, label: "graveyard interaction" },
+    { pattern: /transform|converted|meld/i, label: "transform" },
+    { pattern: /additional cost/i, label: "additional cost" },
+    { pattern: /replacement effect|instead/i, label: "replacement effect" },
+  ];
+
+  // Extract mechanics per card
+  const cardMechanics: { name: string; mechanics: string[] }[] = cardOracleTexts.map((card, i) => {
+    const mechanics: string[] = [];
+    const text = card.oracleText.toLowerCase();
+
+    // Check keyword abilities (from metadata if available, else from oracle text)
+    const meta = cardMetadata?.[i];
+    const keywords = (meta?.keywords as string[]) ?? [];
+    if (keywords.length > 0) {
+      mechanics.push(...keywords.map((k) => k.toLowerCase()));
+    } else {
+      for (const kw of KEYWORD_ABILITIES) {
+        if (text.includes(kw)) mechanics.push(kw);
+      }
+    }
+
+    // Check mechanic patterns
+    for (const { pattern, label } of MECHANIC_PATTERNS) {
+      const match = card.oracleText.match(pattern);
+      if (match) {
+        mechanics.push(typeof label === "function" ? label(match[0]) : label);
+      }
+    }
+
+    return { name: card.name, mechanics: [...new Set(mechanics)] };
+  });
+
+  // Build pairwise interaction queries
+  const queries: string[] = [];
+  for (let i = 0; i < cardMechanics.length; i++) {
+    for (let j = i + 1; j < cardMechanics.length; j++) {
+      const a = cardMechanics[i];
+      const b = cardMechanics[j];
+
+      // Cross each card's mechanics with the other card's
+      for (const mechA of a.mechanics.slice(0, 4)) {
+        for (const mechB of b.mechanics.slice(0, 4)) {
+          if (mechA === mechB) continue;
+          queries.push(`${mechA} interaction with ${mechB}`);
+        }
+      }
+
+      // Also add a general interaction query for the card pair
+      queries.push(
+        `${a.name} and ${b.name} interaction rules`
+      );
+    }
+  }
+
+  // Cap to avoid excessive embedding calls
+  return queries.slice(0, 6);
+}
+
+/**
  * Deduplicate by source+sourceId and cap total chunks.
  */
 export function deduplicateAndCap(chunks: RuleChunk[], maxChunks = 40): RuleChunk[] {

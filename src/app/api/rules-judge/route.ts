@@ -9,6 +9,7 @@ import {
   directRuleLookup,
   cardRulingsLookup,
   oracleCardLookup,
+  buildInteractionQueries,
   deduplicateAndCap,
 } from "@/lib/rules/retrieval";
 
@@ -167,14 +168,20 @@ export async function POST(req: Request) {
       }
     }
 
-    // Step 2: Parallel retrieval — include tournament docs for procedure questions
+    // Step 2: Two-hop retrieval
+    // Hop 1: question + rule areas
     const searchQueries = [
       body.question,
       ...analysis.ruleAreas.slice(0, 3),
     ];
 
+    // Hop 2: cross-card mechanic interaction queries
+    const localCardMeta = localResults.map((r) => r.metadata);
+    const interactionQueries = buildInteractionQueries(cardOracleTexts, localCardMeta);
+    const allSearchQueries = [...searchQueries, ...interactionQueries];
+
     const [vectorResults, directResults, cardRulings] = await Promise.all([
-      vectorSearch(searchQueries, 25),
+      vectorSearch(allSearchQueries, 25),
       directRuleLookup(analysis.specificRules),
       cardRulingsLookup(oracleIds),
     ]);
