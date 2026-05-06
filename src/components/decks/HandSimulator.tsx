@@ -154,10 +154,10 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/80 z-[90]" onClick={phase === "hand" ? onClose : undefined} />
+      <div className="fixed inset-0 bg-black/80 z-[100]" onClick={phase === "hand" ? onClose : undefined} />
 
       {/* Panel */}
-      <div className="fixed inset-x-0 bottom-0 top-0 z-[91] flex flex-col bg-bg-primary overflow-hidden">
+      <div className="fixed inset-0 z-[101] flex flex-col bg-bg-primary overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary transition-colors">

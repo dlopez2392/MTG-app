@@ -283,8 +283,8 @@ export default function PlayerSetup({
               <div className="flex items-center justify-between px-4 py-3 bg-amber-900/30 border border-amber-500/50 border-t-0 rounded-b-xl">
                 <button
                   type="button"
-                  onClick={() => setGameTimerMinutes((m) => Math.max(30, m - 30))}
-                  disabled={gameTimerMinutes <= 30}
+                  onClick={() => setGameTimerMinutes((m) => Math.max(10, m - 10))}
+                  disabled={gameTimerMinutes <= 10}
                   className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
                 >
                   −
@@ -296,7 +296,7 @@ export default function PlayerSetup({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setGameTimerMinutes((m) => Math.min(300, m + 30))}
+                  onClick={() => setGameTimerMinutes((m) => Math.min(300, m + 10))}
                   disabled={gameTimerMinutes >= 300}
                   className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-amber-400 active:bg-white/20 disabled:opacity-30 text-lg font-bold cursor-pointer"
                 >
