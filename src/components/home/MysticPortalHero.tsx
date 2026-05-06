@@ -43,6 +43,8 @@ function useParallax(containerRef: React.RefObject<HTMLElement | null>) {
       };
     };
 
+    let cancelled = false;
+
     if (isMobile) {
       if (
         typeof DeviceOrientationEvent !== "undefined" &&
@@ -53,14 +55,31 @@ function useParallax(containerRef: React.RefObject<HTMLElement | null>) {
           (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> })
             .requestPermission()
             .then((perm) => {
-              if (perm === "granted") {
+              if (perm === "granted" && !cancelled) {
                 window.addEventListener("deviceorientation", handleOrientation);
               }
             })
             .catch(() => {});
-          container.removeEventListener("touchstart", requestOnce);
         };
         container.addEventListener("touchstart", requestOnce, { once: true });
+
+        let raf: number;
+        const tick = () => {
+          offset.current = {
+            x: lerp(offset.current.x, target.current.x, 0.08),
+            y: lerp(offset.current.y, target.current.y, 0.08),
+          };
+          raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+
+        return () => {
+          cancelled = true;
+          cancelAnimationFrame(raf);
+          container.removeEventListener("mousemove", handleMouse);
+          container.removeEventListener("touchstart", requestOnce);
+          window.removeEventListener("deviceorientation", handleOrientation);
+        };
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
       }
@@ -79,6 +98,7 @@ function useParallax(containerRef: React.RefObject<HTMLElement | null>) {
     raf = requestAnimationFrame(tick);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(raf);
       container.removeEventListener("mousemove", handleMouse);
       window.removeEventListener("deviceorientation", handleOrientation);
@@ -168,28 +188,36 @@ function usePortalParticles(
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
+    const displayW = () => canvas.width / dpr;
+    const displayH = () => canvas.height / dpr;
+
+    const INITIAL_COUNT = 120;
+    let particles: Particle[] = [];
+    const rebuildParticles = () => {
+      const count = particleCount.current === INITIAL_COUNT ? INITIAL_COUNT : particleCount.current;
+      particles = [];
+      for (let i = 0; i < count; i++) {
+        particles.push(createParticle(displayW(), displayH()));
+      }
+    };
+
     const resize = () => {
-      const rect = canvas.parentElement!.getBoundingClientRect();
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      const rect = parent.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      rebuildParticles();
     };
     resize();
-
-    const displayW = () => canvas.width / dpr;
-    const displayH = () => canvas.height / dpr;
-
-    let particles: Particle[] = [];
-    for (let i = 0; i < particleCount.current; i++) {
-      particles.push(createParticle(displayW(), displayH()));
-    }
 
     // FPS tracking for adaptive quality
     let lastTime = performance.now();
     let frameCount = 0;
-    let fpsCheckInterval = 0;
 
     let raf: number;
     const draw = (now: number) => {
@@ -229,8 +257,7 @@ function usePortalParticles(
 
       // Adaptive quality: check FPS every 60 frames
       frameCount++;
-      fpsCheckInterval++;
-      if (fpsCheckInterval >= 60) {
+      if (frameCount >= 60) {
         const elapsed = now - lastTime;
         const fps = (frameCount / elapsed) * 1000;
         if (fps < 30 && particles.length > 60) {
@@ -239,7 +266,6 @@ function usePortalParticles(
         }
         frameCount = 0;
         lastTime = now;
-        fpsCheckInterval = 0;
       }
 
       raf = requestAnimationFrame(draw);
