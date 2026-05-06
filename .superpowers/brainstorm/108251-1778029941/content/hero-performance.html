@@ -1,0 +1,26 @@
+<h2>Performance & Interaction Strategy</h2>
+<p class="subtitle">How should the hero behave across devices?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full Experience Everywhere</h3>
+      <p>Same 3D portal + particles on all devices. Use Canvas/WebGL for GPU-accelerated rendering. Detect low-end devices and reduce particle count automatically. Risk: battery drain on older phones.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tiered: Full Desktop, Light Mobile</h3>
+      <p>Desktop gets the full 3D portal with mouse-reactive particles. Mobile gets a simplified version — CSS-only animated gradient vortex with fewer, lighter particles (no WebGL). Still looks great, but prioritizes battery and performance on phones.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>CSS-First with Canvas Enhancement</h3>
+      <p>Build the core vortex effect with pure CSS (gradients, transforms, animations). Layer a lightweight Canvas particle system on top that gracefully degrades. No WebGL dependency. Works everywhere, enhances where possible. Smallest bundle size.</p>
+    </div>
+  </div>
+</div>

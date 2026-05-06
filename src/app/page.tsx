@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import NewsWidget from "@/components/news/NewsWidget";
-import MysticPortalHero from "@/components/home/MysticPortalHero";
 
 const FEATURES = [
   {
@@ -83,7 +82,19 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen pb-20 animate-page-enter">
       {/* ── Hero ── */}
-      <MysticPortalHero />
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-hero-from/60 via-transparent to-hero-to/60" />
+        <div className="absolute inset-0 glow-radial-accent" />
+
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 pt-12 pb-4 text-center max-w-2xl mx-auto w-full">
+          <h1 className="animate-houdini font-mtg text-mtg-gradient text-hero mb-1 drop-shadow-lg">
+            MTG Houdini
+          </h1>
+          <p className="text-body text-text-secondary max-w-xs">
+            Your ultimate Magic: The Gathering companion
+          </p>
+        </div>
+      </div>
 
       {/* ── Search shortcut ── */}
       <div className="px-4 pt-1 pb-2 max-w-2xl mx-auto w-full">
