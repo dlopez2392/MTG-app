@@ -106,7 +106,7 @@ export default function PlayerSetup({
   const [selectedColorKeys, setSelectedColorKeys] = useState<MtgPlayerColorKey[]>(
     [...DEFAULT_PLAYER_COLOR_KEYS]
   );
-  const [playgroupSearch, setPlaygroupSearch] = useState<string[]>(Array(6).fill(""));
+
   const [turnTimer, setTurnTimer] = useState(false);
   const [gameTimer, setGameTimer] = useState(false);
   const [gameTimerMinutes, setGameTimerMinutes] = useState(90);
@@ -393,63 +393,28 @@ export default function PlayerSetup({
                       className="flex-1"
                     />
                   </div>
-                  {/* Playgroup quick-pick for this slot */}
-                  {availableMembers.length > 0 && (() => {
-                    const query = playgroupSearch[i]?.toLowerCase() ?? "";
-                    const filtered = query
-                      ? availableMembers.filter((m) => m.name.toLowerCase().includes(query))
-                      : availableMembers;
-                    const showSearch = availableMembers.length > 4;
-                    return (
-                      <div className="space-y-1">
-                        {showSearch && (
-                          <div className="relative">
-                            <svg className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
-                            <input
-                              type="text"
-                              value={playgroupSearch[i] ?? ""}
-                              onChange={(e) => setPlaygroupSearch((prev) => { const next = [...prev]; next[i] = e.target.value; return next; })}
-                              placeholder="Search playgroup..."
-                              className="w-full pl-6 pr-2 py-1 rounded-md bg-bg-hover/50 border border-border text-[11px] text-text-secondary placeholder:text-text-muted/50 focus:outline-none focus:border-accent/40"
-                            />
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-1">
-                          {filtered.map((member) => {
-                            const isSelected = playerNames[i] === member.name;
-                            return (
-                              <button
-                                key={member.id}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) handleNameChange(i, `Player ${i + 1}`);
-                                  else handleNameChange(i, member.name);
-                                  setPlaygroupSearch((prev) => { const next = [...prev]; next[i] = ""; return next; });
-                                }}
-                                className={cn(
-                                  "inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all border",
-                                  isSelected
-                                    ? "border-accent/50 bg-accent/15 text-accent"
-                                    : "border-border bg-bg-hover/50 text-text-muted hover:text-text-secondary hover:border-accent/30"
-                                )}
-                              >
-                                <div
-                                  className="w-3 h-3 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: member.avatarColor }}
-                                />
-                                {member.name}
-                              </button>
-                            );
-                          })}
-                          {query && filtered.length === 0 && (
-                            <span className="text-[10px] text-text-muted italic px-1">No matches</span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                  {/* Playgroup dropdown */}
+                  {availableMembers.length > 0 && (
+                    <select
+                      value={availableMembers.some((m) => m.name === playerNames[i]) ? playerNames[i] : ""}
+                      onChange={(e) => {
+                        if (e.target.value === "") {
+                          handleNameChange(i, `Player ${i + 1}`);
+                        } else {
+                          handleNameChange(i, e.target.value);
+                        }
+                      }}
+                      className="w-full px-3 py-2 rounded-lg bg-bg-hover/50 border border-border text-sm text-text-primary focus:outline-none focus:border-accent/50 appearance-none cursor-pointer"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.5rem center", backgroundSize: "1.25rem" }}
+                    >
+                      <option value="">Select from playgroup...</option>
+                      {availableMembers.map((member) => (
+                        <option key={member.id} value={member.name}>
+                          {member.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] text-text-muted uppercase tracking-wide mr-1">Color</span>
                     {MTG_PLAYER_COLORS.map((c) => (
