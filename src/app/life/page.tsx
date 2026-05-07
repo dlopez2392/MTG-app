@@ -16,6 +16,9 @@ import { useMatchHistory } from "@/hooks/useMatchHistory";
 import { useGameLog } from "@/hooks/useGameLog";
 import { usePlaygroup } from "@/hooks/usePlaygroup";
 import type { CreateMatchPayload } from "@/types/match";
+import { useMultiplayerRoom } from "@/hooks/useMultiplayerRoom";
+import type { GameEndPayload } from "@/hooks/useMultiplayerRoom";
+import OpponentBar from "@/components/life/OpponentBar";
 
 export default function LifePage() {
   const {
@@ -42,6 +45,8 @@ export default function LifePage() {
   const { matches, loading: matchesLoading, error: matchesError, saveMatch } = useMatchHistory();
   const { addEntry: addGameLogEntry } = useGameLog();
   const { members: playgroupMembers } = usePlaygroup();
+  const multiplayer = useMultiplayerRoom();
+  const [isMultiplayerMode, setIsMultiplayerMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -319,6 +324,84 @@ export default function LifePage() {
     }, 1500);
   }, [players, turnOrder, gameOptions]);
 
+  // Sync local player state to multiplayer room
+  useEffect(() => {
+    if (!isMultiplayerMode || !multiplayer.isConnected || players.length === 0) return;
+    const localPlayer = players[0];
+    multiplayer.trackState({
+      playerId: localPlayer.id,
+      name: localPlayer.name,
+      color: localPlayer.color,
+      life: localPlayer.life,
+      poisonCounters: localPlayer.poisonCounters,
+      energyCounters: localPlayer.energyCounters,
+      experienceCounters: localPlayer.experienceCounters,
+      isMonarch: localPlayer.isMonarch,
+      hasInitiative: localPlayer.hasInitiative,
+      dungeonLevel: localPlayer.dungeonLevel,
+      commanderDamage: localPlayer.commanderDamage,
+    });
+  }, [isMultiplayerMode, multiplayer.isConnected, players]);
+
+  // Non-host: start game when host broadcasts game-start
+  useEffect(() => {
+    if (!isMultiplayerMode || multiplayer.isHost) return;
+    if (multiplayer.gameStarted && !gameStarted) {
+      setupGame(1, startingLife || settings.defaultStartingLife, [], []);
+    }
+  }, [multiplayer.gameStarted, isMultiplayerMode, multiplayer.isHost, gameStarted]);
+
+  // Non-host: save match when game-end broadcast received
+  useEffect(() => {
+    if (!multiplayer.gameEndPayload || multiplayer.isHost) return;
+    const gep = multiplayer.gameEndPayload;
+
+    const localPlayerName = players[0]?.name ?? "Player";
+    const matchPlayer = gep.players.find((p) => p.name === localPlayerName);
+    const isWinner = matchPlayer?.isWinner ?? false;
+    const hasDraw = !gep.players.some((p) => p.isWinner);
+    const result: "win" | "loss" | "draw" = hasDraw ? "draw" : isWinner ? "win" : "loss";
+    const opponents = gep.players
+      .filter((p) => p.name !== localPlayerName)
+      .map((p) => p.name)
+      .join(", ");
+
+    saveMatch({
+      startedAt: gameStartedAt ? new Date(gameStartedAt).toISOString() : new Date().toISOString(),
+      endedAt: gep.endedAt,
+      durationSecs: gep.durationSecs,
+      startingLife: gep.startingLife,
+      playerCount: gep.playerCount,
+      format: gep.format,
+      notes: gep.notes,
+      players: gep.players.map((p, i) => ({
+        playerName: p.name,
+        color: p.color,
+        startingLife: gep.startingLife,
+        finalLife: p.finalLife,
+        poisonTotal: 0,
+        commanderDmg: 0,
+        isWinner: p.isWinner,
+        playerOrder: i,
+      })),
+    });
+
+    addGameLogEntry({
+      date: gep.endedAt,
+      deckName: localPlayerName,
+      result,
+      format: gep.format,
+      playerCount: gep.playerCount,
+      notes: gep.notes,
+      opponentNames: opponents || undefined,
+    });
+
+    exitFullscreen();
+    newGame();
+    multiplayer.leaveRoom();
+    setIsMultiplayerMode(false);
+  }, [multiplayer.gameEndPayload]);
+
   if (!gameStarted) {
     if (!mounted) return null;
     return (
@@ -328,17 +411,29 @@ export default function LifePage() {
         defaultPlayerCount={settings.defaultPlayerCount}
         onShowMatchHistory={() => setShowMatchHistory(true)}
         playgroupMembers={playgroupMembers}
+        multiplayerRoom={{
+          roomCode: multiplayer.roomCode,
+          isHost: multiplayer.isHost,
+          isConnected: multiplayer.isConnected,
+          remotePlayers: multiplayer.remotePlayers,
+          onCreateRoom: () => { multiplayer.createRoom(); setIsMultiplayerMode(true); },
+          onJoinRoom: (code) => { multiplayer.joinRoom(code); setIsMultiplayerMode(true); },
+          onLeaveRoom: () => { multiplayer.leaveRoom(); setIsMultiplayerMode(false); },
+          onStartGame: () => {
+            multiplayer.broadcastGameStart(startingLife || settings.defaultStartingLife);
+          },
+        }}
         onStart={(count, life, names, colors, options) => {
           setGameOptions(options);
-          setTurnOrder(computeClockwiseOrder(options.layout, count));
+          setTurnOrder(computeClockwiseOrder(options.layout, isMultiplayerMode ? 1 : count));
           if (options.gameTimer) {
             setGameSecondsLeft(options.gameTimerMinutes * 60);
-            if (count === 1) setGameTimerRunning(true);
+            if (isMultiplayerMode || count === 1) setGameTimerRunning(true);
           }
-          if (options.turnTimer && count === 1) {
+          if (options.turnTimer && (isMultiplayerMode || count === 1)) {
             setTurnTimerRunning(true);
           }
-          setupGame(count, life, names, colors);
+          setupGame(isMultiplayerMode ? 1 : count, life, isMultiplayerMode ? [names[0]] : names, isMultiplayerMode ? [colors[0]] : colors);
         }}
       />
       <Modal open={showMatchHistory} onClose={() => setShowMatchHistory(false)} title="Match History">
@@ -426,6 +521,11 @@ export default function LifePage() {
     >
       <div className="absolute inset-0">
         {renderPlayers()}
+
+        {/* Multiplayer opponent bar */}
+        {isMultiplayerMode && (
+          <OpponentBar players={multiplayer.remotePlayers} />
+        )}
 
         {/* ── "Choose Starting Player" overlay ── */}
         {choosingStarter && !startingPlayer && (
@@ -749,10 +849,31 @@ export default function LifePage() {
             opponentNames: opponents || undefined,
           });
 
+          if (isMultiplayerMode && multiplayer.isHost) {
+            multiplayer.broadcastGameEnd({
+              players: payload.players.map((p) => ({
+                name: p.playerName,
+                finalLife: p.finalLife,
+                isWinner: p.isWinner,
+                color: p.color,
+              })),
+              startingLife: payload.startingLife,
+              playerCount: payload.playerCount,
+              format: payload.format ?? "casual",
+              durationSecs: payload.durationSecs,
+              notes: payload.notes,
+              endedAt: payload.endedAt,
+            });
+          }
+
           setSavingMatch(false);
           setShowEndGame(false);
           exitFullscreen();
           newGame();
+          if (isMultiplayerMode) {
+            multiplayer.leaveRoom();
+            setIsMultiplayerMode(false);
+          }
           setGameTimerRunning(false);
           setTurnTimerRunning(false);
           setGameSecondsLeft(0);
