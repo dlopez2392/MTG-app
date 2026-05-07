@@ -157,7 +157,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
       <div className="fixed inset-0 bg-black/80 z-[100]" onClick={phase === "hand" ? onClose : undefined} />
 
       {/* Panel */}
-      <div className="fixed inset-0 z-[101] flex flex-col bg-bg-primary overflow-hidden">
+      <div className="fixed inset-0 z-[101] flex flex-col items-center justify-start bg-bg-primary overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary transition-colors">
@@ -202,7 +202,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
         )}
 
         {/* Card hand */}
-        <div className="flex-1 overflow-y-auto px-3 py-3">
+        <div className="px-3 py-3 w-full">
           {/* Cards grid — 4 cols so they fit nicely */}
           <div className="grid grid-cols-4 gap-2">
             {hand.map((card) => {
@@ -278,7 +278,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
         </div>
 
         {/* Stats bar */}
-        <div className="px-4 py-2 border-t border-border shrink-0">
+        <div className="px-4 py-2 border-t border-border shrink-0 w-full">
           <div className="flex items-center justify-center gap-6">
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 rounded-full bg-mtg-green" />
@@ -298,7 +298,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
         </div>
 
         {/* Action buttons */}
-        <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 flex gap-2 border-t border-border shrink-0">
+        <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 flex gap-2 border-t border-border shrink-0 w-full">
           {phase === "hand" ? (
             <>
               <button
