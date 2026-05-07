@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import type { MultiplayerPlayerState } from "@/hooks/useMultiplayerRoom";
 
@@ -29,6 +29,15 @@ export default function MultiplayerLobby({
 }: MultiplayerLobbyProps) {
   const [joinCode, setJoinCode] = useState("");
   const [mode, setMode] = useState<"idle" | "create" | "join">("idle");
+  const [copied, setCopied] = useState(false);
+
+  const copyRoomCode = useCallback(() => {
+    if (!roomCode) return;
+    navigator.clipboard.writeText(roomCode).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [roomCode]);
 
   if (roomCode && isConnected) {
     const allPlayers = [
@@ -40,7 +49,24 @@ export default function MultiplayerLobby({
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-text-muted uppercase tracking-wider font-bold">Room Code</p>
-            <p className="text-3xl font-black tracking-[0.3em] text-accent">{roomCode}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-black tracking-[0.3em] text-accent">{roomCode}</p>
+              <button
+                type="button"
+                onClick={copyRoomCode}
+                className="p-1.5 rounded-lg bg-accent/10 border border-accent/20 active:scale-90 transition-all"
+              >
+                {copied ? (
+                  <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
           <button
             type="button"

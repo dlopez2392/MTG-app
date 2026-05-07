@@ -420,7 +420,9 @@ export default function LifePage() {
           onJoinRoom: (code) => { multiplayer.joinRoom(code); setIsMultiplayerMode(true); },
           onLeaveRoom: () => { multiplayer.leaveRoom(); setIsMultiplayerMode(false); },
           onStartGame: () => {
-            multiplayer.broadcastGameStart(startingLife || settings.defaultStartingLife);
+            const life = startingLife || settings.defaultStartingLife;
+            multiplayer.broadcastGameStart(life);
+            setupGame(1, life, [], []);
           },
         }}
         onStart={(count, life, names, colors, options) => {
