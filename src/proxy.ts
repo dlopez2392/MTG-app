@@ -1,8 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Allow all routes — auth is optional. Signed-in users get cloud sync,
-// guests use localStorage and their data stays on-device only.
-export default clerkMiddleware();
+export const proxy = clerkMiddleware();
 
 export const config = {
   matcher: [
