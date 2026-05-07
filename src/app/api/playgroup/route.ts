@@ -10,6 +10,7 @@ function toMember(row: Record<string, unknown>, profile?: Record<string, unknown
     notes: row.notes ?? undefined,
     friendUserId: row.friend_user_id ?? undefined,
     friendAvatarUrl: profile?.avatar_url ?? undefined,
+    isFriend: row.is_friend ?? false,
     createdAt: row.created_at,
   };
 }
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest) {
       avatar_color: body.avatarColor ?? "#607D8B",
       notes: body.notes?.trim() || null,
       friend_user_id: body.friendUserId || null,
+      is_friend: body.isFriend ?? false,
     })
     .select()
     .single();
@@ -92,6 +94,7 @@ export async function PATCH(req: NextRequest) {
   if (body.avatarColor !== undefined) updates.avatar_color = body.avatarColor;
   if (body.notes !== undefined) updates.notes = body.notes?.trim() || null;
   if (body.friendUserId !== undefined) updates.friend_user_id = body.friendUserId || null;
+  if (body.isFriend !== undefined) updates.is_friend = body.isFriend;
 
   const sb = getSupabase();
   const { data, error } = await sb

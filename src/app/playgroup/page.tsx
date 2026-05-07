@@ -83,19 +83,22 @@ function MemberForm({
   onCancel,
   saveLabel = "Add",
   isEditing = false,
+  isFriend = false,
 }: {
   initial?: Partial<PlaygroupMember>;
-  onSave: (name: string, color: string, notes?: string, friendUserId?: string) => void;
+  onSave: (name: string, color: string, notes?: string, friendUserId?: string, isFriend?: boolean) => void;
   onCancel: () => void;
   saveLabel?: string;
   isEditing?: boolean;
+  isFriend?: boolean;
 }) {
-  const [tab, setTab] = useState<"search" | "manual">(isEditing ? "manual" : "search");
+  const [tab, setTab] = useState<"search" | "code" | "manual">(isEditing ? "manual" : "search");
   const [name, setName] = useState(initial?.name ?? "");
   const [color, setColor] = useState(initial?.avatarColor ?? AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
   const [notes, setNotes] = useState(initial?.notes ?? "");
 
   const [email, setEmail] = useState("");
+  const [friendCode, setFriendCode] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<{ found: boolean; user?: FoundUser } | null>(null);
 
@@ -105,6 +108,24 @@ function MemberForm({
     setSearchResult(null);
     try {
       const res = await fetch(`/api/profile/search?email=${encodeURIComponent(email.trim())}`);
+      const data = await res.json();
+      setSearchResult(data);
+      if (data.found && data.user) {
+        setName(data.user.displayName);
+      }
+    } catch {
+      setSearchResult({ found: false });
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function handleCodeSearch() {
+    if (!friendCode.trim()) return;
+    setSearching(true);
+    setSearchResult(null);
+    try {
+      const res = await fetch(`/api/profile/search?friendCode=${encodeURIComponent(friendCode.trim())}`);
       const data = await res.json();
       setSearchResult(data);
       if (data.found && data.user) {
@@ -132,7 +153,17 @@ function MemberForm({
               tab === "search" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
             )}
           >
-            Find by Email
+            Email
+          </button>
+          <button
+            type="button"
+            onClick={() => { setTab("code"); setSearchResult(null); }}
+            className={cn(
+              "flex-1 px-3 py-1.5 text-xs font-semibold rounded transition-colors",
+              tab === "code" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
+            )}
+          >
+            Friend Code
           </button>
           <button
             type="button"
@@ -142,7 +173,7 @@ function MemberForm({
               tab === "manual" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
             )}
           >
-            Add Manually
+            Manual
           </button>
         </div>
       )}
@@ -177,6 +208,63 @@ function MemberForm({
             <div className="rounded-xl px-4 py-3 bg-bg-card border border-border">
               <p className="text-sm text-text-secondary">No discoverable account found for this email.</p>
               <p className="text-xs text-text-muted mt-1">They may need to enable &quot;Discoverable&quot; in their settings, or you can add them manually.</p>
+            </div>
+          )}
+
+          {foundUser && (
+            <div className="rounded-xl px-4 py-3 bg-accent/10 border border-accent/30">
+              <div className="flex items-center gap-3">
+                {foundUser.avatarUrl ? (
+                  <img src={foundUser.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold">
+                    {foundUser.displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text-primary">{foundUser.displayName}</p>
+                  <p className="text-xs text-accent">Account linked</p>
+                </div>
+                <svg className="w-5 h-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Search by friend code */}
+      {tab === "code" && !isEditing && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-text-muted font-medium block mb-1">Friend Code</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={friendCode}
+                onChange={(e) => { setFriendCode(e.target.value.toUpperCase()); setSearchResult(null); }}
+                onKeyDown={(e) => e.key === "Enter" && handleCodeSearch()}
+                placeholder="MTG-XXXX"
+                className="flex-1 input-base px-3 py-2.5 uppercase"
+                autoFocus
+                maxLength={8}
+              />
+              <button
+                type="button"
+                onClick={handleCodeSearch}
+                disabled={!friendCode.trim() || searching}
+                className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors disabled:opacity-40"
+              >
+                {searching ? "..." : "Search"}
+              </button>
+            </div>
+          </div>
+
+          {searchResult && !searchResult.found && (
+            <div className="rounded-xl px-4 py-3 bg-bg-card border border-border">
+              <p className="text-sm text-text-secondary">No account found for this friend code.</p>
+              <p className="text-xs text-text-muted mt-1">Double-check the code or try searching by email instead.</p>
             </div>
           )}
 
@@ -256,7 +344,7 @@ function MemberForm({
         </button>
         <button
           type="button"
-          onClick={() => name.trim() && onSave(name.trim(), color, notes.trim() || undefined, foundUser?.userId)}
+          onClick={() => name.trim() && onSave(name.trim(), color, notes.trim() || undefined, foundUser?.userId, isFriend || undefined)}
           disabled={!name.trim()}
           className="px-4 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors disabled:opacity-40"
         >
@@ -358,9 +446,14 @@ export default function PlaygroupPage() {
   const { entries } = useGameLog();
   const { matches } = useMatchHistory();
   const [showAdd, setShowAdd] = useState(false);
+  const [addAsFriend, setAddAsFriend] = useState(false);
   const [editing, setEditing] = useState<PlaygroupMember | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [viewingDecks, setViewingDecks] = useState<PlaygroupMember | null>(null);
+  const [activeTab, setActiveTab] = useState<"friends" | "playgroup">("friends");
+
+  const friends = useMemo(() => members.filter((m) => m.isFriend), [members]);
+  const playgroupOnly = useMemo(() => members.filter((m) => !m.isFriend), [members]);
 
   const memberStats = useMemo(() => {
     const map = new Map<string, MemberStats>();
@@ -433,16 +526,44 @@ export default function PlaygroupPage() {
           </button>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs text-text-muted">{members.length} {members.length === 1 ? "member" : "members"}</p>
+        {/* Friends / Playgroup tabs */}
+        <div className="flex gap-1 bg-bg-card rounded-lg p-0.5 mb-4">
           <button
-            onClick={() => setShowAdd(true)}
+            type="button"
+            onClick={() => setActiveTab("friends")}
+            className={cn(
+              "flex-1 px-3 py-2 text-sm font-semibold rounded-md transition-colors",
+              activeTab === "friends" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
+            )}
+          >
+            Friends ({friends.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("playgroup")}
+            className={cn(
+              "flex-1 px-3 py-2 text-sm font-semibold rounded-md transition-colors",
+              activeTab === "playgroup" ? "btn-gradient" : "text-text-muted hover:text-text-secondary"
+            )}
+          >
+            Playgroup ({playgroupOnly.length})
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-xs text-text-muted">
+            {activeTab === "friends"
+              ? `${friends.length} ${friends.length === 1 ? "friend" : "friends"}`
+              : `${playgroupOnly.length} ${playgroupOnly.length === 1 ? "member" : "members"}`}
+          </p>
+          <button
+            onClick={() => { setAddAsFriend(activeTab === "friends"); setShowAdd(true); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl btn-gradient text-sm font-bold transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Add Member
+            {activeTab === "friends" ? "Add Friend" : "Add Member"}
           </button>
         </div>
 
@@ -452,19 +573,21 @@ export default function PlaygroupPage() {
               <div key={i} className="h-20 bg-bg-card rounded-xl border border-border skeleton-shimmer" />
             ))}
           </div>
-        ) : members.length === 0 ? (
+        ) : (activeTab === "friends" ? friends : playgroupOnly).length === 0 ? (
           <EmptyState
             icon={
               <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
             }
-            title="No playgroup members yet"
-            description="Add the people you regularly play with to track matchups and stats over time."
+            title={activeTab === "friends" ? "No friends added yet" : "No playgroup members yet"}
+            description={activeTab === "friends"
+              ? "Add friends by email or friend code to track matchups and invite them to games."
+              : "Add people you play with at pods and events to track stats over time."}
           />
         ) : (
           <div className="flex flex-col gap-2">
-            {members.map((member) => {
+            {(activeTab === "friends" ? friends : playgroupOnly).map((member) => {
               const stats = memberStats.get(member.id);
               const isExpanded = expanded === member.id;
               const winRate = stats && stats.gamesPlayed > 0
@@ -630,9 +753,10 @@ export default function PlaygroupPage() {
       </PageContainer>
 
       {/* Add member modal */}
-      <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Add Member">
+      <Modal open={showAdd} onClose={() => setShowAdd(false)} title={addAsFriend ? "Add Friend" : "Add Member"}>
         <MemberForm
-          onSave={(name, color, notes, friendUserId) => { addMember(name, color, notes, friendUserId); setShowAdd(false); }}
+          isFriend={addAsFriend}
+          onSave={(name, color, notes, friendUserId, isFriend) => { addMember(name, color, notes, friendUserId, isFriend); setShowAdd(false); }}
           onCancel={() => setShowAdd(false)}
         />
       </Modal>

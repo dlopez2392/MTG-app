@@ -10,6 +10,7 @@ function toProfile(row: Record<string, unknown>) {
     email: row.email,
     avatarUrl: row.avatar_url,
     discoverable: row.discoverable,
+    friendCode: row.friend_code ?? null,
     createdAt: row.created_at,
   };
 }

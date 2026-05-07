@@ -5,5 +5,6 @@ export interface PlaygroupMember {
   notes?: string;
   friendUserId?: string;
   friendAvatarUrl?: string;
+  isFriend: boolean;
   createdAt: string;
 }

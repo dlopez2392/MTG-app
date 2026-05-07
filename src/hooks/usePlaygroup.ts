@@ -41,20 +41,20 @@ export function usePlaygroup() {
     }
   }, [isSignedIn]);
 
-  const addMember = useCallback(async (name: string, avatarColor: string, notes?: string, friendUserId?: string) => {
+  const addMember = useCallback(async (name: string, avatarColor: string, notes?: string, friendUserId?: string, isFriend?: boolean) => {
     if (isSignedIn) {
       try {
         const res = await fetch("/api/playgroup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, avatarColor, notes, friendUserId }),
+          body: JSON.stringify({ name, avatarColor, notes, friendUserId, isFriend }),
         });
         const created = await res.json();
         if (created.id) setMembers((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
         return created as PlaygroupMember;
       } catch { return null; }
     } else {
-      const member: PlaygroupMember = { id: uuid(), name: name.trim(), avatarColor, notes, createdAt: new Date().toISOString() };
+      const member: PlaygroupMember = { id: uuid(), name: name.trim(), avatarColor, notes, isFriend: isFriend ?? false, createdAt: new Date().toISOString() };
       setMembers((prev) => {
         const updated = [...prev, member].sort((a, b) => a.name.localeCompare(b.name));
         lsSet(LS_KEY, updated);

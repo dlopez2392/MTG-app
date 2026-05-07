@@ -7,16 +7,24 @@ export async function GET(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const email = req.nextUrl.searchParams.get("email")?.trim().toLowerCase();
-  if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
+  const friendCode = req.nextUrl.searchParams.get("friendCode")?.trim().toUpperCase();
+
+  if (!email && !friendCode) return NextResponse.json({ error: "Email or friend code required" }, { status: 400 });
 
   const sb = getSupabase();
-  const { data, error } = await sb
+
+  let query = sb
     .from("user_profiles")
     .select("user_id, display_name, avatar_url")
-    .eq("discoverable", true)
-    .ilike("email", email)
-    .neq("user_id", userId)
-    .maybeSingle();
+    .neq("user_id", userId);
+
+  if (friendCode) {
+    query = query.eq("friend_code", friendCode);
+  } else {
+    query = query.eq("discoverable", true).ilike("email", email!);
+  }
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ found: false });
