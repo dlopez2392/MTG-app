@@ -10,6 +10,7 @@ interface EndGameModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (payload: CreateMatchPayload) => Promise<void>;
+  onRematch?: (payload: CreateMatchPayload) => Promise<void>;
   players: Player[];
   startingLife: number;
   gameStartedAt: number;
@@ -23,6 +24,7 @@ export default function EndGameModal({
   open,
   onClose,
   onSave,
+  onRematch,
   players,
   startingLife,
   gameStartedAt,
@@ -33,9 +35,9 @@ export default function EndGameModal({
   const [format, setFormat] = useState("");
   const [notes, setNotes] = useState("");
 
-  const handleSave = async () => {
+  const buildPayload = (): CreateMatchPayload => {
     const now = new Date().toISOString();
-    const payload: CreateMatchPayload = {
+    return {
       startedAt: new Date(gameStartedAt).toISOString(),
       endedAt: now,
       durationSecs,
@@ -54,7 +56,14 @@ export default function EndGameModal({
         playerOrder: i,
       })),
     };
-    await onSave(payload);
+  };
+
+  const handleSave = async () => {
+    await onSave(buildPayload());
+  };
+
+  const handleRematch = async () => {
+    if (onRematch) await onRematch(buildPayload());
   };
 
   return (
@@ -169,13 +178,23 @@ export default function EndGameModal({
           >
             Skip
           </button>
+          {onRematch && (
+            <button
+              type="button"
+              onClick={handleRematch}
+              disabled={saving}
+              className="flex-1 py-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400 text-sm font-bold active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {saving ? "Saving..." : "Rematch"}
+            </button>
+          )}
           <button
             type="button"
             onClick={handleSave}
             disabled={saving}
             className="flex-1 py-3 rounded-xl btn-gradient text-sm font-bold active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
           >
-            {saving ? "Saving..." : "Save Match"}
+            {saving ? "Saving..." : "Save & Exit"}
           </button>
         </div>
       </div>

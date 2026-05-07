@@ -351,6 +351,24 @@ export default function LifePage() {
     }
   }, [multiplayer.gameStarted, isMultiplayerMode, multiplayer.isHost, gameStarted]);
 
+  // Non-host: reset game when host broadcasts game-reset (rematch)
+  const prevMultiplayerGameStarted = useRef(multiplayer.gameStarted);
+  useEffect(() => {
+    if (!isMultiplayerMode || multiplayer.isHost) return;
+    if (prevMultiplayerGameStarted.current && !multiplayer.gameStarted && gameStarted) {
+      resetGame();
+      setGameTimerRunning(false);
+      setTurnTimerRunning(false);
+      setGameSecondsLeft(0);
+      setTurnSeconds(0);
+      setTurnNumber(1);
+      setTotalElapsed(0);
+      setActivePlayerIndex(0);
+      setPlayerTurnTimes({});
+    }
+    prevMultiplayerGameStarted.current = multiplayer.gameStarted;
+  }, [multiplayer.gameStarted, isMultiplayerMode, multiplayer.isHost, gameStarted]);
+
   // Non-host: save match when game-end broadcast received
   useEffect(() => {
     if (!multiplayer.gameEndPayload || multiplayer.isHost) return;
@@ -885,6 +903,43 @@ export default function LifePage() {
           setActivePlayerIndex(0);
           setPlayerTurnTimes({});
         }}
+        onRematch={isMultiplayerMode ? async (payload: CreateMatchPayload) => {
+          setSavingMatch(true);
+          await saveMatch(payload);
+
+          const winner = payload.players.find((p) => p.isWinner);
+          const player1 = payload.players[0];
+          const isPlayer1Winner = player1?.isWinner;
+          const hasDraw = !winner;
+          const result = hasDraw ? "draw" as const : isPlayer1Winner ? "win" as const : "loss" as const;
+          const opponents = payload.players.slice(1).map((p) => p.playerName).join(", ");
+
+          await addGameLogEntry({
+            date: payload.endedAt,
+            deckName: player1?.playerName ?? "Player 1",
+            result,
+            format: payload.format,
+            playerCount: payload.playerCount,
+            notes: payload.notes,
+            opponentNames: opponents || undefined,
+          });
+
+          multiplayer.broadcastGameReset();
+          resetGame();
+          setSavingMatch(false);
+          setShowEndGame(false);
+          setGameTimerRunning(false);
+          setTurnTimerRunning(false);
+          if (gameOptions.gameTimer) {
+            setGameSecondsLeft(gameOptions.gameTimerMinutes * 60);
+            setGameTimerRunning(true);
+          }
+          setTurnSeconds(0);
+          setTurnNumber(1);
+          setTotalElapsed(0);
+          setActivePlayerIndex(0);
+          setPlayerTurnTimes({});
+        } : undefined}
         players={players}
         startingLife={startingLife}
         gameStartedAt={gameStartedAt}
