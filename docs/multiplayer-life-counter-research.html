@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1a1a2e; line-height: 1.6; }
+  h1 { color: #7C5CFC; border-bottom: 3px solid #7C5CFC; padding-bottom: 10px; font-size: 28px; }
+  h2 { color: #2d2d4e; margin-top: 30px; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+  h3 { color: #444; }
+  .verdict { font-weight: bold; padding: 6px 12px; border-radius: 6px; display: inline-block; margin: 8px 0; }
+  .dealbreaker { background: #ffe0e0; color: #c0392b; }
+  .viable { background: #e8f5e9; color: #27ae60; }
+  .recommended { background: #e8e0ff; color: #7C5CFC; }
+  .complex { background: #fff3e0; color: #e67e22; }
+  .not-viable { background: #f5f5f5; color: #666; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; font-size: 14px; }
+  th { background: #f8f6ff; color: #2d2d4e; }
+  code { background: #f4f2ff; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  pre code { background: none; color: inherit; }
+  .summary-box { background: #f8f6ff; border-left: 4px solid #7C5CFC; padding: 16px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+  .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; color: #888; font-size: 12px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>MTG Houdini: Multiplayer Life Counter Sync</h1>
+<p><strong>Research Report</strong> &mdash; May 6, 2026</p>
+<p>Technical feasibility analysis for real-time multiplayer syncing of life counters across player devices during in-person Magic: The Gathering games.</p>
+
+<div class="summary-box">
+  <strong>TL;DR Recommendation:</strong> Use <strong>Supabase Realtime</strong> (Broadcast + Presence) with room codes. It's already in your stack, requires ~50 lines of new code, works on all platforms, and is free at your scale. Every major MTG app with multiplayer uses this exact pattern.
+</div>
+
+<h2>1. Web Bluetooth API</h2>
+<div class="verdict dealbreaker">DEALBREAKER &mdash; Not Viable</div>
+<ul>
+  <li><strong>iOS Safari:</strong> Not supported at all (any version). Hard blocker for cross-platform.</li>
+  <li><strong>Firefox:</strong> Not supported.</li>
+  <li><strong>Chrome Android:</strong> Supported, but designed for peripheral devices (heart monitors, etc.), not phone-to-phone.</li>
+  <li><strong>Architecture issue:</strong> GATT-based. Phones would need to act as both central and peripheral, which the API doesn't support well.</li>
+  <li><strong>PWA standalone mode:</strong> Inconsistent behavior even on Chrome Android.</li>
+</ul>
+<p><strong>Kill reason:</strong> Zero iOS Safari support makes this a non-starter for any cross-platform mobile app.</p>
+
+<h2>2. WebRTC Data Channels (PeerJS)</h2>
+<div class="verdict complex">VIABLE &mdash; But Complex</div>
+<ul>
+  <li><strong>Browser support:</strong> ~96% global. iOS Safari 11.2+, Android Chrome, Firefox, Edge.</li>
+  <li><strong>How it works:</strong> Peer-to-peer data channels. Once connected, data flows directly between devices with sub-10ms latency on the same Wi-Fi.</li>
+  <li><strong>Signaling server required:</strong> Needs a server to broker initial connections (SDP offers/answers, ICE candidates). PeerJS Cloud offers this for free, or Supabase Realtime could serve as the signaling channel.</li>
+  <li><strong>NAT traversal:</strong> Needs STUN servers (Google provides free ones). TURN servers needed as fallback &mdash; costs money but rarely needed on same Wi-Fi.</li>
+  <li><strong>Mesh topology:</strong> For 6 players, you'd need 15 peer connections (full mesh) or a star topology where one host relays.</li>
+  <li><strong>Cost:</strong> Free with PeerJS Cloud + Google STUN.</li>
+</ul>
+<p><strong>Downside:</strong> Connection setup takes 2-5 seconds. Managing disconnects/reconnects and state reconciliation across a mesh adds significant complexity compared to server-mediated approaches.</p>
+
+<h2>3. WebSockets (Server-Mediated)</h2>
+<div class="verdict viable">VIABLE &mdash; But Hosting Challenge on Vercel</div>
+<ul>
+  <li><strong>Browser support:</strong> 96%+ universal. No compatibility issues on any platform.</li>
+  <li><strong>Vercel limitation:</strong> Vercel Serverless Functions do not natively support persistent WebSocket connections. You'd need an external provider.</li>
+  <li><strong>Latency:</strong> 20-100ms round-trip through server. Adequate for life counter updates.</li>
+  <li><strong>Requires internet:</strong> Yes, always.</li>
+</ul>
+
+<table>
+  <tr><th>Service</th><th>Free Tier</th><th>Cost at Scale</th><th>Notes</th></tr>
+  <tr><td><strong>Supabase Realtime</strong></td><td>200 connections, 2M msgs/mo</td><td>$2.50/M messages</td><td>Already in stack</td></tr>
+  <tr><td>Ably</td><td>200 connections, 6M msgs/mo</td><td>$2.50/M messages</td><td>Robust, good docs</td></tr>
+  <tr><td>Pusher</td><td>200 connections, 200K msgs/day</td><td>Per-message pricing</td><td>Popular, vendor lock-in</td></tr>
+  <tr><td>Socket.io on Fly.io</td><td>Fly.io free tier</td><td>~$5/month</td><td>Self-managed</td></tr>
+</table>
+
+<h2>4. Supabase Realtime (Broadcast + Presence)</h2>
+<div class="verdict recommended">STRONGLY RECOMMENDED &mdash; Best Fit</div>
+
+<p>This is the clear winner. The app already uses Supabase and <code>@supabase/supabase-js</code> v2.103.0 already includes the Realtime client. Zero new dependencies required.</p>
+
+<h3>How It Works</h3>
+<ul>
+  <li><strong>Broadcast:</strong> Send arbitrary JSON messages to all subscribers of a named channel. Perfect for life change events and game actions.</li>
+  <li><strong>Presence:</strong> Track shared state per user. Each client calls <code>track()</code> with their state, and all clients receive <code>sync</code>, <code>join</code>, and <code>leave</code> events. Perfect for "who is in this game" and "what are their life totals."</li>
+</ul>
+
+<h3>Example Code</h3>
+<pre><code>const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+// Join a game room
+const channel = supabase.channel('game-room-A7X3KM')
+
+// Track this player's state via Presence
+channel.subscribe(async (status) => {
+  if (status === 'SUBSCRIBED') {
+    await channel.track({
+      playerId: 'player-1',
+      name: 'Dan',
+      life: 40,
+      poison: 0,
+      commanderDamage: {}
+    })
+  }
+})
+
+// Listen for all players' state changes
+channel.on('presence', { event: 'sync' }, () => {
+  const state = channel.presenceState()
+  // state contains all players and their life totals
+})
+
+// Broadcast discrete events (animations, game reset)
+channel.on('broadcast', { event: 'life-change' }, (payload) => {
+  // { playerId: 'player-2', life: 38, delta: -2 }
+})</code></pre>
+
+<h3>Key Characteristics</h3>
+<table>
+  <tr><th>Aspect</th><th>Detail</th></tr>
+  <tr><td>Browser Support</td><td>Universal (WebSocket-based). iOS Safari, Android Chrome, all PWA modes.</td></tr>
+  <tr><td>Latency</td><td>~50-150ms. Imperceptible for life counter taps.</td></tr>
+  <tr><td>Complexity</td><td>LOW. ~50 lines of client code for a working sync.</td></tr>
+  <tr><td>Cost</td><td>Free tier: 200 concurrent connections, 2M msgs/month. A 6-player game uses ~100 messages per session.</td></tr>
+  <tr><td>New Dependencies</td><td>None. Already have <code>@supabase/supabase-js</code>.</td></tr>
+  <tr><td>Offline</td><td>No &mdash; requires internet. Standard for same-table play in 2026.</td></tr>
+</table>
+
+<h2>5. Room Code / QR Code Lobby System</h2>
+<div class="verdict viable">RECOMMENDED &mdash; Pairs with Supabase Realtime</div>
+
+<h3>Room Codes</h3>
+<ul>
+  <li>Generate 4-6 character alphanumeric codes client-side (e.g., "A7X3KM").</li>
+  <li>36^6 = ~2.2 billion possible codes. Collision risk is negligible.</li>
+  <li>No server-side registry needed &mdash; the Supabase channel name <em>is</em> the room.</li>
+  <li>Subscribing to <code>life-counter-A7X3KM</code> puts you in that room.</li>
+</ul>
+
+<h3>QR Code (Nice-to-Have)</h3>
+<ul>
+  <li>Display QR encoding <code>https://mtghoudini.com/life?room=A7X3KM</code>.</li>
+  <li>Use <code>react-qr-code</code> or <code>qrcode</code> npm package for generation.</li>
+  <li>Scanning opens the app and auto-joins the room.</li>
+  <li>Not essential &mdash; typing 4-6 characters is fast enough for same-table play.</li>
+</ul>
+
+<h3>Player Flow</h3>
+<ol>
+  <li>Host taps <strong>"Create Room"</strong> &rarr; generates code, displays it large on screen.</li>
+  <li>Other players tap <strong>"Join Room"</strong> &rarr; type the code (or scan QR).</li>
+  <li>All subscribe to the same Supabase channel.</li>
+  <li>Presence <code>sync</code> event populates the player list with live life totals.</li>
+</ol>
+
+<h2>6. Local Network Approaches (mDNS, Wi-Fi Direct)</h2>
+<div class="verdict not-viable">NOT VIABLE &mdash; No Web APIs</div>
+<ul>
+  <li><strong>mDNS / Bonjour:</strong> No web API exists. Native apps only.</li>
+  <li><strong>Wi-Fi Direct:</strong> No web API. Android-only native API.</li>
+  <li><strong>Web NFC:</strong> Chrome Android only. Not on iOS. Could tap-to-share a room code, but can't do continuous sync.</li>
+</ul>
+<p>The web platform has no local-network peer discovery APIs that work cross-platform. All "local" solutions ultimately require an internet server.</p>
+
+<h2>What Existing MTG Apps Do</h2>
+<ul>
+  <li><strong>Carbon (MTG Life Counter):</strong> Server-based sync with room codes. Requires internet.</li>
+  <li><strong>Lifelinker:</strong> Cloud-based rooms with join codes.</li>
+  <li><strong>MTG Familiar:</strong> No multiplayer sync.</li>
+</ul>
+<p><strong>The industry standard is room codes + cloud sync.</strong> No major MTG app uses Bluetooth or peer-to-peer.</p>
+
+<h2>Comparison Matrix</h2>
+<table>
+  <tr>
+    <th>Approach</th><th>iOS Safari</th><th>Complexity</th><th>Latency</th><th>Cost</th><th>Offline</th><th>Verdict</th>
+  </tr>
+  <tr><td>Web Bluetooth</td><td>No</td><td>High</td><td>Low</td><td>Free</td><td>Yes</td><td style="color:#c0392b;">Dealbreaker</td></tr>
+  <tr><td>WebRTC (PeerJS)</td><td>Yes</td><td>High</td><td>Very Low</td><td>Free*</td><td>Partial</td><td style="color:#e67e22;">Backup option</td></tr>
+  <tr><td>WebSockets (3rd party)</td><td>Yes</td><td>Medium</td><td>Low</td><td>Free tier</td><td>No</td><td style="color:#27ae60;">Viable</td></tr>
+  <tr><td><strong>Supabase Realtime</strong></td><td><strong>Yes</strong></td><td><strong>Low</strong></td><td><strong>Low</strong></td><td><strong>Free tier</strong></td><td><strong>No</strong></td><td style="color:#7C5CFC;"><strong>Recommended</strong></td></tr>
+  <tr><td>Local Network</td><td>No</td><td>N/A</td><td>N/A</td><td>N/A</td><td>Yes</td><td style="color:#666;">Not viable</td></tr>
+</table>
+
+<h2>Implementation Roadmap</h2>
+<p>If you decide to build this with Supabase Realtime, here's what's needed:</p>
+<ol>
+  <li><strong>Client-side Supabase instance</strong> &mdash; New file <code>src/lib/supabase/client.ts</code> using <code>NEXT_PUBLIC_SUPABASE_URL</code> and <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> environment variables.</li>
+  <li><strong><code>useMultiplayerRoom</code> hook</strong> &mdash; Wraps channel subscription, Presence tracking, and Broadcast events.</li>
+  <li><strong>Room create/join UI</strong> &mdash; Modal in the life counter setup page with code input + display.</li>
+  <li><strong>Sync integration</strong> &mdash; Modify existing life counter state to optionally broadcast changes via the room channel.</li>
+  <li><strong>Supabase Realtime policy</strong> &mdash; Enable Broadcast/Presence for anonymous or authenticated users (Supabase dashboard setting).</li>
+</ol>
+<p><strong>Estimated effort:</strong> 2-3 development sessions. No new infrastructure, no new dependencies, no additional cost.</p>
+
+<div class="footer">
+  <p>MTG Houdini &mdash; Multiplayer Life Counter Research &mdash; Generated May 6, 2026</p>
+</div>
+
+</body>
+</html>
