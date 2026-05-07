@@ -6,6 +6,8 @@ import { MTG_PLAYER_COLORS, DEFAULT_PLAYER_COLOR_KEYS, type MtgPlayerColorKey } 
 import Input from "@/components/ui/Input";
 import ManaSymbol from "@/components/cards/ManaSymbol";
 import type { PlaygroupMember } from "@/types/playgroup";
+import MultiplayerLobby from "@/components/life/MultiplayerLobby";
+import type { MultiplayerPlayerState } from "@/hooks/useMultiplayerRoom";
 
 export type LayoutId = string;
 
@@ -64,6 +66,16 @@ interface PlayerSetupProps {
   ) => void;
   onShowMatchHistory?: () => void;
   playgroupMembers?: PlaygroupMember[];
+  multiplayerRoom?: {
+    roomCode: string | null;
+    isHost: boolean;
+    isConnected: boolean;
+    remotePlayers: MultiplayerPlayerState[];
+    onCreateRoom: () => void;
+    onJoinRoom: (code: string) => void;
+    onLeaveRoom: () => void;
+    onStartGame: () => void;
+  };
 }
 
 const LIFE_TOTALS = [20, 25, 30, 40] as const;
@@ -83,6 +95,7 @@ export default function PlayerSetup({
   onStart,
   onShowMatchHistory,
   playgroupMembers = [],
+  multiplayerRoom,
 }: PlayerSetupProps) {
   const [playerCount, setPlayerCount] = useState(defaultPlayerCount);
   const [startingLife, setStartingLife] = useState(defaultStartingLife);
@@ -462,6 +475,28 @@ export default function PlayerSetup({
             })}
           </div>
         </div>
+
+        {/* ── Multiplayer ── */}
+        {multiplayerRoom && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-bold">Multiplayer</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <MultiplayerLobby
+              roomCode={multiplayerRoom.roomCode}
+              isHost={multiplayerRoom.isHost}
+              isConnected={multiplayerRoom.isConnected}
+              remotePlayers={multiplayerRoom.remotePlayers}
+              localPlayer={{ name: playerNames[0], color: MTG_PLAYER_COLORS.find(c => c.key === selectedColorKeys[0])?.color ?? "#607D8B" }}
+              onCreateRoom={multiplayerRoom.onCreateRoom}
+              onJoinRoom={multiplayerRoom.onJoinRoom}
+              onLeaveRoom={multiplayerRoom.onLeaveRoom}
+              onStartGame={multiplayerRoom.onStartGame}
+            />
+          </div>
+        )}
 
         {/* ── Start Button ── */}
         <button
