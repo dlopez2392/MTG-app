@@ -41,6 +41,7 @@ async function fetchArchidektDeck(deckId: string): Promise<{ name: string; forma
     name: entry.card?.oracleCard?.name ?? "",
     quantity: entry.quantity ?? 1,
     category: archidektCategory(entry.categories ?? []),
+    scryfallId: entry.card?.uid || undefined,
   })).filter((c: ImportCard) => c.name);
 
   return { name: data.name ?? "Imported Deck", format, cards };

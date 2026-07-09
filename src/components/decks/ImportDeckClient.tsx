@@ -34,7 +34,7 @@ interface ImportOutcome {
 
 export default function ImportDeckClient() {
   const router = useRouter();
-  const { isSignedIn } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { createDeck, updateDeck, addCardToDeck } = useDecks();
 
   const [tab, setTab] = useState("link");
@@ -197,7 +197,7 @@ export default function ImportDeckClient() {
                       That doesn&apos;t look like a Moxfield or Archidekt deck link.
                     </p>
                   )}
-                  <Button onClick={handleLinkImport} disabled={!urlValid || busy}>
+                  <Button onClick={handleLinkImport} disabled={!urlValid || busy || !isLoaded}>
                     {busy ? status || "Importing…" : "Import Deck"}
                   </Button>
                 </div>
@@ -213,7 +213,7 @@ export default function ImportDeckClient() {
                     placeholder={"4 Lightning Bolt (M21) 123\n20 Mountain\n\nSideboard\n2 Roiling Vortex"}
                     className="w-full h-56 input-base p-3 resize-none font-mono text-sm"
                   />
-                  <Button onClick={handleTextImport} disabled={!text.trim() || busy}>
+                  <Button onClick={handleTextImport} disabled={!text.trim() || busy || !isLoaded}>
                     {busy ? status || "Importing…" : "Import Deck"}
                   </Button>
                 </div>
