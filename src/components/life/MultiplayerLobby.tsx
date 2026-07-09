@@ -82,6 +82,7 @@ export default function MultiplayerLobby({
           <QrCode
             value={`${typeof window !== "undefined" ? window.location.origin : "https://mtghoudini.com"}/life?room=${roomCode}`}
             size={150}
+            label={`Join room ${roomCode}`}
           />
           <p className="text-caption">Scan with a phone camera to join</p>
         </div>
@@ -129,9 +130,16 @@ export default function MultiplayerLobby({
     return (
       <div className="space-y-3 text-center py-6">
         <p className="text-sm font-bold text-text-primary tracking-[0.2em] uppercase">
-          Joining {roomCode}...
+          {isHost ? "Creating room…" : `Joining ${roomCode}…`}
         </p>
         <p className="text-xs text-text-muted">Connecting to the room</p>
+        <button
+          type="button"
+          onClick={onLeaveRoom}
+          className="w-full py-3 text-sm font-bold rounded-xl border border-border text-text-secondary active:scale-95 transition-all"
+        >
+          Cancel
+        </button>
       </div>
     );
   }
