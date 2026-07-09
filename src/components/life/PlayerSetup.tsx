@@ -134,7 +134,7 @@ export default function PlayerSetup({
   }
 
   return (
-    <div className="flex flex-col min-h-screen overflow-y-auto pb-24">
+    <div className="flex flex-col min-h-screen overflow-y-auto pb-24 max-w-2xl mx-auto w-full">
       {/* Header */}
       <div className="px-6 pt-12 pb-4 flex items-center justify-between">
         <h1 className="font-display text-3xl font-black uppercase tracking-wide text-text-primary">
