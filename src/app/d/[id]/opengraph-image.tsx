@@ -14,6 +14,20 @@ export default async function OgImage({ params }: { params: Promise<{ id: string
   const format = deck?.format ? deck.format.charAt(0).toUpperCase() + deck.format.slice(1) : null;
   const cover = deck?.coverImageUri ?? null;
 
+  let coverSrc: string | null = null;
+  if (cover) {
+    try {
+      const res = await fetch(cover, { signal: AbortSignal.timeout(3000) });
+      if (res.ok) {
+        const buf = await res.arrayBuffer();
+        const type = res.headers.get("content-type") ?? "image/jpeg";
+        coverSrc = `data:${type};base64,${Buffer.from(buf).toString("base64")}`;
+      }
+    } catch {
+      // Dead/slow cover — render the text-only card.
+    }
+  }
+
   return new ImageResponse(
     (
       <div
@@ -25,10 +39,10 @@ export default async function OgImage({ params }: { params: Promise<{ id: string
           position: "relative",
         }}
       >
-        {cover && (
+        {coverSrc && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={cover}
+            src={coverSrc}
             alt=""
             style={{
               position: "absolute",
