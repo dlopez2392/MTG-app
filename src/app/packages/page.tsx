@@ -193,7 +193,7 @@ function PackageCard({
           {loadingCards ? (
             <div className="grid grid-cols-5 gap-2">
               {Array.from({ length: pkg.cardNames.length }).map((_, i) => (
-                <div key={i} className="aspect-[2.5/3.5] rounded bg-bg-secondary animate-pulse" />
+                <div key={i} className="aspect-[2.5/3.5] rounded skeleton-shimmer" />
               ))}
             </div>
           ) : cards.length > 0 ? (

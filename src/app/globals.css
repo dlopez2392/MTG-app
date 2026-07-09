@@ -285,9 +285,9 @@ input[type="email"] {
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    var(--color-bg-card)  25%,
-    var(--color-bg-hover) 50%,
-    var(--color-bg-card)  75%
+    var(--color-bg-card) 25%,
+    color-mix(in srgb, var(--color-bg-hover) 80%, var(--color-accent) 20%) 50%,
+    var(--color-bg-card) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s ease-in-out infinite;
