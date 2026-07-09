@@ -47,6 +47,22 @@ export default function LifePage() {
   const { members: playgroupMembers } = usePlaygroup();
   const multiplayer = useMultiplayerRoom();
   const [isMultiplayerMode, setIsMultiplayerMode] = useState(false);
+
+  // Auto-join a room from a scanned QR link: /life?room=ABC12
+  const autoJoinAttempted = useRef(false);
+  useEffect(() => {
+    if (autoJoinAttempted.current) return;
+    const param = new URLSearchParams(window.location.search).get("room");
+    if (!param || !/^[A-HJ-NP-Z2-9]{5}$/i.test(param.trim())) return;
+    if (multiplayer.roomCode) return; // already in a room
+    autoJoinAttempted.current = true;
+    setTimeout(() => {
+      multiplayer.joinRoom(param);
+      setIsMultiplayerMode(true);
+      // Clean the URL so refreshes don't re-join
+      window.history.replaceState(null, "", "/life");
+    }, 0);
+  }, [multiplayer]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);

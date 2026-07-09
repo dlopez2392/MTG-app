@@ -121,6 +121,21 @@ export default function MultiplayerLobby({
     );
   }
 
+  if (roomCode && !isConnected) {
+    // A room code is set (e.g. auto-joined from a scanned QR link) but the
+    // realtime channel hasn't confirmed the subscription yet — show a
+    // connecting state instead of falling through to the idle Create/Join
+    // screen, which would otherwise hide that a join is in progress.
+    return (
+      <div className="space-y-3 text-center py-6">
+        <p className="text-sm font-bold text-text-primary tracking-[0.2em] uppercase">
+          Joining {roomCode}...
+        </p>
+        <p className="text-xs text-text-muted">Connecting to the room</p>
+      </div>
+    );
+  }
+
   if (mode === "idle") {
     return (
       <div className="space-y-3">
