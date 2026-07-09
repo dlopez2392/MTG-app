@@ -439,7 +439,7 @@ export default function TradesPage() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />
+              <div key={i} className="h-20 rounded-2xl skeleton-shimmer" />
             ))}
           </div>
         ) : trades.length === 0 ? (

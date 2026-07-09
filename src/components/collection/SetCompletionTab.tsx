@@ -107,7 +107,7 @@ export default function SetCompletionTab({ allCards }: SetCompletionTabProps) {
     return (
       <div className="flex flex-col gap-3 mt-2">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-16 rounded-xl bg-bg-card border border-border animate-pulse" />
+          <div key={i} className="h-16 rounded-xl border border-border skeleton-shimmer" />
         ))}
       </div>
     );

@@ -313,7 +313,8 @@ export default function PlayerPanel({
             })()}
 
             <span
-              className={cn("tabular-nums leading-none", compact ? "text-[3rem]" : "text-[5rem]")}
+              key={player.life}
+              className={cn("tabular-nums leading-none inline-block animate-life-pop", compact ? "text-[3rem]" : "text-[5rem]")}
               style={{
                 fontFamily: "'Arial', 'Helvetica', sans-serif",
                 fontWeight: 400,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
+import MoreSheet from "@/components/layout/MoreSheet";
 
 const leftTabs = [
   {
@@ -30,12 +31,12 @@ const leftTabs = [
 
 const rightTabs = [
   {
-    href: "/ask-harry",
-    label: "Ask Harry",
+    href: "/search",
+    label: "Search",
     exact: false,
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     ),
   },
@@ -49,17 +50,13 @@ const rightTabs = [
       </svg>
     ),
   },
-  {
-    href: "/settings",
-    label: "More",
-    exact: false,
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    ),
-  },
 ];
+
+const moreIcon = (
+  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
 
 function NavTab({
   href,
@@ -81,21 +78,10 @@ function NavTab({
         isActive ? "text-black bg-accent-gradient" : "text-accent/50 hover:text-accent/75"
       )}
     >
-      <span
-        className={cn(
-          "relative transition-transform duration-200 ease-out",
-          isActive ? "scale-110" : "scale-100"
-        )}
-      >
+      <span className={cn("relative transition-transform duration-200 ease-out", isActive ? "scale-110" : "scale-100")}>
         {icon}
       </span>
-
-      <span
-        className={cn(
-          "relative text-[11px] tracking-wide transition-all duration-200",
-          isActive ? "font-bold" : "font-medium"
-        )}
-      >
+      <span className={cn("relative text-[11px] tracking-wide transition-all duration-200", isActive ? "font-bold" : "font-medium")}>
         {label}
       </span>
     </Link>
@@ -105,12 +91,20 @@ function NavTab({
 export default function BottomNav() {
   const pathname = usePathname();
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [lastPathname, setLastPathname] = useState(pathname);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handler);
     return () => document.removeEventListener("fullscreenchange", handler);
   }, []);
+
+  // Close the sheet on navigation (adjust state during render, not in an effect)
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    if (moreOpen) setMoreOpen(false);
+  }
 
   if (isFullscreen) return null;
 
@@ -120,28 +114,30 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50">
-      <div className="flex items-center justify-around h-16 max-w-2xl mx-auto relative">
-        {leftTabs.map((tab) => (
-          <NavTab
-            key={tab.href}
-            href={tab.href}
-            label={tab.label}
-            icon={tab.icon}
-            isActive={isTabActive(tab.href, tab.exact)}
-          />
-        ))}
-
-        {rightTabs.map((tab) => (
-          <NavTab
-            key={tab.href}
-            href={tab.href}
-            label={tab.label}
-            icon={tab.icon}
-            isActive={isTabActive(tab.href, tab.exact)}
-          />
-        ))}
-      </div>
-    </nav>
+    <>
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 lg:hidden">
+        <div className="flex items-center justify-around h-16 max-w-2xl mx-auto relative">
+          {leftTabs.map((tab) => (
+            <NavTab key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} isActive={isTabActive(tab.href, tab.exact)} />
+          ))}
+          {rightTabs.map((tab) => (
+            <NavTab key={tab.href} href={tab.href} label={tab.label} icon={tab.icon} isActive={isTabActive(tab.href, tab.exact)} />
+          ))}
+          <button
+            onClick={() => setMoreOpen((v) => !v)}
+            suppressHydrationWarning
+            aria-expanded={moreOpen}
+            className={cn(
+              "relative flex flex-col items-center justify-center w-full h-full gap-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset mx-1 rounded-xl",
+              moreOpen ? "text-black bg-accent-gradient" : "text-accent/50 hover:text-accent/75"
+            )}
+          >
+            <span className="relative">{moreIcon}</span>
+            <span className="relative text-[11px] tracking-wide font-medium">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }

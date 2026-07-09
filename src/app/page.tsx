@@ -20,7 +20,7 @@ const FEATURES = [
     href: "/rules",
     title: "RULEBOOK",
     description: "Comprehensive rules & glossary",
-    accent: "#A855F7",
+    accent: "#3B82F6",
     art: "https://cards.scryfall.io/art_crop/front/9/5/95e307d4-7e5f-4f00-869e-da0e7abbf27f.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -32,7 +32,7 @@ const FEATURES = [
     href: "/trades",
     title: "TRADING",
     description: "Track & evaluate card trades",
-    accent: "#F97316",
+    accent: "#D4A843",
     art: "https://cards.scryfall.io/art_crop/front/c/8/c88acaa8-ad4d-4321-a6f6-9361916e5b5e.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -44,7 +44,7 @@ const FEATURES = [
     href: "/wishlist",
     title: "WISHLIST",
     description: "Track cards & set price alerts",
-    accent: "#F59E0B",
+    accent: "#ED9A57",
     art: "https://cards.scryfall.io/art_crop/front/8/6/861b5889-0183-4bee-afeb-a4b2aa700a8e.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -56,7 +56,7 @@ const FEATURES = [
     href: "/playgroup",
     title: "PLAYGROUP",
     description: "Track your pod & head-to-head stats",
-    accent: "#8B5CF6",
+    accent: "#22C55E",
     art: "https://cards.scryfall.io/art_crop/front/9/7/97fa8615-2b6c-445a-bcaf-44a7e847bf65.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -68,7 +68,7 @@ const FEATURES = [
     href: "/games",
     title: "GAME LOG",
     description: "Track wins, losses & stats",
-    accent: "#06B6D4",
+    accent: "#94A3B8",
     art: "https://cards.scryfall.io/art_crop/front/5/2/5252794a-5cbe-45e3-b5c1-b27c667e9c17.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -116,12 +116,32 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* ── Ask Harry shortcut ── */}
+      <div className="px-4 pb-2 max-w-2xl mx-auto w-full">
+        <Link href="/ask-harry">
+          <div className="flex items-center gap-3 glass-card border border-border rounded-2xl px-4 py-3.5 hover:border-accent/40 transition-colors active:scale-[0.98]">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-page-title text-text-primary">ASK HARRY</p>
+              <p className="text-caption truncate">AI rules judge — card interactions answered</p>
+            </div>
+            <svg className="ml-auto w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      </div>
+
       {/* ── Feature Grid ── */}
       <div className="px-4 pb-3 max-w-2xl mx-auto w-full">
         <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 gap-3.5 [grid-auto-rows:1fr]">
+        <div className="grid grid-cols-2 gap-3.5 [grid-auto-rows:1fr] stagger-children">
           {FEATURES.map((feature) => (
             <Link key={feature.href} href={feature.href} className="block h-full">
               <div className="group relative glass-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/30 h-full">
@@ -130,9 +150,9 @@ export default function HomePage() {
                   <img
                     src={feature.art}
                     alt=""
-                    className="w-full h-full object-cover opacity-35 group-hover:opacity-45 transition-opacity duration-300"
+                    className="w-full h-full object-cover opacity-30 group-hover:opacity-45 transition-opacity duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/80 via-bg-primary/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/95 via-bg-primary/60 to-transparent" />
                 </div>
                 {/* Subtle top accent line */}
                 <div
