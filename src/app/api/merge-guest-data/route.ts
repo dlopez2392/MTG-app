@@ -36,6 +36,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
   const decks = body.decks ?? [];
   const binders = body.binders ?? [];
   if (decks.length === 0 && binders.length === 0) {
