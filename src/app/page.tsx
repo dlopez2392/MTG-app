@@ -116,6 +116,26 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* ── Ask Harry shortcut ── */}
+      <div className="px-4 pb-2 max-w-2xl mx-auto w-full">
+        <Link href="/ask-harry">
+          <div className="flex items-center gap-3 glass-card border border-border rounded-2xl px-4 py-3.5 hover:border-accent/40 transition-colors active:scale-[0.98]">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <p className="text-page-title text-text-primary">ASK HARRY</p>
+              <p className="text-caption truncate">AI rules judge — card interactions answered</p>
+            </div>
+            <svg className="ml-auto w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+      </div>
+
       {/* ── Feature Grid ── */}
       <div className="px-4 pb-3 max-w-2xl mx-auto w-full">
         <p className="text-section-label text-text-muted mb-3">
