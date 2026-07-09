@@ -1,13 +1,19 @@
 export interface ParsedDeckEntry {
   quantity: number;
   name: string;
-  category: "main" | "sideboard" | "commander" | "maybeboard";
+  category: "main" | "sideboard" | "commander" | "companion" | "maybeboard";
 }
 
 export function parseDeckList(text: string): ParsedDeckEntry[] {
   const lines = text.trim().split("\n");
   const entries: ParsedDeckEntry[] = [];
   let currentCategory: ParsedDeckEntry["category"] = "main";
+  let skipNextName = false;
+
+  // Strip MTGA export suffix: "Lightning Bolt (M21) 123" → "Lightning Bolt"
+  // Set code in parens followed by a collector number at end of line.
+  const cleanName = (raw: string) =>
+    raw.replace(/\s*\(([A-Z0-9]{1,6})\)\s+[\w★-]+$/u, "").trim();
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
@@ -20,6 +26,19 @@ export function parseDeckList(text: string): ParsedDeckEntry[] {
     }
     if (/^commander:?$/i.test(line)) {
       currentCategory = "commander";
+      continue;
+    }
+    if (/^companion:?$/i.test(line)) {
+      currentCategory = "companion";
+      continue;
+    }
+    // MTG Arena "About" section: skip the header and its "Name X" line
+    if (/^about:?$/i.test(line)) {
+      skipNextName = true;
+      continue;
+    }
+    if (skipNextName && /^name\s/i.test(line)) {
+      skipNextName = false;
       continue;
     }
     if (/^(maybeboard|maybe):?$/i.test(line)) {
@@ -38,14 +57,14 @@ export function parseDeckList(text: string): ParsedDeckEntry[] {
     if (match) {
       entries.push({
         quantity: parseInt(match[1], 10),
-        name: match[2].trim(),
+        name: cleanName(match[2].trim()),
         category: currentCategory,
       });
     } else {
       // Just a card name, assume qty 1
       entries.push({
         quantity: 1,
-        name: line,
+        name: cleanName(line),
         category: currentCategory,
       });
     }
