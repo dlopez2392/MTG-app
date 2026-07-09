@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import type { MultiplayerPlayerState } from "@/hooks/useMultiplayerRoom";
+import QrCode from "@/components/ui/QrCode";
 
 interface MultiplayerLobbyProps {
   roomCode: string | null;
@@ -75,6 +76,14 @@ export default function MultiplayerLobby({
           >
             Leave
           </button>
+        </div>
+
+        <div className="flex flex-col items-center gap-1.5">
+          <QrCode
+            value={`${typeof window !== "undefined" ? window.location.origin : "https://mtghoudini.com"}/life?room=${roomCode}`}
+            size={150}
+          />
+          <p className="text-caption">Scan with a phone camera to join</p>
         </div>
 
         <div className="space-y-2">
