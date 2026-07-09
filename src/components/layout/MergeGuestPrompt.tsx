@@ -52,6 +52,7 @@ export default function MergeGuestPrompt() {
   }
 
   function handleClose() {
+    if (phase === "merging") return;
     // Reload after a successful merge so all data hooks refetch from the account.
     if (phase === "done") {
       window.location.reload();
