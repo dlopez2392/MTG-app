@@ -141,6 +141,32 @@ export default function DecksPageClient() {
               </svg>
             </button>
 
+            {/* Import Deck button */}
+            <button
+              onClick={() => router.push("/decks/import")}
+              className="w-full rounded-2xl border p-3.5 flex items-center gap-3 mb-4 transition-all active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))",
+                borderColor: "rgba(59,130,246,0.3)",
+              }}
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(59,130,246,0.2)" }}
+              >
+                <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-semibold text-text-primary">Import Deck</p>
+                <p className="text-[10px] text-text-muted">From Moxfield, Archidekt, or any text list</p>
+              </div>
+              <svg className="w-4 h-4 text-text-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
+
             {/* Search + Filter row */}
             <div className="flex gap-2 mb-4">
               <div className="flex-1">
