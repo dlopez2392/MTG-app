@@ -15,7 +15,7 @@ export default function QrCode({ value, size = 160, className }: QrCodeProps) {
   const svg = useMemo(() => renderSVG(value, { border: 2 }), [value]);
   return (
     <div
-      className={cn("inline-block rounded-xl bg-white p-2", className)}
+      className={cn("inline-block rounded-xl bg-white p-2 [&>svg]:h-full [&>svg]:w-full [&>svg]:block", className)}
       style={{ width: size, height: size }}
       role="img"
       aria-label={`QR code: ${value}`}
