@@ -62,7 +62,6 @@ export async function POST(req: Request) {
         user_id: userId,
         name: deck.name,
         format: deck.format ?? null,
-        description: deck.description ?? null,
         cover_card_id: deck.coverCardId ?? null,
         cover_image_uri: deck.coverImageUri ?? null,
         created_at: now,

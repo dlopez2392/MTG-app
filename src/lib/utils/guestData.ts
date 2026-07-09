@@ -92,7 +92,18 @@ export function collectGuestData(): GuestMergePayload {
         coverCardId: d.coverCardId,
         coverImageUri: d.coverImageUri,
       },
-      cards: lsGet<GuestDeckCard[]>(`${DECK_CARDS_PREFIX}${d.id}`, []),
+      cards: lsGet<GuestDeckCard[]>(`${DECK_CARDS_PREFIX}${d.id}`, []).map((c) => ({
+        scryfallId: c.scryfallId,
+        name: c.name,
+        quantity: c.quantity,
+        category: c.category,
+        manaCost: c.manaCost,
+        cmc: c.cmc,
+        typeLine: c.typeLine,
+        rarity: c.rarity,
+        imageUri: c.imageUri,
+        priceUsd: c.priceUsd,
+      })),
     })),
     binders: binders.map((b) => ({
       binder: {
@@ -100,7 +111,20 @@ export function collectGuestData(): GuestMergePayload {
         description: b.description,
         coverImageUri: b.coverImageUri,
       },
-      cards: lsGet<GuestBinderCard[]>(`${BINDER_CARDS_PREFIX}${b.id}`, []),
+      cards: lsGet<GuestBinderCard[]>(`${BINDER_CARDS_PREFIX}${b.id}`, []).map((c) => ({
+        scryfallId: c.scryfallId,
+        name: c.name,
+        quantity: c.quantity,
+        condition: c.condition,
+        isFoil: c.isFoil,
+        setCode: c.setCode,
+        setName: c.setName,
+        collectorNumber: c.collectorNumber,
+        imageUri: c.imageUri,
+        priceUsd: c.priceUsd,
+        typeLine: c.typeLine,
+        rarity: c.rarity,
+      })),
     })),
   };
 }
