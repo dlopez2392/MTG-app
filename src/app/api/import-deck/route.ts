@@ -115,7 +115,11 @@ async function resolveCards(cards: ImportCard[]): Promise<(ImportCard & { resolv
     const chunk = alreadyResolved.slice(i, i + CHUNK);
     const res = await fetch("https://api.scryfall.com/cards/collection", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "MTGHoudini/1.0",
+        Accept: "application/json",
+      },
       body: JSON.stringify({ identifiers: chunk.map((c) => ({ id: c.scryfallId })) }),
     });
     if (res.ok) {
@@ -134,7 +138,11 @@ async function resolveCards(cards: ImportCard[]): Promise<(ImportCard & { resolv
     const chunk = toResolve.slice(i, i + CHUNK);
     const res = await fetch("https://api.scryfall.com/cards/collection", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": "MTGHoudini/1.0",
+        Accept: "application/json",
+      },
       body: JSON.stringify({ identifiers: chunk.map((c) => ({ name: c.name })) }),
     });
     if (res.ok) {
