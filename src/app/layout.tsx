@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Big_Shoulders, Cinzel_Decorative } from "next/font/g
 import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import BottomNav from "@/components/layout/BottomNav";
+import MergeGuestPrompt from "@/components/layout/MergeGuestPrompt";
 import PageBackground from "@/components/layout/PageBackground";
 import SideNav from "@/components/layout/SideNav";
 import "./globals.css";
@@ -76,6 +77,7 @@ export default function RootLayout({
           <SideNav />
           <div className="relative z-10 flex-1 flex flex-col lg:pl-56">{children}</div>
           <BottomNav />
+          <MergeGuestPrompt />
         </body>
       </html>
     </ClerkProvider>
