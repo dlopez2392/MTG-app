@@ -37,9 +37,9 @@ export function parseDeckList(text: string): ParsedDeckEntry[] {
       skipNextName = true;
       continue;
     }
-    if (skipNextName && /^name\s/i.test(line)) {
+    if (skipNextName) {
       skipNextName = false;
-      continue;
+      if (/^name\s/i.test(line)) continue;
     }
     if (/^(maybeboard|maybe):?$/i.test(line)) {
       currentCategory = "maybeboard";
