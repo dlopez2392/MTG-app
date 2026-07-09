@@ -76,7 +76,7 @@ export default function DashboardStrip() {
 
       {/* Stat chips row */}
       {(movement || showStreak || nextSet) && (
-        <div className="flex gap-2 mb-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex gap-2 mb-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {movement && (
             <Link
               href="/collection"
