@@ -20,7 +20,7 @@ const FEATURES = [
     href: "/rules",
     title: "RULEBOOK",
     description: "Comprehensive rules & glossary",
-    accent: "#A855F7",
+    accent: "#3B82F6",
     art: "https://cards.scryfall.io/art_crop/front/9/5/95e307d4-7e5f-4f00-869e-da0e7abbf27f.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -32,7 +32,7 @@ const FEATURES = [
     href: "/trades",
     title: "TRADING",
     description: "Track & evaluate card trades",
-    accent: "#F97316",
+    accent: "#D4A843",
     art: "https://cards.scryfall.io/art_crop/front/c/8/c88acaa8-ad4d-4321-a6f6-9361916e5b5e.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -44,7 +44,7 @@ const FEATURES = [
     href: "/wishlist",
     title: "WISHLIST",
     description: "Track cards & set price alerts",
-    accent: "#F59E0B",
+    accent: "#ED9A57",
     art: "https://cards.scryfall.io/art_crop/front/8/6/861b5889-0183-4bee-afeb-a4b2aa700a8e.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -56,7 +56,7 @@ const FEATURES = [
     href: "/playgroup",
     title: "PLAYGROUP",
     description: "Track your pod & head-to-head stats",
-    accent: "#8B5CF6",
+    accent: "#22C55E",
     art: "https://cards.scryfall.io/art_crop/front/9/7/97fa8615-2b6c-445a-bcaf-44a7e847bf65.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -68,7 +68,7 @@ const FEATURES = [
     href: "/games",
     title: "GAME LOG",
     description: "Track wins, losses & stats",
-    accent: "#06B6D4",
+    accent: "#94A3B8",
     art: "https://cards.scryfall.io/art_crop/front/5/2/5252794a-5cbe-45e3-b5c1-b27c667e9c17.jpg",
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -141,7 +141,7 @@ export default function HomePage() {
         <p className="text-section-label text-text-muted mb-3">
           Features
         </p>
-        <div className="grid grid-cols-2 gap-3.5 [grid-auto-rows:1fr]">
+        <div className="grid grid-cols-2 gap-3.5 [grid-auto-rows:1fr] stagger-children">
           {FEATURES.map((feature) => (
             <Link key={feature.href} href={feature.href} className="block h-full">
               <div className="group relative glass-card border border-border rounded-2xl p-4 overflow-hidden transition-all duration-200 active:scale-95 hover:border-accent/30 h-full">
@@ -150,9 +150,9 @@ export default function HomePage() {
                   <img
                     src={feature.art}
                     alt=""
-                    className="w-full h-full object-cover opacity-35 group-hover:opacity-45 transition-opacity duration-300"
+                    className="w-full h-full object-cover opacity-30 group-hover:opacity-45 transition-opacity duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/80 via-bg-primary/40 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/95 via-bg-primary/60 to-transparent" />
                 </div>
                 {/* Subtle top accent line */}
                 <div

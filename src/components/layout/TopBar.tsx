@@ -24,7 +24,7 @@ export default function TopBar({ title, showBack, rightContent, className }: Top
         {showBack && (
           <button
             onClick={() => router.back()}
-            className="mr-2 -ml-1 w-8 h-8 rounded-xl flex items-center justify-center text-white btn-gradient transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="mr-2 -ml-1 w-8 h-8 rounded-xl flex items-center justify-center text-accent btn-accent-subtle border border-accent/20 transition-all active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             suppressHydrationWarning
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
