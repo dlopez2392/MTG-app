@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import DashboardStrip from "@/components/home/DashboardStrip";
 import NewsWidget from "@/components/news/NewsWidget";
 
 const FEATURES = [
@@ -135,6 +136,8 @@ export default function HomePage() {
           </div>
         </Link>
       </div>
+
+      <DashboardStrip />
 
       {/* ── Feature Grid ── */}
       <div className="px-4 pb-3 max-w-2xl mx-auto w-full">

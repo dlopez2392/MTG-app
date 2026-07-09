@@ -19,6 +19,7 @@ import PageContainer from "@/components/layout/PageContainer";
 import GameInsights from "@/components/games/GameInsights";
 import { useGameLog, computeStats } from "@/hooks/useGameLog";
 import { cn } from "@/lib/utils/cn";
+import { computeStreak } from "@/lib/utils/gameStats";
 import type { GameEntry } from "@/types/game";
 
 function GlassSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -142,35 +143,6 @@ function computePlayerCountStats(entries: GameEntry[]): PlayerCountStat[] {
     s.winRate = s.total > 0 ? Math.round((s.wins / s.total) * 100) : 0;
   }
   return [...map.values()].sort((a, b) => a.playerCount - b.playerCount);
-}
-
-function computeStreak(entries: GameEntry[]): { current: number; type: "win" | "loss" | "none"; best: number } {
-  const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
-  let current = 0;
-  let type: "win" | "loss" | "none" = "none";
-  let best = 0;
-  let bestRun = 0;
-
-  if (sorted.length > 0) {
-    type = sorted[0].result === "draw" ? "none" : sorted[0].result;
-    for (const e of sorted) {
-      if (e.result === type) current++;
-      else break;
-    }
-  }
-
-  let run = 0;
-  for (const e of sorted) {
-    if (e.result === "win") {
-      run++;
-      bestRun = Math.max(bestRun, run);
-    } else {
-      run = 0;
-    }
-  }
-  best = bestRun;
-
-  return { current, type, best };
 }
 
 const CHART_COLORS = {
