@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { cn } from "@/lib/utils/cn";
 import type { MultiplayerPlayerState } from "@/hooks/useMultiplayerRoom";
+import QrCode from "@/components/ui/QrCode";
 
 interface MultiplayerLobbyProps {
   roomCode: string | null;
@@ -77,6 +78,15 @@ export default function MultiplayerLobby({
           </button>
         </div>
 
+        <div className="flex flex-col items-center gap-1.5">
+          <QrCode
+            value={`${typeof window !== "undefined" ? window.location.origin : "https://mtghoudini.com"}/life?room=${roomCode}`}
+            size={150}
+            label={`Join room ${roomCode}`}
+          />
+          <p className="text-caption">Scan with a phone camera to join</p>
+        </div>
+
         <div className="space-y-2">
           <p className="text-xs text-text-muted uppercase tracking-wider font-bold">
             Players ({allPlayers.length})
@@ -108,6 +118,28 @@ export default function MultiplayerLobby({
         {!isHost && (
           <p className="text-center text-sm text-text-muted">Waiting for host to start...</p>
         )}
+      </div>
+    );
+  }
+
+  if (roomCode && !isConnected) {
+    // A room code is set (e.g. auto-joined from a scanned QR link) but the
+    // realtime channel hasn't confirmed the subscription yet — show a
+    // connecting state instead of falling through to the idle Create/Join
+    // screen, which would otherwise hide that a join is in progress.
+    return (
+      <div className="space-y-3 text-center py-6">
+        <p className="text-sm font-bold text-text-primary tracking-[0.2em] uppercase">
+          {isHost ? "Creating room…" : `Joining ${roomCode}…`}
+        </p>
+        <p className="text-xs text-text-muted">Connecting to the room</p>
+        <button
+          type="button"
+          onClick={onLeaveRoom}
+          className="w-full py-3 text-sm font-bold rounded-xl border border-border text-text-secondary active:scale-95 transition-all"
+        >
+          Cancel
+        </button>
       </div>
     );
   }
