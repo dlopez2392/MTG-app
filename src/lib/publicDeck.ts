@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getSupabase } from "@/lib/supabase/server";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,7 +25,7 @@ export interface PublicDeck {
 }
 
 /** Fetch a deck for public display. Returns null unless the deck exists AND is public. */
-export async function getPublicDeck(id: string): Promise<PublicDeck | null> {
+export const getPublicDeck = cache(async (id: string): Promise<PublicDeck | null> => {
   if (!UUID_RE.test(id)) return null;
 
   const sb = getSupabase();
@@ -58,4 +59,4 @@ export async function getPublicDeck(id: string): Promise<PublicDeck | null> {
       priceUsd: (c.price_usd as string | null) ?? null,
     })),
   };
-}
+});

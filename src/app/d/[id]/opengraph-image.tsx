@@ -100,6 +100,11 @@ export default async function OgImage({ params }: { params: Promise<{ id: string
         </div>
       </div>
     ),
-    size
+    {
+      ...size,
+      headers: {
+        "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=300",
+      },
+    }
   );
 }
