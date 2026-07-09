@@ -58,9 +58,9 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   const [library, setLibrary]           = useState<SimCard[]>([]);
   const [hand, setHand]                 = useState<SimCard[]>([]);
   const [mulligans, setMulligans]       = useState(0);
-  // Cards selected to put back (London mulligan)
+  // Cards selected to put on the bottom (London mulligan — chosen at keep time)
   const [putBack, setPutBack]           = useState<Set<string>>(new Set());
-  const [phase, setPhase]               = useState<"hand" | "choosing">("hand");
+  const [phase, setPhase]               = useState<"hand" | "bottoming">("hand");
   const [flipped, setFlipped]           = useState<Set<string>>(new Set());
 
   const deal7 = useCallback((lib: SimCard[]) => {
@@ -92,47 +92,61 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
 
   const mainCount = cards.filter((c) => c.category === "main").reduce((s, c) => s + c.quantity, 0);
   const stats = handStats(hand);
-  const putBackTarget = mulligans + 1; // London: put back N cards where N = mulligans AFTER this one
+  // London: when keeping after N mulligans, put N cards on the bottom of the library.
+  const bottomTarget = mulligans;
 
   // ── Actions ──────────────────────────────────────────────────────────────
 
   function handleNewHand() {
+    // "New game" — reset everything and deal a fresh 7
     setMulligans(0);
     deal7(buildLibrary(cards));
   }
 
-  function handleStartMulligan() {
-    // Enter "choosing" phase — user picks putBackTarget cards to put back
-    setPhase("choosing");
+  function handleMulligan() {
+    // London mulligan: shuffle the entire hand back into the library,
+    // then draw a fresh 7. Increment the mulligan counter.
+    const full = shuffle([...library, ...hand]);
+    setHand(full.slice(0, 7));
+    setLibrary(full.slice(7));
+    setMulligans((m) => m + 1);
+    setPutBack(new Set());
+    setFlipped(new Set());
+    setPhase("hand");
+  }
+
+  function handleKeep() {
+    // London: if we've taken mulligans, choose `mulligans` cards to bottom.
+    if (mulligans === 0) {
+      onClose();
+      return;
+    }
+    setPhase("bottoming");
     setPutBack(new Set());
   }
 
   function togglePutBack(uid: string) {
-    if (phase !== "choosing") return;
+    if (phase !== "bottoming") return;
     setPutBack((prev) => {
       const next = new Set(prev);
       if (next.has(uid)) {
         next.delete(uid);
-      } else if (next.size < putBackTarget) {
+      } else if (next.size < bottomTarget) {
         next.add(uid);
       }
       return next;
     });
   }
 
-  function confirmMulligan() {
-    // Put selected cards back, draw 7 new from reshuffled library
-    const kept = hand.filter((c) => !putBack.has(c.uid));
-    const returned = hand.filter((c) => putBack.has(c.uid));
-    const newLib = shuffle([...library, ...returned]);
-    const drawn = newLib.slice(0, 7 - kept.length);
-    const newHand = shuffle([...kept, ...drawn]);
-    setLibrary(newLib.slice(7 - kept.length));
-    setHand(newHand);
-    setMulligans((m) => m + 1);
+  function confirmBottom() {
+    // Move selected cards to the bottom of the library and keep the rest.
+    const bottomed = hand.filter((c) => putBack.has(c.uid));
+    setLibrary((l) => [...l, ...bottomed]);
+    setHand((h) => h.filter((c) => !putBack.has(c.uid)));
     setPutBack(new Set());
     setFlipped(new Set());
     setPhase("hand");
+    onClose();
   }
 
   function handleDraw() {
@@ -180,12 +194,12 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
           </button>
         </div>
 
-        {/* Mulligan instruction */}
-        {phase === "choosing" && (
+        {/* Bottoming instruction (London) */}
+        {phase === "bottoming" && (
           <div className="px-4 py-2 bg-accent/10 border-b border-accent/20 text-center shrink-0">
             <p className="text-xs font-semibold text-accent">
-              Select {putBackTarget - putBack.size} more card{putBackTarget - putBack.size !== 1 ? "s" : ""} to put back
-              {putBack.size === putBackTarget && " — tap Confirm"}
+              London mulligan — select {bottomTarget - putBack.size} more card{bottomTarget - putBack.size !== 1 ? "s" : ""} to put on the bottom
+              {putBack.size === bottomTarget && " — tap Confirm"}
             </p>
           </div>
         )}
@@ -213,13 +227,13 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
               return (
                 <button
                   key={card.uid}
-                  onClick={() => phase === "choosing" ? togglePutBack(card.uid) : toggleFlip(card.uid)}
+                  onClick={() => phase === "bottoming" ? togglePutBack(card.uid) : toggleFlip(card.uid)}
                   className={cn(
                     "relative rounded-lg overflow-hidden border-2 transition-all active:scale-95",
                     selected
                       ? "border-accent opacity-50 scale-95"
                       : "border-transparent",
-                    phase === "choosing" && !selected && putBack.size >= putBackTarget
+                    phase === "bottoming" && !selected && putBack.size >= bottomTarget
                       ? "opacity-40"
                       : ""
                   )}
@@ -309,17 +323,17 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
                 Draw
               </button>
               <button
-                onClick={handleStartMulligan}
-                disabled={mainCount < 7}
+                onClick={handleMulligan}
+                disabled={mainCount < 7 || mulligans >= 7}
                 className="flex-1 py-2.5 rounded-xl border border-accent/50 text-sm font-semibold text-accent hover:bg-accent/10 transition-all active:scale-[0.98] disabled:opacity-40"
               >
                 Mulligan
               </button>
               <button
-                onClick={onClose}
+                onClick={handleKeep}
                 className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98]"
               >
-                Keep
+                Keep{mulligans > 0 ? ` (bottom ${mulligans})` : ""}
               </button>
             </>
           ) : (
@@ -331,11 +345,11 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
                 Cancel
               </button>
               <button
-                onClick={confirmMulligan}
-                disabled={putBack.size < putBackTarget}
+                onClick={confirmBottom}
+                disabled={putBack.size < bottomTarget}
                 className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-40"
               >
-                Confirm ({putBack.size}/{putBackTarget})
+                Confirm ({putBack.size}/{bottomTarget})
               </button>
             </>
           )}
