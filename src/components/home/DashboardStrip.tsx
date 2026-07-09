@@ -71,7 +71,7 @@ export default function DashboardStrip() {
       {/* Greeting */}
       <p className="text-section-label text-text-muted mb-2">
         {greeting()}
-        {isLoaded && user?.firstName ? `, ${user.firstName}` : ""}
+        {isLoaded && user?.firstName ? <>, <span className="normal-case">{user.firstName}</span></> : ""}
       </p>
 
       {/* Stat chips row */}
