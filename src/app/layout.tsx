@@ -4,6 +4,7 @@ import Script from "next/script";
 import { ClerkProvider } from "@clerk/nextjs";
 import BottomNav from "@/components/layout/BottomNav";
 import PageBackground from "@/components/layout/PageBackground";
+import SideNav from "@/components/layout/SideNav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -72,7 +73,8 @@ export default function RootLayout({
             {`if("serviceWorker"in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js")})}`}
           </Script>
           <PageBackground />
-          <div className="relative z-10 flex-1 flex flex-col">{children}</div>
+          <SideNav />
+          <div className="relative z-10 flex-1 flex flex-col lg:pl-56">{children}</div>
           <BottomNav />
         </body>
       </html>
