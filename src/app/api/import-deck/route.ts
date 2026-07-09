@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
+import { parseDeckUrl } from "@/lib/utils/deckUrl";
 
 interface ImportCard {
   name: string;
@@ -68,7 +69,14 @@ async function fetchMoxfieldDeck(deckId: string): Promise<{ name: string; format
   const res = await fetch(`https://api2.moxfield.com/v2/decks/all/${deckId}`, {
     headers: { Accept: "application/json", "User-Agent": "MTGHoudini/1.0" },
   });
-  if (!res.ok) throw new Error(`Moxfield returned ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 403) {
+      throw new Error(
+        "Moxfield blocks third-party imports. On Moxfield: open your deck → Export → Copy for MTGA, then paste it in the Text tab here."
+      );
+    }
+    throw new Error(`Moxfield returned ${res.status}`);
+  }
   const data = await res.json();
 
   const cards: ImportCard[] = [
@@ -146,14 +154,32 @@ async function resolveCards(cards: ImportCard[]): Promise<(ImportCard & { resolv
 // ── Route ──
 
 export async function POST(req: Request) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await req.json();
-  const { source, deckId } = body as { source: string; deckId: string };
+  const { url, persist = true } = body as { url?: string; persist?: boolean };
+  let { source, deckId } = body as { source?: string; deckId?: string };
+
+  // URL input: parse into source + id
+  if (url) {
+    const parsed = parseDeckUrl(url);
+    if (!parsed) {
+      return NextResponse.json(
+        { error: "Unrecognized URL. Paste a Moxfield or Archidekt deck link." },
+        { status: 400 }
+      );
+    }
+    source = parsed.source;
+    deckId = parsed.id;
+  }
 
   if (!source || !deckId) {
-    return NextResponse.json({ error: "source and deckId are required" }, { status: 400 });
+    return NextResponse.json({ error: "url, or source and deckId, are required" }, { status: 400 });
+  }
+
+  // Auth only needed when persisting server-side
+  let userId: string | null = null;
+  if (persist) {
+    ({ userId } = await auth());
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -173,8 +199,27 @@ export async function POST(req: Request) {
 
     // 2. Resolve cards via Scryfall
     const resolved = await resolveCards(deckData.cards);
+    const resolvedKeys = new Set(resolved.map((c) => c.name.toLowerCase()));
+    const skipped = deckData.cards
+      .filter((c) => !resolvedKeys.has(c.name.toLowerCase()))
+      .map((c) => c.name);
 
-    // 3. Create deck in DB
+    // 3a. Guest mode: return the resolved deck without persisting
+    if (!persist) {
+      return NextResponse.json({
+        name: deckData.name,
+        format: deckData.format,
+        totalCards: deckData.cards.length,
+        skipped,
+        cards: resolved.map((c) => ({
+          quantity: c.quantity,
+          category: c.category,
+          card: c.resolved,
+        })),
+      });
+    }
+
+    // 3b. Persist to Supabase
     const sb = getSupabase();
     const now = new Date().toISOString();
 
@@ -228,7 +273,8 @@ export async function POST(req: Request) {
       format: deckData.format,
       totalCards: deckData.cards.length,
       importedCards: insertedCount,
-      skippedCards: deckData.cards.length - resolved.length,
+      skippedCards: deckData.cards.length - resolved.length, // kept for ExploreDecks
+      skipped,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Import failed";
