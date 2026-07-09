@@ -24,7 +24,7 @@ export function parseDeckUrl(input: string): ParsedDeckUrl | null {
   const host = url.hostname.replace(/^www\./, "").toLowerCase();
 
   if (host === "moxfield.com" || host === "api2.moxfield.com") {
-    const m = url.pathname.match(/^\/(?:decks|v2\/decks\/all)\/([A-Za-z0-9_-]+)\/?$/);
+    const m = url.pathname.match(/^\/(?:decks|v2\/decks\/all)\/([A-Za-z0-9_-]+)(?:\/|$)/);
     if (m) return { source: "moxfield", id: m[1] };
     return null;
   }
