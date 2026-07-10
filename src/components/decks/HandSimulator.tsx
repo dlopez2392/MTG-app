@@ -1,43 +1,21 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useReducer } from "react";
 import { cn } from "@/lib/utils/cn";
 import type { DeckCard } from "@/types/deck";
+import {
+  buildLibrary,
+  shuffle,
+  isLand,
+  goldfishReducer,
+  type SimCard,
+} from "@/lib/utils/goldfish";
+import PlaytestBoard from "./PlaytestBoard";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   cards: DeckCard[]; // all deck cards (we only use "main")
-}
-
-interface SimCard extends DeckCard {
-  uid: string; // unique instance id (same card can appear multiple times)
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function buildLibrary(cards: DeckCard[]): SimCard[] {
-  const lib: SimCard[] = [];
-  for (const c of cards) {
-    if (c.category !== "main") continue;
-    for (let i = 0; i < c.quantity; i++) {
-      lib.push({ ...c, uid: `${c.scryfallId}-${i}` });
-    }
-  }
-  return lib;
-}
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function isLand(card: SimCard) {
-  return (card.typeLine ?? "").toLowerCase().includes("land");
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -60,8 +38,9 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   const [mulligans, setMulligans]       = useState(0);
   // Cards selected to put on the bottom (London mulligan — chosen at keep time)
   const [putBack, setPutBack]           = useState<Set<string>>(new Set());
-  const [phase, setPhase]               = useState<"hand" | "bottoming">("hand");
+  const [phase, setPhase]               = useState<"hand" | "bottoming" | "playtest">("hand");
   const [flipped, setFlipped]           = useState<Set<string>>(new Set());
+  const [board, dispatchBoard]          = useReducer(goldfishReducer, null);
 
   const deal7 = useCallback((lib: SimCard[]) => {
     const shuffled = shuffle(lib);
@@ -70,6 +49,7 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
     setPutBack(new Set());
     setFlipped(new Set());
     setPhase("hand");
+    dispatchBoard({ type: "RESET" });
   }, []);
 
   // Draw fresh hand on open
@@ -116,9 +96,10 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   }
 
   function handleKeep() {
-    // London: if we've taken mulligans, choose `mulligans` cards to bottom.
+    // London: if we've taken mulligans, choose `mulligans` cards to bottom first.
     if (mulligans === 0) {
-      onClose();
+      dispatchBoard({ type: "START", hand, library });
+      setPhase("playtest");
       return;
     }
     setPhase("bottoming");
@@ -139,14 +120,14 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   }
 
   function confirmBottom() {
-    // Move selected cards to the bottom of the library and keep the rest.
+    // Bottom the selected cards, then start the playtest with the kept hand.
+    // The board owns library/hand state from here until restart.
     const bottomed = hand.filter((c) => putBack.has(c.uid));
-    setLibrary((l) => [...l, ...bottomed]);
-    setHand((h) => h.filter((c) => !putBack.has(c.uid)));
+    const kept = hand.filter((c) => !putBack.has(c.uid));
+    dispatchBoard({ type: "START", hand: kept, library: [...library, ...bottomed] });
     setPutBack(new Set());
     setFlipped(new Set());
-    setPhase("hand");
-    onClose();
+    setPhase("playtest");
   }
 
   function handleDraw() {
@@ -158,12 +139,18 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
   function toggleFlip(uid: string) {
     setFlipped((prev) => {
       const next = new Set(prev);
-      next.has(uid) ? next.delete(uid) : next.add(uid);
+      if (next.has(uid)) {
+        next.delete(uid);
+      } else {
+        next.add(uid);
+      }
       return next;
     });
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
+
+  const inPlaytest = phase === "playtest" && board !== null;
 
   return (
     <>
@@ -171,17 +158,26 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
       <div className="fixed inset-0 bg-black/80 z-[100]" onClick={phase === "hand" ? onClose : undefined} />
 
       {/* Panel */}
-      <div className="fixed inset-0 z-[101] flex flex-col items-center justify-start bg-bg-primary overflow-y-auto">
+      <div className={cn(
+        "fixed inset-0 z-[101] flex flex-col items-center justify-start bg-bg-primary",
+        inPlaytest ? "overflow-hidden" : "overflow-y-auto"
+      )}>
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 w-full">
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           <div className="text-center">
-            <h2 className="text-sm font-bold text-text-primary">Opening Hand</h2>
-            <p className="text-xs text-text-muted">{mainCount} cards · {library.length} in library</p>
+            <h2 className="text-sm font-bold text-text-primary">
+              {inPlaytest ? `Playtest · Turn ${board.turn}` : "Opening Hand"}
+            </h2>
+            <p className="text-xs text-text-muted">
+              {inPlaytest
+                ? `${board.library.length} in library`
+                : `${mainCount} cards · ${library.length} in library`}
+            </p>
           </div>
           <button
             onClick={handleNewHand}
@@ -194,166 +190,172 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
           </button>
         </div>
 
-        {/* Bottoming instruction (London) */}
-        {phase === "bottoming" && (
-          <div className="px-4 py-2 bg-accent/10 border-b border-accent/20 text-center shrink-0">
-            <p className="text-xs font-semibold text-accent">
-              London mulligan — select {bottomTarget - putBack.size} more card{bottomTarget - putBack.size !== 1 ? "s" : ""} to put on the bottom
-              {putBack.size === bottomTarget && " — tap Confirm"}
-            </p>
-          </div>
+        {inPlaytest ? (
+          <PlaytestBoard board={board} dispatch={dispatchBoard} />
+        ) : (
+          <>
+            {/* Bottoming instruction (London) */}
+            {phase === "bottoming" && (
+              <div className="px-4 py-2 bg-accent/10 border-b border-accent/20 text-center shrink-0 w-full">
+                <p className="text-xs font-semibold text-accent">
+                  London mulligan — select {bottomTarget - putBack.size} more card{bottomTarget - putBack.size !== 1 ? "s" : ""} to put on the bottom
+                  {putBack.size === bottomTarget && " — tap Confirm"}
+                </p>
+              </div>
+            )}
+
+            {/* Mulligans taken badge */}
+            {mulligans > 0 && phase === "hand" && (
+              <div className="px-4 pt-2 shrink-0">
+                <div className="flex justify-center">
+                  <span className="px-2.5 py-0.5 rounded-full bg-bg-card border border-border text-xs text-text-muted">
+                    {mulligans} mulligan{mulligans !== 1 ? "s" : ""} taken
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Card hand */}
+            <div className="px-3 py-3 w-full">
+              {/* Cards grid — 4 cols so they fit nicely */}
+              <div className="grid grid-cols-4 gap-2">
+                {hand.map((card) => {
+                  const selected = putBack.has(card.uid);
+                  const isFlipped = flipped.has(card.uid);
+                  const land = isLand(card);
+
+                  return (
+                    <button
+                      key={card.uid}
+                      onClick={() => phase === "bottoming" ? togglePutBack(card.uid) : toggleFlip(card.uid)}
+                      className={cn(
+                        "relative rounded-lg overflow-hidden border-2 transition-all active:scale-95",
+                        selected
+                          ? "border-accent opacity-50 scale-95"
+                          : "border-transparent",
+                        phase === "bottoming" && !selected && putBack.size >= bottomTarget
+                          ? "opacity-40"
+                          : ""
+                      )}
+                      style={{ aspectRatio: "488/680" }}
+                    >
+                      {card.imageUri ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={card.imageUri}
+                          alt={card.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className={cn(
+                          "w-full h-full flex flex-col items-center justify-center gap-1 p-1 text-center",
+                          land ? "bg-mtg-green/20" : "bg-bg-card"
+                        )}>
+                          <p className="text-[9px] font-semibold text-text-primary leading-tight line-clamp-3">{card.name}</p>
+                          {card.cmc !== undefined && !land && (
+                            <span className="text-[8px] text-text-muted">{card.cmc} CMC</span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Land indicator */}
+                      {land && (
+                        <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-mtg-green/80 border border-white/30" />
+                      )}
+
+                      {/* Selected overlay */}
+                      {selected && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      )}
+
+                      {/* Flipped — show card name overlay */}
+                      {isFlipped && phase === "hand" && (
+                        <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-1 text-center">
+                          <p className="text-[9px] font-semibold text-white leading-tight">{card.name}</p>
+                          {card.typeLine && (
+                            <p className="text-[8px] text-text-muted mt-0.5 leading-tight line-clamp-2">{card.typeLine}</p>
+                          )}
+                          {card.cmc !== undefined && (
+                            <p className="text-[8px] text-accent mt-0.5">{card.cmc} CMC</p>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Stats bar */}
+            <div className="px-4 py-2 border-t border-border shrink-0 w-full">
+              <div className="flex items-center justify-center gap-6">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-mtg-green" />
+                  <span className="text-xs text-text-secondary">
+                    <span className="font-semibold text-text-primary">{stats.lands}</span> land{stats.lands !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="w-px h-4 bg-border" />
+                <div className="text-xs text-text-secondary">
+                  Avg CMC: <span className="font-semibold text-text-primary">{stats.avgCmc.toFixed(1)}</span>
+                </div>
+                <div className="w-px h-4 bg-border" />
+                <div className="text-xs text-text-secondary">
+                  {hand.length} cards
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 flex gap-2 border-t border-border shrink-0 w-full">
+              {phase === "hand" ? (
+                <>
+                  <button
+                    onClick={handleDraw}
+                    disabled={library.length === 0}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-secondary hover:text-text-primary hover:border-accent/40 transition-all active:scale-[0.98] disabled:opacity-40"
+                  >
+                    Draw
+                  </button>
+                  <button
+                    onClick={handleMulligan}
+                    disabled={mainCount < 7 || mulligans >= 7}
+                    className="flex-1 py-2.5 rounded-xl border border-accent/50 text-sm font-semibold text-accent hover:bg-accent/10 transition-all active:scale-[0.98] disabled:opacity-40"
+                  >
+                    Mulligan
+                  </button>
+                  <button
+                    onClick={handleKeep}
+                    className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98]"
+                  >
+                    {mulligans > 0 ? `Keep (bottom ${mulligans})` : "Keep & Play"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => { setPutBack(new Set()); setPhase("hand"); }}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-secondary hover:text-text-primary transition-all active:scale-[0.98]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmBottom}
+                    disabled={putBack.size < bottomTarget}
+                    className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-40"
+                  >
+                    Confirm ({putBack.size}/{bottomTarget})
+                  </button>
+                </>
+              )}
+            </div>
+          </>
         )}
-
-        {/* Mulligans taken badge */}
-        {mulligans > 0 && phase === "hand" && (
-          <div className="px-4 pt-2 shrink-0">
-            <div className="flex justify-center">
-              <span className="px-2.5 py-0.5 rounded-full bg-bg-card border border-border text-xs text-text-muted">
-                {mulligans} mulligan{mulligans !== 1 ? "s" : ""} taken
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Card hand */}
-        <div className="px-3 py-3 w-full">
-          {/* Cards grid — 4 cols so they fit nicely */}
-          <div className="grid grid-cols-4 gap-2">
-            {hand.map((card) => {
-              const selected = putBack.has(card.uid);
-              const isFlipped = flipped.has(card.uid);
-              const land = isLand(card);
-
-              return (
-                <button
-                  key={card.uid}
-                  onClick={() => phase === "bottoming" ? togglePutBack(card.uid) : toggleFlip(card.uid)}
-                  className={cn(
-                    "relative rounded-lg overflow-hidden border-2 transition-all active:scale-95",
-                    selected
-                      ? "border-accent opacity-50 scale-95"
-                      : "border-transparent",
-                    phase === "bottoming" && !selected && putBack.size >= bottomTarget
-                      ? "opacity-40"
-                      : ""
-                  )}
-                  style={{ aspectRatio: "488/680" }}
-                >
-                  {card.imageUri ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={card.imageUri}
-                      alt={card.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className={cn(
-                      "w-full h-full flex flex-col items-center justify-center gap-1 p-1 text-center",
-                      land ? "bg-mtg-green/20" : "bg-bg-card"
-                    )}>
-                      <p className="text-[9px] font-semibold text-text-primary leading-tight line-clamp-3">{card.name}</p>
-                      {card.cmc !== undefined && !land && (
-                        <span className="text-[8px] text-text-muted">{card.cmc} CMC</span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Land indicator */}
-                  {land && (
-                    <div className="absolute top-1 right-1 w-3 h-3 rounded-full bg-mtg-green/80 border border-white/30" />
-                  )}
-
-                  {/* Selected overlay */}
-                  {selected && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                      <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Flipped — show card name overlay */}
-                  {isFlipped && phase === "hand" && (
-                    <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center p-1 text-center">
-                      <p className="text-[9px] font-semibold text-white leading-tight">{card.name}</p>
-                      {card.typeLine && (
-                        <p className="text-[8px] text-text-muted mt-0.5 leading-tight line-clamp-2">{card.typeLine}</p>
-                      )}
-                      {card.cmc !== undefined && (
-                        <p className="text-[8px] text-accent mt-0.5">{card.cmc} CMC</p>
-                      )}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="px-4 py-2 border-t border-border shrink-0 w-full">
-          <div className="flex items-center justify-center gap-6">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-mtg-green" />
-              <span className="text-xs text-text-secondary">
-                <span className="font-semibold text-text-primary">{stats.lands}</span> land{stats.lands !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="text-xs text-text-secondary">
-              Avg CMC: <span className="font-semibold text-text-primary">{stats.avgCmc.toFixed(1)}</span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="text-xs text-text-secondary">
-              {hand.length} cards
-            </div>
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-2 flex gap-2 border-t border-border shrink-0 w-full">
-          {phase === "hand" ? (
-            <>
-              <button
-                onClick={handleDraw}
-                disabled={library.length === 0}
-                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-secondary hover:text-text-primary hover:border-accent/40 transition-all active:scale-[0.98] disabled:opacity-40"
-              >
-                Draw
-              </button>
-              <button
-                onClick={handleMulligan}
-                disabled={mainCount < 7 || mulligans >= 7}
-                className="flex-1 py-2.5 rounded-xl border border-accent/50 text-sm font-semibold text-accent hover:bg-accent/10 transition-all active:scale-[0.98] disabled:opacity-40"
-              >
-                Mulligan
-              </button>
-              <button
-                onClick={handleKeep}
-                className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98]"
-              >
-                Keep{mulligans > 0 ? ` (bottom ${mulligans})` : ""}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => { setPutBack(new Set()); setPhase("hand"); }}
-                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-semibold text-text-secondary hover:text-text-primary transition-all active:scale-[0.98]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmBottom}
-                disabled={putBack.size < bottomTarget}
-                className="flex-1 py-2.5 rounded-xl btn-gradient text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-40"
-              >
-                Confirm ({putBack.size}/{bottomTarget})
-              </button>
-            </>
-          )}
-        </div>
       </div>
     </>
   );
