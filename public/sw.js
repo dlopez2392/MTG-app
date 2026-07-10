@@ -1,4 +1,4 @@
-const CACHE_NAME = "mtg-houdini-v0.5.0";
+const CACHE_NAME = "mtg-houdini-v0.5.1";
 const OFFLINE_URL = "/";
 
 const PRECACHE_URLS = [
