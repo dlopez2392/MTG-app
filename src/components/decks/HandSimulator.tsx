@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useReducer } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils/cn";
 import type { DeckCard } from "@/types/deck";
 import {
@@ -152,7 +153,11 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
 
   const inPlaytest = phase === "playtest" && board !== null;
 
-  return (
+  // Portal to document.body: the overlay is `fixed inset-0`, but an ancestor
+  // (<main> carries the page-enter transform) forms the containing block, which
+  // would size the "viewport" overlay to the full page height and push the
+  // playtest hand/actions far below the fold. Portaling escapes that ancestor.
+  const overlay = (
     <>
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/80 z-[100]" onClick={phase === "hand" ? onClose : undefined} />
@@ -359,4 +364,8 @@ export default function HandSimulator({ open, onClose, cards }: Props) {
       </div>
     </>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(overlay, document.body)
+    : null;
 }
