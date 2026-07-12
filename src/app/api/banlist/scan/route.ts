@@ -8,6 +8,7 @@ import {
   extractBanlistEvents,
   type BanlistEvent,
 } from "@/lib/banlist/detect";
+import { sendPush } from "@/lib/push/send";
 
 // Per-user, dynamic. The WotC feed itself is cached upstream (30 min).
 export const dynamic = "force-dynamic";
@@ -137,6 +138,40 @@ export async function GET() {
       await sb
         .from("banlist_notifications")
         .upsert(notifRows, { onConflict: "user_id,event_id", ignoreDuplicates: true });
+    }
+  }
+
+  // 3b. Fire a push for any not-yet-pushed notifications (best-effort). Uses the
+  //     event details to build a headline; marks pushed=true so we never re-send.
+  const { data: unpushed } = await sb
+    .from("banlist_notifications")
+    .select("event_id, deck_ids, banlist_events(card_name, format, status)")
+    .eq("user_id", userId)
+    .eq("pushed", false);
+  if (unpushed && unpushed.length > 0) {
+    const pushedIds: string[] = [];
+    for (const n of unpushed) {
+      const ev = Array.isArray(n.banlist_events) ? n.banlist_events[0] : n.banlist_events;
+      if (!ev) continue;
+      const deckCount = (n.deck_ids ?? []).length;
+      const fmt = ev.format && ev.format !== "Unknown" && ev.format !== "your" ? ev.format : "";
+      const title =
+        ev.status === "review"
+          ? "B&R update"
+          : `${ev.card_name} ${ev.status}${fmt ? ` in ${fmt}` : ""}`;
+      const body =
+        ev.status === "review"
+          ? `Review your ${fmt || "affected"} decks`
+          : `${deckCount} deck${deckCount !== 1 ? "s" : ""} affected`;
+      await sendPush(userId, { title, body, url: "/", tag: n.event_id });
+      pushedIds.push(n.event_id);
+    }
+    if (pushedIds.length > 0) {
+      await sb
+        .from("banlist_notifications")
+        .update({ pushed: true })
+        .eq("user_id", userId)
+        .in("event_id", pushedIds);
     }
   }
 
