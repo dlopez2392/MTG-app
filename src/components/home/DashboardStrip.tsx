@@ -8,6 +8,7 @@ import { useValueHistory } from "@/hooks/useValueHistory";
 import { useGameLog } from "@/hooks/useGameLog";
 import { computeStreak } from "@/lib/utils/gameStats";
 import type { ScryfallSet } from "@/types/card";
+import BanlistAlert from "./BanlistAlert";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -64,9 +65,14 @@ export default function DashboardStrip() {
   const daysToSet = nextSet?.released_at ? daysUntil(nextSet.released_at) : null;
 
   const hasAnything = recentDecks.length > 0 || movement !== null || showStreak || nextSet !== null;
-  if (!hasAnything) return null;
+
+  // The ban-list alert is independent of the rest of the strip — a user with no
+  // value/streak/set data can still have an affected deck.
+  if (!hasAnything) return <BanlistAlert />;
 
   return (
+    <>
+    <BanlistAlert />
     <div className="px-4 pb-2 max-w-2xl mx-auto w-full">
       {/* Greeting */}
       <p className="text-section-label text-text-muted mb-2">
@@ -143,5 +149,6 @@ export default function DashboardStrip() {
         </div>
       )}
     </div>
+    </>
   );
 }
