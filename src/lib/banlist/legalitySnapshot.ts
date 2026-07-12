@@ -65,14 +65,22 @@ export async function loadLegalities(scryfallIds: string[]): Promise<{
   if (ids.length === 0) return { prev, curr, toUpsert };
 
   const sb = getSupabase();
-  const { data } = await sb
-    .from("card_legality_snapshot")
-    .select("scryfall_id, card_name, legalities, updated_at")
-    .in("scryfall_id", ids);
+  // Read the snapshot in chunks. A single .in() with hundreds of ids builds a
+  // multi-KB request URL that overflows PostgREST's header limit (~16KB) and
+  // fails the whole query — which would silently make every card look new.
+  const READ_CHUNK = 150;
+  const rows: DbRow[] = [];
+  for (let i = 0; i < ids.length; i += READ_CHUNK) {
+    const chunk = ids.slice(i, i + READ_CHUNK);
+    const { data } = await sb
+      .from("card_legality_snapshot")
+      .select("scryfall_id, card_name, legalities, updated_at")
+      .in("scryfall_id", chunk);
+    if (data) rows.push(...(data as DbRow[]));
+  }
 
   const now = Date.now();
   const stale: string[] = [];
-  const rows = (data ?? []) as DbRow[];
   const byId = new Map(rows.map((r) => [r.scryfall_id, r]));
   for (const id of ids) {
     const row = byId.get(id);

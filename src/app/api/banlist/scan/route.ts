@@ -75,6 +75,10 @@ export async function GET() {
   // 4. Per-format diff → global banlist_events on ban/restrict/unban transitions.
   const nowIso = new Date().toISOString();
   const seenEvent = new Set<string>();
+  // eventId → deckIds this user runs the card in (captured by exact scryfall_id
+  // at detection, so double-faced/split cards whose stored name differs from
+  // Scryfall's canonical name still attribute to the right deck).
+  const freshEventDecks = new Map<string, Set<string>>();
   const eventRows: {
     id: string;
     card_name: string;
@@ -93,6 +97,12 @@ export async function GET() {
     if (!t) continue;
     const name = curr.get(c.scryfall_id)?.name ?? c.name;
     const id = hashId(`${c.scryfall_id}|${fmt}|${t}`);
+    let decks = freshEventDecks.get(id);
+    if (!decks) {
+      decks = new Set<string>();
+      freshEventDecks.set(id, decks);
+    }
+    decks.add(c.deck_id);
     if (seenEvent.has(id)) continue;
     seenEvent.add(id);
     eventRows.push({
@@ -106,7 +116,11 @@ export async function GET() {
     });
   }
   if (eventRows.length > 0) {
-    await sb.from("banlist_events").upsert(eventRows, { onConflict: "id" });
+    // ignoreDuplicates: an event id is hash(scryfall_id|fmt|status) with no time
+    // component, so re-detecting the same transition must NOT overwrite the
+    // original announced_at (which would keep it "fresh" forever and never age
+    // out of the 90-day window).
+    await sb.from("banlist_events").upsert(eventRows, { onConflict: "id", ignoreDuplicates: true });
   }
 
   // 5. Upsert snapshot (this is also the silent baseline for first sightings).
@@ -143,8 +157,13 @@ export async function GET() {
     }
     const notifRows: { user_id: string; event_id: string; deck_ids: string[] }[] = [];
     for (const ev of recentEvents as { id: string; card_name: string; format: string }[]) {
-      const deckIds = runIndex.get(`${ev.card_name.toLowerCase()}|${normFormat(ev.format)}`);
-      if (deckIds && deckIds.size > 0) {
+      // Prefer exact deck ids captured at detection (handles DFC/split name
+      // mismatches); fall back to name-based matching for events detected by
+      // other users' scans that this user is also affected by.
+      const exact = freshEventDecks.get(ev.id);
+      const byName = runIndex.get(`${ev.card_name.toLowerCase()}|${normFormat(ev.format)}`);
+      const deckIds = new Set<string>([...(exact ?? []), ...(byName ?? [])]);
+      if (deckIds.size > 0) {
         notifRows.push({ user_id: userId, event_id: ev.id, deck_ids: [...deckIds] });
       }
     }
