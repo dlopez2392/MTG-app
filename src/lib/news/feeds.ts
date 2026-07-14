@@ -8,11 +8,11 @@ export interface FeedDef {
 
 export const FEEDS: FeedDef[] = [
   {
-    key: "wizards",
-    name: "Magic: The Gathering",
-    url: "https://magic.wizards.com/en/rss/news",
+    key: "scryfall",
+    name: "Scryfall Blog",
+    url: "https://scryfall.com/blog/feed",
     color: "#A855F7",
-    initials: "WotC",
+    initials: "SF",
   },
   {
     key: "tcgplayer",
@@ -65,4 +65,4 @@ export const FEEDS: FeedDef[] = [
   },
 ];
 
-export const DEFAULT_ENABLED = new Set(["wizards", "tcgplayer", "edhrec", "mtggoldfish", "arenazone", "hipsters"]);
+export const DEFAULT_ENABLED = new Set(["scryfall", "tcgplayer", "edhrec", "mtggoldfish", "arenazone", "hipsters"]);
