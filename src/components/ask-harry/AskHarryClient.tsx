@@ -6,10 +6,12 @@ import HeroBanner from "@/components/layout/HeroBanner";
 import PageContainer from "@/components/layout/PageContainer";
 import CardChipInput from "@/components/ask-harry/CardChipInput";
 import RulingResult from "@/components/ask-harry/RulingResult";
+import { useDecks } from "@/hooks/useDecks";
+import { splitNdjson } from "@/lib/rules/stream";
 
 interface RulingData {
   ruling: string;
-  confidence: "high" | "medium" | "low";
+  confidence: "high" | "medium" | "low" | null;
   citedRules: { number: string; text: string }[];
   cardsAnalyzed: { name: string; oracleText: string }[];
   model: "flash" | "pro";
@@ -46,10 +48,13 @@ function saveRecentQuestion(question: string, cards: string[]) {
 
 export default function AskHarryClient() {
   const { isSignedIn } = useUser();
+  const { allDecks } = useDecks();
   const [question, setQuestion] = useState("");
   const [cards, setCards] = useState<string[]>([]);
+  const [deckId, setDeckId] = useState("");
   const [result, setResult] = useState<RulingData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recentQuestions] = useState<RecentQuestion[]>(() => getRecentQuestions());
 
@@ -57,8 +62,9 @@ export default function AskHarryClient() {
     if (!question.trim() || question.trim().length < 3) return;
 
     setLoading(true);
+    setStreaming(true);
     setError(null);
-    setResult(null);
+    setResult({ ruling: "", confidence: null, citedRules: [], cardsAnalyzed: [], model: "flash" });
 
     try {
       const res = await fetch("/api/rules-judge", {
@@ -67,21 +73,50 @@ export default function AskHarryClient() {
         body: JSON.stringify({
           question: question.trim(),
           cards: cards.length > 0 ? cards : undefined,
+          deckId: deckId || undefined,
         }),
       });
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({ error: "Request failed" }));
         throw new Error(data.error ?? `Error ${res.status}`);
       }
 
-      const data: RulingData = await res.json();
-      setResult(data);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let streamError: string | null = null;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const { events, remainder } = splitNdjson(buf);
+        buf = remainder;
+        for (const ev of events) {
+          if (ev.type === "meta") {
+            setResult((r) => ({
+              ...(r ?? { ruling: "", confidence: null, citedRules: [], cardsAnalyzed: [], model: "flash" }),
+              citedRules: (ev.citedRules as RulingData["citedRules"]) ?? [],
+              cardsAnalyzed: (ev.cardsAnalyzed as RulingData["cardsAnalyzed"]) ?? [],
+              model: (ev.model as "flash" | "pro") ?? "flash",
+            }));
+          } else if (ev.type === "confidence") {
+            setResult((r) => (r ? { ...r, confidence: (ev.value as RulingData["confidence"]) ?? null } : r));
+          } else if (ev.type === "token") {
+            setResult((r) => (r ? { ...r, ruling: r.ruling + (ev.text as string) } : r));
+          } else if (ev.type === "error") {
+            streamError = (ev.message as string) ?? "Stream error";
+          }
+        }
+      }
+      if (streamError) throw new Error(streamError);
       saveRecentQuestion(question.trim(), cards);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+      setResult(null);
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   }
 
@@ -132,6 +167,26 @@ export default function AskHarryClient() {
             onRemove={(i) => setCards((prev) => prev.filter((_, j) => j !== i))}
           />
 
+          {isSignedIn && allDecks.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2">
+                Deck context (optional)
+              </label>
+              <select
+                value={deckId}
+                onChange={(e) => setDeckId(e.target.value)}
+                className="w-full input-base px-3 py-2 text-sm"
+              >
+                <option value="">No deck</option>
+                {allDecks.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleSubmit}
@@ -168,6 +223,7 @@ export default function AskHarryClient() {
               citedRules={result.citedRules}
               cardsAnalyzed={result.cardsAnalyzed}
               model={result.model}
+              streaming={streaming}
             />
           )}
 
