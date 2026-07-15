@@ -13,12 +13,17 @@ export function parseConfidencePrefix(buf: string): {
   confidence: "high" | "medium" | "low" | null;
   rest: string;
 } {
-  const nl = buf.indexOf("\n");
+  // Normalize CRLF and skip any leading blank lines the model may emit before
+  // the "Confidence:" line, so a stray blank/CR never leaks into the ruling.
+  const norm = buf.replace(/\r\n/g, "\n").replace(/^\n+/, "");
+  const nl = norm.indexOf("\n");
   if (nl === -1) return { settled: false, confidence: null, rest: "" };
-  const first = buf.slice(0, nl).trim();
+  const first = norm.slice(0, nl).trim();
   const m = first.match(/^confidence\s*[:\-]\s*(high|medium|low)/i);
   const confidence = m ? (m[1].toLowerCase() as "high" | "medium" | "low") : null;
-  const rest = confidence ? buf.slice(nl + 1).replace(/^\n+/, "") : buf;
+  // If the first non-blank line is the marker, drop it; otherwise it's ruling
+  // content — keep the normalized, blank-stripped buffer so nothing is lost.
+  const rest = confidence ? norm.slice(nl + 1).replace(/^\n+/, "") : norm;
   return { settled: true, confidence, rest };
 }
 
