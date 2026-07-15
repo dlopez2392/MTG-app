@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils/cn";
 
 interface RulingResultProps {
   ruling: string;
-  confidence: "high" | "medium" | "low";
+  confidence: "high" | "medium" | "low" | null;
   citedRules: { number: string; text: string }[];
   cardsAnalyzed: { name: string; oracleText: string }[];
   model: "flash" | "pro";
+  streaming?: boolean;
 }
 
 const CONFIDENCE_STYLES = {
@@ -17,12 +18,12 @@ const CONFIDENCE_STYLES = {
   low: { bg: "bg-red-500/15", text: "text-red-400", dot: "bg-red-400", label: "Low Confidence" },
 };
 
-export default function RulingResult({ ruling, confidence, citedRules, cardsAnalyzed, model }: RulingResultProps) {
+export default function RulingResult({ ruling, confidence, citedRules, cardsAnalyzed, model, streaming = false }: RulingResultProps) {
   const [showRules, setShowRules] = useState(false);
   const [showCards, setShowCards] = useState(false);
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 
-  const conf = CONFIDENCE_STYLES[confidence];
+  const conf = confidence ? CONFIDENCE_STYLES[confidence] : null;
   const modelLabel = model === "pro" ? "DeepSeek Pro" : "DeepSeek Flash";
 
   // Load existing feedback
@@ -57,10 +58,19 @@ export default function RulingResult({ ruling, confidence, citedRules, cardsAnal
     <div className="glass-card rounded-2xl border border-border p-4 space-y-3">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", conf.bg, conf.text)}>
-          <span className={cn("w-1.5 h-1.5 rounded-full", conf.dot)} />
-          {conf.label}
-        </span>
+        {conf ? (
+          <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", conf.bg, conf.text)}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", conf.dot)} />
+            {conf.label}
+          </span>
+        ) : streaming ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-bg-hover text-text-muted">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+            Analyzing…
+          </span>
+        ) : (
+          <span />
+        )}
         <span className="text-[10px] text-text-muted font-medium px-2 py-0.5 rounded-md bg-bg-hover">
           {modelLabel}
         </span>
@@ -69,6 +79,7 @@ export default function RulingResult({ ruling, confidence, citedRules, cardsAnal
       {/* Ruling text */}
       <div className="text-sm text-text-primary leading-relaxed whitespace-pre-wrap">
         {ruling}
+        {streaming && <span className="inline-block w-1.5 h-4 ml-0.5 -mb-0.5 bg-accent/70 animate-pulse align-middle" />}
       </div>
 
       {/* Cited Rules expandable */}
