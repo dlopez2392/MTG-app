@@ -1,8 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rateLimit";
+import { getSupabase } from "@/lib/supabase/server";
+import { buildDeckSummary, type DeckCardInput } from "@/lib/decks/summary";
 import { analyzeQuestion } from "@/lib/rules/analyze";
-import { generateRuling } from "@/lib/rules/answer";
+import { generateRulingStream } from "@/lib/rules/answer";
 import { getCachedRuling, setCachedRuling } from "@/lib/rules/cache";
 import {
   vectorSearch,
@@ -16,11 +18,73 @@ import {
 interface RulesJudgeRequest {
   question: string;
   cards?: string[];
+  deckId?: string;
   gameContext?: {
     format?: string;
     playerCount?: number;
     counters?: Record<string, number>;
   };
+}
+
+type Emit = (ev: Record<string, unknown>) => void;
+
+/** Wrap an async producer into an NDJSON streaming Response. */
+function ndjsonResponse(run: (emit: Emit) => Promise<void>): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const emit: Emit = (ev) => controller.enqueue(encoder.encode(JSON.stringify(ev) + "\n"));
+      try {
+        await run(emit);
+      } catch (e) {
+        emit({ type: "error", message: e instanceof Error ? e.message : "Stream error" });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson", "Cache-Control": "no-store" },
+  });
+}
+
+interface DeckCardRow {
+  name: string;
+  quantity: number | null;
+  category: string | null;
+  mana_cost: string | null;
+  cmc: number | null;
+  type_line: string | null;
+  rarity: string | null;
+  price_usd: string | null;
+}
+
+async function loadDeckSummary(userId: string, deckId: string): Promise<string | undefined> {
+  const sb = getSupabase();
+  const { data: deck } = await sb
+    .from("decks")
+    .select("name, format")
+    .eq("id", deckId)
+    .eq("user_id", userId)
+    .single();
+  if (!deck) return undefined;
+  const { data: rows } = await sb
+    .from("deck_cards")
+    .select("name, quantity, category, mana_cost, cmc, type_line, rarity, price_usd")
+    .eq("deck_id", deckId)
+    .eq("user_id", userId);
+  const cards: DeckCardInput[] = ((rows ?? []) as DeckCardRow[]).map((c) => ({
+    name: c.name,
+    quantity: c.quantity ?? 1,
+    category: c.category ?? "main",
+    manaCost: c.mana_cost ?? undefined,
+    cmc: c.cmc ?? undefined,
+    typeLine: c.type_line ?? undefined,
+    rarity: c.rarity ?? undefined,
+    priceUsd: c.price_usd ?? null,
+  }));
+  if (cards.length === 0) return undefined;
+  return buildDeckSummary({ deckName: (deck as { name: string }).name, format: ((deck as { format: string | null }).format ?? "commander").toLowerCase(), cards });
 }
 
 async function fetchCardOracle(
@@ -99,12 +163,20 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Check cache first
+    // Check cache first (deck context is part of the key)
     const requestedCards = body.cards ?? [];
-    const cached = getCachedRuling(body.question, requestedCards, body.gameContext?.format);
+    const cached = getCachedRuling(body.question, requestedCards, body.gameContext?.format, body.deckId);
     if (cached) {
-      return NextResponse.json(cached);
+      return ndjsonResponse(async (emit) => {
+        emit({ type: "meta", citedRules: cached.citedRules, cardsAnalyzed: cached.cardsAnalyzed, model: cached.model });
+        emit({ type: "confidence", value: cached.confidence });
+        emit({ type: "token", text: cached.ruling });
+        emit({ type: "done" });
+      });
     }
+
+    // Deck context (optional) — inject the chosen deck's decklist.
+    const deckSummary = body.deckId ? await loadDeckSummary(userId, body.deckId) : undefined;
 
     // Fetch oracle text — local DB first, Scryfall API fallback
     const localResults = await oracleCardLookup(requestedCards);
@@ -192,17 +264,40 @@ export async function POST(req: Request) {
       ...cardRulings,
     ], 50);
 
-    // Step 3: Generate ruling
-    const ruling = await generateRuling(
-      body.question,
-      allChunks,
-      cardOracleTexts,
-      analysis.complexity,
-      body.gameContext?.format
-    );
+    // Step 3: Stream the ruling. Sources + cards + model come from server-side
+    // data we already have; the prose (and its leading Confidence line) stream.
+    const sourceChunks = allChunks
+      .filter((c) =>
+        ["comprehensive_rules", "glossary", "scryfall_ruling", "tournament_rules", "infraction_procedure", "regular_rel"].includes(c.source)
+      )
+      .slice(0, 8)
+      .map((c) => ({ number: c.sourceId, text: c.content.slice(0, 400) }));
+    const model: "flash" | "pro" = analysis.complexity === "complex" ? "pro" : "flash";
+    const questionText = body.question;
+    const format = body.gameContext?.format;
 
-    setCachedRuling(body.question, requestedCards, body.gameContext?.format, ruling);
-    return NextResponse.json(ruling);
+    return ndjsonResponse(async (emit) => {
+      emit({ type: "meta", citedRules: sourceChunks, cardsAnalyzed: cardOracleTexts, model });
+      let full = "";
+      let confidence: "high" | "medium" | "low" | null = null;
+      for await (const part of generateRulingStream(questionText, allChunks, cardOracleTexts, analysis.complexity, format, deckSummary)) {
+        if ("confidence" in part) {
+          confidence = part.confidence;
+          emit({ type: "confidence", value: confidence });
+        } else {
+          full += part.token;
+          emit({ type: "token", text: part.token });
+        }
+      }
+      setCachedRuling(
+        questionText,
+        requestedCards,
+        format,
+        { ruling: full, confidence: confidence ?? "low", citedRules: sourceChunks, cardsAnalyzed: cardOracleTexts, model },
+        body.deckId
+      );
+      emit({ type: "done" });
+    });
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Rules judge analysis failed";

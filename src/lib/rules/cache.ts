@@ -9,19 +9,21 @@ const cache = new Map<string, CacheEntry>();
 const MAX_ENTRIES = 500;
 const TTL_MS = 60 * 60 * 1000; // 1 hour
 
-function normalizeKey(question: string, cards: string[], format?: string): string {
+function normalizeKey(question: string, cards: string[], format?: string, deckId?: string): string {
   const q = question.toLowerCase().trim().replace(/\s+/g, " ");
   const c = cards.map((n) => n.toLowerCase().trim()).sort().join("|");
   const f = format?.toLowerCase() ?? "";
-  return `${q}::${c}::${f}`;
+  const d = deckId ?? "";
+  return `${q}::${c}::${f}::${d}`;
 }
 
 export function getCachedRuling(
   question: string,
   cards: string[],
-  format?: string
+  format?: string,
+  deckId?: string
 ): RulingResponse | null {
-  const key = normalizeKey(question, cards, format);
+  const key = normalizeKey(question, cards, format, deckId);
   const entry = cache.get(key);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > TTL_MS) {
@@ -35,7 +37,8 @@ export function setCachedRuling(
   question: string,
   cards: string[],
   format: string | undefined,
-  response: RulingResponse
+  response: RulingResponse,
+  deckId?: string
 ): void {
   if (cache.size >= MAX_ENTRIES) {
     const oldest = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -43,6 +46,6 @@ export function setCachedRuling(
       cache.delete(oldest[i][0]);
     }
   }
-  const key = normalizeKey(question, cards, format);
+  const key = normalizeKey(question, cards, format, deckId);
   cache.set(key, { response, timestamp: Date.now() });
 }
