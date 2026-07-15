@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getSupabase } from "@/lib/supabase/server";
+import type { DeckPrimerData } from "@/types/deck";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -21,6 +22,7 @@ export interface PublicDeck {
   format: string | null;
   coverImageUri: string | null;
   updatedAt: string;
+  primer: DeckPrimerData | null;
   cards: PublicDeckCard[];
 }
 
@@ -31,7 +33,7 @@ export const getPublicDeck = cache(async (id: string): Promise<PublicDeck | null
   const sb = getSupabase();
   const { data: deck, error } = await sb
     .from("decks")
-    .select("name, format, cover_image_uri, updated_at, public")
+    .select("name, format, cover_image_uri, updated_at, public, primer")
     .eq("id", id)
     .single();
   if (error || !deck || deck.public !== true) return null;
@@ -46,6 +48,7 @@ export const getPublicDeck = cache(async (id: string): Promise<PublicDeck | null
     format: (deck.format as string | null) ?? null,
     coverImageUri: (deck.cover_image_uri as string | null) ?? null,
     updatedAt: deck.updated_at as string,
+    primer: (deck.primer as DeckPrimerData | null) ?? null,
     cards: (cards ?? []).map((c) => ({
       scryfallId: c.scryfall_id as string,
       name: c.name as string,

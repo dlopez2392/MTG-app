@@ -72,6 +72,51 @@ export default async function PublicDeckPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
+      {/* Primer */}
+      {deck.primer && (
+        <div className="glass-card border border-border rounded-2xl p-4 mb-4 space-y-3">
+          <p className="text-section-label text-text-muted">Deck primer</p>
+          {deck.primer.tagline && (
+            <p className="text-base font-semibold text-text-primary">{deck.primer.tagline}</p>
+          )}
+          {deck.primer.gamePlan && (
+            <div>
+              <p className="text-label text-accent mb-1">Game plan</p>
+              <p className="text-sm text-text-secondary whitespace-pre-line leading-relaxed">{deck.primer.gamePlan}</p>
+            </div>
+          )}
+          {deck.primer.keyCards?.length > 0 && (
+            <div>
+              <p className="text-label text-accent mb-1">Key cards</p>
+              <ul className="space-y-1">
+                {deck.primer.keyCards.map((c, i) => (
+                  <li key={i} className="text-sm text-text-secondary">
+                    <span className="font-medium text-text-primary">{c.name}</span>
+                    {c.note ? ` — ${c.note}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {deck.primer.mulligan && (
+            <div>
+              <p className="text-label text-accent mb-1">Mulligan guide</p>
+              <p className="text-sm text-text-secondary whitespace-pre-line leading-relaxed">{deck.primer.mulligan}</p>
+            </div>
+          )}
+          {deck.primer.keyLines?.length > 0 && (
+            <div>
+              <p className="text-label text-accent mb-1">Key lines</p>
+              <ul className="list-disc list-inside space-y-1">
+                {deck.primer.keyLines.map((line, i) => (
+                  <li key={i} className="text-sm text-text-secondary leading-relaxed">{line}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Mana curve */}
       <div className="glass-card border border-border rounded-2xl p-4 mb-4">
         <p className="text-section-label text-text-muted mb-2">Mana curve</p>
