@@ -53,6 +53,8 @@ function toDecK(row: Record<string, unknown>) {
     coverCardId: row.cover_card_id,
     coverImageUri: row.cover_image_uri,
     public: row.public ?? false,
+    primer: row.primer ?? null,
+    primerGeneratedAt: row.primer_generated_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

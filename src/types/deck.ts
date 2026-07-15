@@ -4,6 +4,19 @@ export type DeckCategory = "main" | "sideboard" | "commander" | "companion" | "m
 
 export type MTGColor = "W" | "U" | "B" | "R" | "G" | "multi" | "colorless";
 
+export interface DeckPrimerCard {
+  name: string;
+  note: string;
+}
+
+export interface DeckPrimerData {
+  tagline: string;
+  gamePlan: string;
+  keyCards: DeckPrimerCard[];
+  mulligan: string;
+  keyLines: string[];
+}
+
 export interface Deck {
   id?: string;
   name: string;
@@ -15,6 +28,8 @@ export interface Deck {
   dominantColor?: MTGColor;
   colors?: string[];
   public?: boolean;
+  primer?: DeckPrimerData | null;
+  primerGeneratedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -15,6 +15,7 @@ import ManaCost from "@/components/cards/ManaCost";
 import DeckCardRow from "./DeckCardRow";
 import DeckCardGrid from "./DeckCardGrid";
 import DeckImportExport from "./DeckImportExport";
+import DeckPrimer from "./DeckPrimer";
 import HandSimulator from "./HandSimulator";
 import type { DeckCard, DeckCategory } from "@/types/deck";
 import type { ScryfallCard } from "@/types/card";
@@ -172,6 +173,8 @@ export default function DeckEditor({ deckId }: DeckEditorProps) {
           })}
         </div>
       </div>
+
+      <DeckPrimer deckId={deckId} />
 
       {/* ── Action Bar ── */}
       <div className="flex items-center gap-1.5">
